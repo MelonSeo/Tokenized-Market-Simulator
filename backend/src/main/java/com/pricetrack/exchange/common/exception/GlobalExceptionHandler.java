@@ -23,6 +23,12 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(com.pricetrack.exchange.auth.google.GoogleAuthFailure.class)
+    public ResponseEntity<ApiErrorResponse> googleAuthFailure(
+            com.pricetrack.exchange.auth.google.GoogleAuthFailure failure, HttpServletRequest request) {
+        return error(failure.status(), failure.code(), "Google 인증 요청을 완료할 수 없습니다.", request);
+    }
+
     @ExceptionHandler(com.pricetrack.exchange.market.provider.kiwoom.KiwoomApiException.class)
     public ResponseEntity<ApiErrorResponse> kiwoomUnavailable(HttpServletRequest request) {
         return error(HttpStatus.SERVICE_UNAVAILABLE, "KIWOOM_UNAVAILABLE", "키움 시세를 현재 사용할 수 없습니다.", request);

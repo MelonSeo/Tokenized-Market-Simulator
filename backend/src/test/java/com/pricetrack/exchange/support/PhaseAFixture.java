@@ -16,7 +16,7 @@ public final class PhaseAFixture {
         if(!session.getParent().equals(runtime)||!session.getFileName().toString().matches("phase-a-\\d{14}-[0-9a-f]{8}"))
             throw new IllegalStateException("Phase A session required");
         Path run=Path.of(Objects.requireNonNull(gateRun)).toRealPath();
-        if(!run.getParent().equals(session.resolve("fixtures"))||!run.getFileName().toString().matches("(reserve|audit|faucet|conditional)-[0-9a-f]{8}"))
+        if(!run.getParent().equals(session.resolve("fixtures"))||!run.getFileName().toString().matches("(reserve|audit|faucet|conditional|google|google-migration|sellall)-[0-9a-f]{8}"))
             throw new IllegalStateException("New Phase A child fixture required");
         var meta=new ObjectMapper().readTree(run.resolve("run.json").toFile());
         String id=run.getFileName().toString();

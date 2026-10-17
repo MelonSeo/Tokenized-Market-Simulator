@@ -19,7 +19,10 @@ FOUNDRY = 'ghcr.io/foundry-rs/foundry@sha256:0c00cb0bda1ab1b91c9a6bf60f4c76c09c1
 CASES = {'reserve': ('RESERVE_E2E', 'ReservePostgresAnvilE2ETest'),
          'audit': ('AUDIT_E2E', 'TradeAuditPostgresAnvilE2ETest'),
          'faucet': ('FAUCET_E2E', 'FaucetPostgresAnvilE2ETest'),
-         'conditional': ('CONDITIONAL_E2E', 'ConditionalPostgresAnvilE2ETest')}
+         'conditional': ('CONDITIONAL_E2E', 'ConditionalPostgresAnvilE2ETest'),
+         'google': ('GOOGLE_AUTH_E2E', 'GoogleAuthPostgresAnvilE2ETest'),
+         'google-migration': ('GOOGLE_MIGRATION_E2E', 'GoogleMigrationPostgresE2ETest'),
+         'sellall': ('SELL_ALL_E2E', 'SellAllPostgresAnvilE2ETest')}
 
 def private(path, text):
     with os.fdopen(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600), 'w', encoding='utf-8') as f:

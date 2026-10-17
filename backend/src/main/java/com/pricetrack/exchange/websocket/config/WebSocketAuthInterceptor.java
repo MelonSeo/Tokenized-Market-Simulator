@@ -40,16 +40,27 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final WebSocketExpiryGuard expiryGuard;
 
     public WebSocketAuthInterceptor(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+        this(jwtTokenProvider, userRepository, new WebSocketExpiryGuard());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public WebSocketAuthInterceptor(JwtTokenProvider jwtTokenProvider, UserRepository userRepository,
+            WebSocketExpiryGuard expiryGuard) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
+        this.expiryGuard = expiryGuard;
     }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (accessor == null || accessor.getCommand() == null) return message;
+
+        if (expiryGuard.expired(accessor.getSessionId()))
+            throw rejected("WebSocket 인증이 만료됐습니다.", null);
 
         if (accessor.getCommand() == StompCommand.CONNECT) authenticate(accessor);
         if (accessor.getCommand() == StompCommand.SUBSCRIBE) authorizeSubscription(accessor);
@@ -71,6 +82,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             Long userId = jwtTokenProvider.getUserId(authorization.substring(BEARER_PREFIX.length()));
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            expiryGuard.authenticate(accessor.getSessionId(),
+                    jwtTokenProvider.getExpiration(authorization.substring(BEARER_PREFIX.length())));
             accessor.setUser(new WebSocketPrincipal(user.getId(), user.getLoginId(), user.getRole()));
         } catch (RuntimeException exception) {
             throw rejected("WebSocket JWT가 유효하지 않습니다.", exception);

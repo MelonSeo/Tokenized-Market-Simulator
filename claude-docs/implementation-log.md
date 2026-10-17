@@ -2796,3 +2796,79 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 기존runtime/DB/Anvil/baseline/credential/capture/image보존, Docker조작·빌드이미지변경·push·worktree제거없음. 앞으로개발은원본프로젝트루트에서한다. 기존KRX인수·NXT진단은절대경로와기존sourceguard때문에보존된worktree를유지해야한다.
 - 독립검토의mergegate/ROOT검증지적2건보완후첫재검토필수수정없음. 실제회귀는구현자실행. 상세커밋·검증·경로의존성과제거선행조건: [원본 루트 통합 보고서](root-integration-2026-10-16.md).
 - 최종2차독립재검토필수수정없음. reviewer가실제6커밋/48파일/merge부모및tree동일/원본XML498·skip35·실패0/문서구분을직접확인했다. 회귀재실행·private백업/hash·WT·Docker/DB/credentials는검토범위밖이다.
+
+# Google 사용자 인증 확장 — 실제 코드 조사·설계 제안 / 구현 승인 대기 (2026-10-16)
+
+- 원본melon-init/a98ea4b에서기존SpringSecurity·BCrypt·JWT·nullable google_sub/email필드·REST/개인WS·웹메모리인증을조사했다. 기존NXT문서변경은보존했다.
+- [구현 승인안](google-oauth-implementation-design.md): GIS공식버튼/JS callback→서버IDtoken검증→기존JWT를추천. Code+PKCE대안과비교, nonce·브라우저바인딩·Origin·원자적challenge소비·비밀번호재인증연결, 이메일자동병합/자산이동금지를명시했다. 모든선택은제안상태다.
+- 기존users컬럼재사용+신규challenge테이블1개를제안했다. 이메일발송·refresh/revoke·해제는후속으로분리, 현재STOMP의연결중서버만료차단부재를확인해별도승인보완으로제시했다. 기존KRX이미지보존과최신Google소스인수는동일검증이아님을구분했다.
+- 공개Google/Spring공식문서조회만수행. 제품코드·스키마·실제.env·Docker/DB/Anvil·기존worktree/private evidence변경없음, 실제Google인증·테스트·commit/merge/push없음.
+- 독립설계검토review_acceptance_baseline:현재인증·WS·웹·schema와제안대조후필수수정없음. 테스트/실인증/private/공식링크독립검증은하지않았으며구현승인이나보안검증완료가아니다.
+
+# Google GIS 사용자 인증 — 승인 구현·오프라인 검증 (2026-10-17)
+
+## 구현과 결정
+- 원본 루트의 `feat/google-auth`에서 GIS callback ID Token 서버 검증, 기존 내부 users.id JWT, Google-only USER/0원 신규 가입, 비밀번호 재인증을 요구하는 명시 LINK를 구현했다. Google email 자동 복사·계정 병합·자산 이동은 하지 않는다.
+- challenge 목적/nonce·브라우저 바인딩 hash/만료/일회성 소비, DB 사용자·google_sub unique 경합, 잔고 초기화 rollback을 보호한다. 공통 JWT 발급을 재사용하고 서버 STOMP의 만료 후 outbound 차단·세션 종료를 추가했다. 기존 가격·Oracle·Vault·정산·복구 정책은 변경하지 않았다.
+- 웹 로그인·내 모의 자산의 연결 UI, auth callback 세대/취소/재로그인, 제한된 GIS CSP 및 feature-off 설정을 추가했다. 실제 .env·Google 계정/키·기존 KRX환경은 변경하지 않았다. [파일·API·실행별 기록](google-auth-implementation.md)을 따른다.
+
+## 검증
+- 새 격리 실제 PostgreSQL/Anvil Google 동시성·rollback·BUY/SELL 정산·두 대사 1 PASS, 별도 새 PG additive migration/기존 사용자 보존1 PASS. 실제 Google proof가 아닌 로컬 RSA fixture이며 실계정 인수가 아니다.
+- 새 전체 backend 재실행530중493 PASS/37 SKIP/FAIL0/ERROR0. real RSA/loopback JWKS 키회전·timeout·오류·alg 경계, null loginId REST/AI 권한, 서버 native/SockJS 만료를 포함한다. 웹93 PASS, Chrome desktop/mobile+오프라인 GIS LOGIN/LINK/재로그인 PASS, Foundry36 PASS. 최종 소스 PG/Anvil 재확인 및 검토는 아래에 추기한다.
+- 실패 증거도 보존: 최초 PG fixture는 구버전 사용자와 신규 Faucet 활성화 혼합으로503; migration과 빈 장부 거래 fixture를 분리했다. 첫 전체 backend487 PASS/6 FAIL/37 SKIP은 신규 Google context가 공용 H2 DB를 drop한 테스트 격리 결함으로, Google H2 이름을 별도로 분리해 수정했다. 실패를 PASS로 덮어쓰지 않는다.
+
+## 검토와 남은 작업
+- 독립 `review_google_auth` 최초 검토 필수3건(UI 로그아웃 DOM 복원, production JWKS 경로 및 핵심 부정 테스트 누락)을 보완했다. 실제 Chrome과 전체 회귀로 재검증했으며 독립 재검토 결과는 추기한다.
+- 실제 Google SDK/계정/JWKS 인수는 별도 승인 전 NOT_RUN. Web Client ID와 exact Authorized JS Origin/동의화면 테스트 사용자가 필요하다. 이메일 발송·refresh/revoke·복구·해제 및 Android Google 네이티브 인증은 미구현/이번 범위 제외다.
+- 기존 NXT 변경·private 증거·원본 melon-init ref·KRX worktree/DB/Anvil/baseline/이미지·playground를 보존했다. 신규 fixture만 사용하고 종료 후 데이터/로그는 남긴다. commit/merge/push/deploy 없음.
+
+## 최종 확인
+- 독립1차재검토: 최초3건해결·추가필수수정없음. 이후 PG 기존 Trade 보존 검증을 강화했다. 최종 새 google-f7e10bae 1PASS와 google-migration-9bf0b82f 1PASS(각FAIL0/SKIP0). 확정Trade와잠긴Order/Faucet/잔고/userId/role이Google연결·재로그인후같고기존로컬JWT도유효하다. GoogleBUY/SELL정산·두대사MATCH를확인했다.
+- 최종 backend전체493PASS/37SKIP/FAIL0/ERROR0, web93PASS, 실제Chrome desktop/mobile+offlineGIS LOGIN/LINK/logout재로그인PASS, Foundry36PASS, bootJar PASS. 전체회귀초기실패6건과선행fixture실패는별도기록보존했다. 최종2차검토결과는추기한다.
+- 최종2차독립재검토 `review_google_auth`: 발견된필수수정없음. 강화PG테스트·문서정합성의읽기전용검토이며검토자직접실행/private·실Google인수는없다. 이번6개신규fixture의PG/Anvil12개모두정지확인,데이터·체인·실패증거보존. 제품/테스트추가수정없이검토결과만기록했다.
+
+# Google 실제 인수 후속 — 주요 흐름 확인 / 수동 경계 검증 대기
+
+> 2026-10-17. feat/google-auth, HEAD a98ea4b. commit/merge/push 없음.
+
+- 실제 SDK/JWKS와 사용자 직접 조작으로 Google 신규/재로그인, 로컬 userId=3 명시 연결, Google 재로그인, 기존 로컬 로그인 유지와 DB 자산/Order/Trade/Faucet 보존을 확인했다. 기존 KRX/개발 DB·Anvil·capture는 변경하지 않았다.
+- 상세 실행과 증거 한계는 [실제 인수 기록](google-auth-live-acceptance-2026-10-17.md) §7~15. 일반 Chrome 현재 응답ID/연결후 신규WS, 실제 취소/중복거부는 사용자 조작 대기 NOT_RUN이며 기존 fixture로 대체하지 않는다.
+- 새 무과금 회귀 `google-final-regression-20261017031656-3c6a5e16`: backend530중493PASS/37SKIP/FAIL0/ERROR0, web93PASS/FAIL0/SKIP0, Chrome desktop/mobile offline GIS PASS, Foundry36PASS/FAIL0/SKIP0. 이전 PG/Anvil2종을 새 실행으로 합산하지 않았다.
+- 이번 독립 검토에서 과거 구현 문서의 실제인수 NOT_RUN 현재형 표현을 지적해 당시 오프라인 이력으로 한정하고 최신 보고서로 연결했다. 최종 재검토는 추기한다.
+- 발견한 전량 매도 반올림/JSON 숫자 정밀도·잠금 제외 수량 문제는 별도 [최소 보완안](sell-all-precision-design.md)만 작성했다. REST tokenAvailableAmount 문자열1개+전량 버튼 승인 대기, UI/API 제품 수정 및 수정후 테스트 NOT_RUN.
+- 독립 재검토 `review_google_live_acceptance`: 발견된 필수 수정 없음. 최초 문서정합성1건과 tail500 범위 보완 확인. 검토자는 테스트/private 원본을 직접 실행·열람하지 않았으며 남은 실제 수동 경계·ID·WS는 NOT_RUN으로 유지한다.
+
+# 전량 매도 정밀도 보완 — Google 인증과 별도 변경
+
+> 2026-10-17. 사용자 승인 [최소 설계](sell-all-precision-design.md), [파일·실행별 상세](sell-all-precision-implementation.md). feat/google-auth/HEAD a98ea4b 유지, commit/merge/push 없음.
+
+## 구현과 결정
+- portfolio REST의 tokenAvailableAmount 문자열1필드=`amount-lockedAmount`의 toPlainString. 기존7필드·DB/schema·거래/견적/정산/잠금/WS payload 유지.
+- SELL 전량 클릭마다 fresh본인REST→문자열그대로입력. 이전Quote무효화·자동Quote/주문0, 중복/계정/세션/방향/입력변경/거래진행·불확실상태/지연응답차단. 기존Google인수·KRX이미지/runtime/DB·chain·NXT문서 보존.
+
+## 실제 실행
+- 새 session phase-a-20261017060611-73283ef3, sellall-ba3ac40a 실제 PG/Anvil1PASS: 실제 부분SELL 잠금 제외·fresh전량SELL 뒤mSEC0/잠금0, Trade3/Receipt성공·두대사MATCH/coverage4항목true. 첫 sellall-a045eaf8 Faucet400은 테스트멱등키길이문제로1FAIL 보존; 키만수정해새fixture실행.
+- 수정후 전체533중495PASS/38SKIP/FAIL0/ERROR0, 웹107PASS/FAIL0/SKIP0, Chrome desktop/mobile·전량·기존offlineGIS PASS, Foundry36PASS, harness/clock15PASS. 이전수정전493/37·웹93과분리. 최초새웹1FAIL mutablecontext참조는복사로보완; harness최초cwd import오류도보존.
+- 신규E2E컨테이너4개 stopped/exited, 데이터·로그·키는ignoredprivate경로보존. Chromefixture와Java실PG/RPC를단일실브라우저라이브인수로합치지않음. 실제Google수동미완료항목은별도유지.
+
+## 검토와 남은 범위
+- 독립최초 review_sell_all_precision: 필수수정없음, 최종결과/문서재검토요청예정. 기존Google환경과KRX에재배포하지않음. Android/실제시세/외부배포미검증, 새버튼을기존인수서버에자동반영하지않음.
+- 최종독립재검토 review_sell_all_precision: 발견된필수수정없음. 테스트키수정·최종수치/실패이력·검증종류/보존경계확인, 검토자직접테스트/private열람없음. diff--check통과, HEAD/melon-init모두a98ea4b유지. 전량매도구현·격리검증완료이며 별도Google수동인수전체완료를뜻하지않음.
+
+# Google 최종 수동 인수·원본 통합 착수 — 신규 환경 준비 / 사용자 조작 대기
+
+> 2026-10-17. [진행·커밋/Phase B/C 경계](google-auth-finalization-and-integration.md).
+
+- feat/google-auth/원본melon-init=a98ea4b, 기존Google·전량매도·NXT미커밋변경유지. Git index빈상태확인, 아직커밋/병합없음.
+- 기존Google5173은전량매도후현재source와불일치하므로guard우회/manifest변경하지않고최신소스의새google-live-20261017083610-9b6c788e준비. localhost5174/backend62461/독립PG·persistentAnvil/새키·계약·기준점·고유이미지. .env/구runtime/pointer/KRX/기존worktree는변경하지않음.
+- 새bootJar/Vite빌드·ready/현재source-image-mount소유권검사PASS, PG/Anvilhealthy·backend/web실행. USER0/Google로그인HTTP0을허용된SELECT/정제로그로확인. 이번에이전495/38·웹107·Foundry36을재실행한것은아님.
+- 사용자에게GoogleCloud같은WebClient의JavaScriptOrigin localhost5174추가요청(5173유지/.env수정불필요). 실제취소/중복거부/일반Chrome현재id/연결후신규WS는아직NOT_RUN. 이증거가닫히기전커밋/통합하지않음.
+- private준비도구만5173/5174명시선택·새run전용origin/port·boundedConnectionError readiness보완. py_compile PASS, 독립검토진행. 제품코드추가수정없음.
+- 준비독립재검토 review_google_final_preparation: 최초문서1건수정후필수수정없음. source/image/mount자동검사와이번network읽기관측을구분했다. 새network owner/예상서비스4개/각서비스단일전용network연결모두true확인. 검토자는실행/private직접확인없음. Cloud5174등록과실제사용자조작대기, 커밋/병합/병합후회귀NOT_RUN유지.
+
+# Google 최종 실제 수동 인수 수용·분리 커밋 (2026-10-18)
+
+- 사용자재부팅후새5174환경을재생성없이복구했다. DB/파일baseline·canonical blockHash·계약codeHash·image/owner보존확인. 기존Google5173/KRX/playground는변경하지않았다.
+- 새5174의로컬id2명시연결/Google재로그인/일반Chrome me.id2/연결후신규개인WS수신확인. Faucet1회100만mKRW·잠금0을DB에서확인. 사용자id3의중복계정거부및id4취소를수용하며정확409매핑·개별challenge소비는미검증유지. [진행·증거구분](google-auth-finalization-and-integration.md).
+- 사용자통합승인후Google40파일 `bc02330`, 전량매도15파일 `16b8988` 분리커밋. index-only분리·원본54파일byte보존·staged보안패턴/경로검사PASS. NXT문서/기존log구간제외, private/state/실제.env미추가.
+- 새Google-only export검증 backend인증/WS54PASS/2SKIP·web93PASS·Chrome desktop/mobile offlineGIS PASS. 독립review_google_sell_integration 소스/두index검토필수수정없음. 최종병합회귀아직미실행이며[새통합기록](google-sell-all-integration-2026-10-18.md)에별도추기한다. 실제키움/유료AI/배포/push없음.

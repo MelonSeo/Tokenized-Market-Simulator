@@ -118,6 +118,27 @@ class WebSocketConnectionIntegrationTest {
         assertThat(payload).isEqualTo("private-order");
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void googleOnlyIdentityReceivesPrivateEventsThenServerClosesExpiredJwt(boolean sockJs) throws Exception {
+        User user = new User(); user.setGoogleSub("ws-google-"+java.util.UUID.randomUUID());
+        user.setNickname("Google fixture"); user = userRepository.save(user);
+        // Same application signing key, deliberately short lifetime for this server integration test.
+        JwtTokenProvider shortTokens = new JwtTokenProvider("test-secret-test-secret-test-secret-32bytes", 4500);
+        String token = shortTokens.createToken(user.getId(), null);
+        WebSocketStompClient client = sockJs ? configured(new WebSocketStompClient(new SockJsClient(
+                List.of(new WebSocketTransport(new StandardWebSocketClient()))))) : nativeClient();
+        StompSession google = connect(client, (sockJs ? "http" : "ws")+"://localhost:"+port+(sockJs ? "/ws-sockjs" : "/ws"), token);
+        var ready = subscribe(google, WebSocketDestinations.PORTFOLIO_SUBSCRIPTION);
+        Long id = user.getId();
+        assertThat(sendUntilReceived(ready, () -> messagingTemplate.convertAndSendToUser(id.toString(), "/queue/portfolio", "before-expiry")))
+                .isEqualTo("before-expiry");
+        var after = subscribe(google, WebSocketDestinations.ORDERS_SUBSCRIPTION);
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(7)).until(() -> !google.isConnected());
+        messagingTemplate.convertAndSendToUser(id.toString(), "/queue/orders", "after-expiry");
+        assertThatThrownBy(() -> after.get(400, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+    }
+
     @Test
     void conditionalQueueIsDeliveredOnlyToOwner() throws Exception {
         User owner=createUser("conditional-owner"),other=createUser("conditional-other");

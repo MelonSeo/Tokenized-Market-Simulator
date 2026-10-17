@@ -53,4 +53,9 @@ public class JwtTokenProvider {
     public long getValiditySeconds() {
         return validityMs / 1_000;
     }
+
+    public java.time.Instant getExpiration(String token) {
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token)
+                .getPayload().getExpiration().toInstant();
+    }
 }
