@@ -81,7 +81,7 @@ public class AuthService {
                 user.getCreatedAt());
     }
 
-    private TokenResponse token(User user) {
+    public TokenResponse token(User user) {
         return new TokenResponse(
                 jwtTokenProvider.createToken(user.getId(), user.getLoginId()),
                 "Bearer",

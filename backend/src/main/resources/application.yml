@@ -30,6 +30,10 @@ server:
 
 # 애플리케이션 커스텀 설정
 app:
+  google:
+    enabled: ${GOOGLE_AUTH_ENABLED:false}
+    client-id: ${GOOGLE_CLIENT_ID:}
+    allowed-origins: ${GOOGLE_ALLOWED_ORIGINS:}
   conditional:
     enabled: ${CONDITIONAL_ORDERS_ENABLED:false}
     fixture: false # Synthetic execution additionally requires the isolated conditional-fixture profile and fixture DB.

@@ -11,6 +11,7 @@ import { writeFile } from 'node:fs/promises';
 const root = resolve('dist'); const artifacts = join(root, '.smoke'); await mkdir(artifacts, { recursive: true });
 const profile = await mkdtemp(join(artifacts, 'profile-'));
 let role = 'USER', orders = [], failWrite = false, failAi = false, delayedAi = false;
+let googleUser = false, googleLinked = false;
 const faucetClaims=new Map();let loseFaucetResponse=false;
 const conditionalClaims=new Map();
 const quoteId = '0x' + '1'.repeat(64); let expiry = 30;
@@ -29,8 +30,16 @@ const server = createServer(async (req, res) => {
   let text = ''; for await (const chunk of req) text += chunk; const input = text ? JSON.parse(text) : {};
   requests.push({ path: url.pathname, method: req.method, input });
   const now = new Date().toISOString(); let body = {}, status = 200;
-  if (url.pathname.startsWith('/api/auth/')) { role = input.loginId === 'admin' ? 'ADMIN' : 'USER'; body = { accessToken: 'fixture-token', expiresIn: 3600 }; }
-  else if (url.pathname === '/api/me') body = { id:role==='ADMIN'?2:1,nickname: role === 'ADMIN' ? '관리자' : '모의 사용자', role };
+  if (url.pathname === '/api/auth/google/config') body = { enabled: true, clientId: 'offline-browser-fixture' };
+  else if (url.pathname === '/api/auth/google/challenges' || url.pathname === '/api/me/google/challenges') body = {
+    challengeId: 'browser-only-challenge', nonce: 'n'.repeat(43), purpose: url.pathname.startsWith('/api/me/') ? 'LINK' : 'LOGIN', expiresAt: new Date(Date.now()+300000).toISOString() };
+  else if (url.pathname === '/api/auth/google/login') { googleUser=true; role='USER'; body={accessToken:'google-fixture-token',expiresIn:3600}; }
+  else if (url.pathname === '/api/me/auth-methods') body = { local: !googleUser, google: googleUser || googleLinked };
+  else if (url.pathname === '/api/me/google/link') {
+    assert.equal(input.password,'fixture-local-password'); googleLinked=true; body={};
+  }
+  else if (url.pathname.startsWith('/api/auth/')) { googleUser=false; role = input.loginId === 'admin' ? 'ADMIN' : 'USER'; body = { accessToken: 'fixture-token', expiresIn: 3600 }; }
+  else if (url.pathname === '/api/me') body = { id:googleUser?3:role==='ADMIN'?2:1,loginId:googleUser?null:'fixture-local',nickname: googleUser?'Google 사용자':role === 'ADMIN' ? '관리자' : '모의 사용자', role };
   else if(url.pathname==='/api/conditional-orders/capabilities')body={registrationEnabled:true};
   else if(url.pathname==='/api/conditional-orders/requests'){body=conditionalClaims.get(req.headers['idempotency-key']);if(!body){status=404;body={code:'CONDITIONAL_NOT_FOUND'};}}
   else if(url.pathname==='/api/conditional-orders'&&req.method==='POST'){const key=req.headers['idempotency-key'];body=conditionalClaims.get(key)||{...input,id:'condition-'+(conditionalClaims.size+1),state:'WAITING',createdAt:now,updatedAt:now};conditionalClaims.set(key,body);}
@@ -176,7 +185,25 @@ try {
   assert.equal(await evaluate(`document.getElementById('quote-request').disabled`), true);
   assert.equal(requests.filter((request) => request.path === '/api/orders/sell').length, 1);
   await click('resolve-order'); await waitText('history-list', '블록체인 확인 중');
-  assert.deepEqual(errors, []); console.log('PASS browser smoke: guest / signup-auto-login / quotes / pending+event / portfolio / AI+safe text+disabled / logout race / ADMIN history+observation / six intervals / mobile five routes+sheet / uncertain write (fixtures).');
+  // Offline GIS adapter: no Google script/network. Server cryptography is tested separately with real RSA.
+  assert.equal(await evaluate(`document.querySelectorAll('script[src^="https://accounts.google.com"]').length`),0);
+  await evaluate(`window.google={accounts:{id:{initialize(options){this.options=options;},renderButton(container){const callback=this.options.callback;const b=document.createElement('button');b.type='button';b.id='fixture-google-button';b.textContent='Offline Google';b.onclick=()=>callback({credential:'offline-fixture-proof'});container.replaceChildren(b);}}}}`);
+  await click('logout'); await click('auth-open'); await fill('login-id','local_fixture'); await fill('password','fixture-local-password'); await submit('auth-form');
+  await poll(()=>evaluate(`!document.getElementById('logout').hidden`)); await evaluate(`location.hash='portfolio'`);
+  await poll(()=>evaluate(`!document.getElementById('google-start').hidden`));
+  await fill('google-link-password','fixture-local-password'); await click('google-start');
+  await poll(()=>evaluate(`Boolean(document.getElementById('fixture-google-button'))`)); await click('fixture-google-button');
+  await waitText('google-status','Google을 연결했습니다');
+  assert.equal(requests.filter(r=>r.path==='/api/me/google/link').length,1);
+  await click('logout'); await click('auth-open'); await click('google-start');
+  await poll(()=>evaluate(`Boolean(document.getElementById('fixture-google-button'))`)); await click('fixture-google-button');
+  await waitText('identity','Google 사용자'); await evaluate(`location.hash='portfolio'`); await waitText('google-status','Google 연결됨');
+  assert.equal(await evaluate(`document.getElementById('google-start').hidden`),true);
+  await click('logout'); await click('auth-open');
+  assert.equal(await evaluate(`document.getElementById('auth-form').contains(document.getElementById('google-start')) && document.getElementById('google-start').getClientRects().length>0`),true);
+  await click('google-start'); await poll(()=>evaluate(`Boolean(document.getElementById('fixture-google-button'))`)); await click('fixture-google-button');
+  await waitText('identity','Google 사용자');
+  assert.deepEqual(errors, []); console.log('PASS browser smoke: existing desktop/mobile regression + offline GIS LOGIN/LINK, null loginId, no external SDK load.');
 } finally {
   if (ws?.readyState === WebSocket.OPEN) { try { await command('Browser.close'); } catch {} ws.close(); }
   else child.kill(); server.close();

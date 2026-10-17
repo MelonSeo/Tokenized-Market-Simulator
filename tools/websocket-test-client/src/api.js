@@ -33,6 +33,19 @@ export class ApiClient {
     return this.#request('/api/me');
   }
 
+  googleConfig() { return this.#request('/api/auth/google/config'); }
+  authMethods() { return this.#request('/api/me/auth-methods'); }
+  googleChallenge(purpose) {
+    return this.#request(purpose === 'LINK' ? '/api/me/google/challenges' : '/api/auth/google/challenges',
+      { method: 'POST', headers: { 'X-Google-Auth': '1' }, body: '{}' });
+  }
+  googleLogin(challengeId, credential) {
+    return this.#request('/api/auth/google/login', { method: 'POST', headers: { 'X-Google-Auth': '1' }, body: JSON.stringify({ challengeId, credential }) });
+  }
+  googleLink(challengeId, credential, password) {
+    return this.#request('/api/me/google/link', { method: 'POST', headers: { 'X-Google-Auth': '1' }, body: JSON.stringify({ challengeId, credential, password }) });
+  }
+
   agent(question, target = null, skillId = null) {
     return this.#request('/api/ai/agent/answers', {
       method: 'POST',

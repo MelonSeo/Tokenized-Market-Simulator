@@ -10,6 +10,7 @@ import { createTradeAuditPanel } from './trade-audit-panel.js';
 import { createFaucetPanel } from './faucet-panel.js';
 import { createConditionalPanel } from './conditional-panel.js';
 import { createTransactionObservationPanel } from './transaction-observation-panel.js';
+import { createGooglePanel } from './google-auth.js';
 
 const $ = (id) => document.getElementById(id);
 const api = new ApiClient(); const requests = new RequestState();
@@ -23,6 +24,11 @@ const state = { user: null, market: null, portfolio: null, orders: [], trades: [
 const chart = new ChartController(api, $('market-chart'), $('chart-message'));
 let sessionExpiry; let toastTimer; let marketRevision = 0; let portfolioRevision = 0;
 const socket = new MarketSocket({ onStatus: socketStatus, onEvent: socketEvent, onDebug: () => {} });
+const googlePanel = createGooglePanel({ api, document,
+  session: () => ({ user: state.user, epoch: requests.generation }),
+  login: completeAuthentication, notify: toast,
+  begin: purpose => purpose === 'LOGIN' ? requests.begin('auth') : null });
+
 
 function message(id, text = '', style = '') { $(id).textContent = text; $(id).className = `notice ${style}`; }
 function toast(text) { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5000); }
@@ -53,6 +59,7 @@ async function read(key, operation, success, statusId, privateRead = false) {
   }
 }
 function showAuth(destination = routeName()) {
+  googlePanel.cancel();
   state.destination = destination === 'admin' ? 'admin' : destination;
   message('auth-message'); if (!$('auth-dialog').open) $('auth-dialog').showModal();
 }
@@ -81,6 +88,7 @@ function renderIdentity() {
   $('admin-nav').hidden = state.user?.role !== 'ADMIN'; updateTradeControls();
 }
 function resetPrivate() {
+  googlePanel.cancel();
   reservePanel.setContext(null, 'market');
   tradeAuditPanel.setContext(null, 'market');
   faucetPanel.setContext(null, 'market');
@@ -95,12 +103,13 @@ function resetPrivate() {
   for (const id of ['ai-result', 'admin-result', 'admin-history', 'portfolio-summary', 'history-list', 'observation', 'latest-order']) $(id).replaceChildren();
   $('order-detail').hidden = true; $('order-detail').replaceChildren(); $('admin-older').disabled = true;
   $('ai-submit').disabled = false; $('admin-run').disabled = false; $('faucet').disabled = false; $('auth-submit').disabled = false;
-  $('trade-amount').value = ''; renderQuote(); renderPortfolio(); renderIdentity();
+  $('trade-amount').value = ''; renderQuote(); renderPortfolio(); renderIdentity(); void googlePanel.context();
 }
 function logout(expired = false) { socket.disconnect(); api.clearToken(); resetPrivate(); navigate('market'); connect(); toast(expired ? '인증이 만료됐습니다. 다시 로그인해 주세요.' : '로그아웃했습니다.'); }
 function expireSession() { if (api.token) logout(true); }
 async function authenticate(event) {
   event.preventDefault(); if (requests.busy('auth')) return;
+  googlePanel.cancel();
   const login = $('login-id').value.trim(), password = $('password').value, nickname = $('nickname').value.trim();
   if (state.authMode === 'signup' && (!/^[a-zA-Z0-9_-]{4,30}$/.test(login) || password.length < 8 || password.length > 72 || nickname.length < 2 || nickname.length > 30)) {
     message('auth-message', '아이디는 영문·숫자·_·- 4~30자, 비밀번호는 8~72자, 닉네임은 2~30자로 입력해 주세요.', 'warning'); return;
@@ -108,14 +117,23 @@ async function authenticate(event) {
   const ticket = requests.begin('auth'); $('auth-submit').disabled = true; message('auth-message', '계정을 확인하는 중입니다.');
   try {
     const { body } = await (state.authMode === 'signup' ? api.signup(login, password, nickname) : api.login(login, password));
-    if (!ticket.current()) return; api.setToken(body.accessToken);
-    const me = await api.me(); if (!ticket.current()) return;
-    const destination = state.destination; socket.disconnect(); resetPrivate(); state.user = me.body;
-    sessionExpiry = setTimeout(expireSession, Math.min(Number(body.expiresIn) * 1000, 2147483647));
-    renderIdentity(); $('auth-dialog').close(); navigate(destination); connect(); toast('로그인했습니다. 모의 자산 거래를 시작해 보세요.');
+    await completeAuthentication(body, ticket.current);
   } catch (error) {
     if (ticket.current()) { api.clearToken(); ticket.finish('error'); message('auth-message', errorText(error), 'warning'); }
   } finally { if (ticket.current()) $('auth-submit').disabled = false; }
+}
+async function completeAuthentication(body, current) {
+  if (!current()) return;
+  try {
+    // Stage a newly issued token separately: a cancelled /me must never replace the current identity.
+    const pending = new ApiClient(); pending.setToken(body.accessToken);
+    const me = await pending.me(); if (!current()) return;
+    api.setToken(body.accessToken);
+    const destination = state.destination; socket.disconnect(); resetPrivate(); state.user = me.body;
+    sessionExpiry = setTimeout(expireSession, Math.min(Number(body.expiresIn) * 1000, 2147483647));
+    renderIdentity(); $('auth-dialog').close(); navigate(destination); connect(); void googlePanel.context();
+    toast('로그인했습니다. 모의 자산 거래를 시작해 보세요.');
+  } catch (error) { if (current()) api.clearToken(); throw error; }
 }
 function marketRender(market) {
   state.market = market; $('price').textContent = number(market.price, 'mKRW', 2);
@@ -323,7 +341,7 @@ async function loadObservation() {
 
 window.addEventListener('hashchange', route);
 $('auth-open').onclick = () => showAuth();
-function cancelAuth() { if (requests.busy('auth')) { requests.invalidate('auth'); api.clearToken(); } $('auth-submit').disabled = false; $('password').value = ''; }
+function cancelAuth() { googlePanel.cancel(); if (requests.busy('auth')) { requests.invalidate('auth'); api.clearToken(); } $('auth-submit').disabled = false; $('password').value = ''; }
 $('auth-close').onclick = () => { cancelAuth(); $('auth-dialog').close(); }; $('auth-dialog').addEventListener('cancel', cancelAuth); $('auth-form').onsubmit = authenticate;
 $('auth-switch').onclick = () => { if (requests.busy('auth')) return; state.authMode = state.authMode === 'login' ? 'signup' : 'login'; const signup = state.authMode === 'signup'; $('auth-title').textContent = signup ? '회원가입' : '로그인'; $('auth-submit').textContent = signup ? '회원가입하고 시작하기' : '로그인'; $('auth-switch').textContent = signup ? '이미 계정이 있나요? 로그인' : '처음이신가요? 회원가입'; $('nickname-wrap').hidden = !signup; $('nickname').required = signup; $('password').autocomplete = signup ? 'new-password' : 'current-password'; message('auth-message'); };
 $('logout').onclick = () => logout(); $('trade-form').onsubmit = issueQuote;

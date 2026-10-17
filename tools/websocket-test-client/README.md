@@ -1,5 +1,7 @@
 # Tokenized Market — 제품형 모의 거래 웹
 
+Google 로그인/가입과 명시적 계정 연결은 기본 비활성입니다. Google-only 신규 가입은 0원이고 이메일로 계정을 합치지 않습니다. 연결은 내 모의 자산 화면에서 현재 로컬 비밀번호와 Google 확인을 요구합니다. 실제 계정 인수와 오프라인 fixture 결과는 [Google 인증 구현 기록](../../claude-docs/google-auth-implementation.md)을 구분해 확인하세요. 연결 해제·계정 복구는 이번 범위가 아닙니다.
+
 ADMIN 운영 화면에 온체인 거래 정체 관측 목록/상세/필터/keyset 다음 페이지를 추가했습니다. LONG_WAIT는 실패 확정이 아니며 기존 자동 복구가 계속됩니다. 시스템/손상된 Order 연결, 조건부 실행 Order, 마지막 기록된 완료 시도의 지연과 UNRECORDED를 구분합니다. txHash/nonce는 ADMIN 상세에만 있고 강제 종료/자산 해제 버튼은 없습니다. [API·검증 기록](../../claude-docs/transaction-stall-observability-implementation.md) 참고. 기존 Android 코드를 수정/빌드하지 않았으며 신규 계약은 ADMIN 웹 전용입니다.
 
 Oracle 가격 조건부 주문 UI는 통합 브랜치에 반영하고 웹77개 및 Chrome desktop/mobile fixture 검증을 완료했습니다. 시장 화면의 조건부 BUY/SELL 입력·목표 가격·만료·본인 이력·취소·실행 Order 연결과 ADMIN 읽기 이력을 제공합니다. 대기 중 자산은 예약되지 않으며 조건 충족은 체결 보장이 아닙니다. public Synthetic에서는 등록 비활성입니다. [구현/검증 기록](../../claude-docs/oracle-conditional-orders-implementation.md)과 [클라이언트 계약](../../claude-docs/conditional-orders-android-integration.md)을 따릅니다. 실제 Toss 장중 웹 인수는 아직 하지 않았습니다.

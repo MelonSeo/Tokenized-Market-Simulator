@@ -19,10 +19,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketAuthInterceptor authInterceptor;
     private final String[] allowedOrigins;
+    private final WebSocketExpiryGuard expiryGuard;
 
-    public WebSocketConfig(WebSocketAuthInterceptor authInterceptor,
+    public WebSocketConfig(WebSocketAuthInterceptor authInterceptor, WebSocketExpiryGuard expiryGuard,
             @Value("${app.websocket.allowed-origin-patterns:*}") String[] allowedOrigins) {
         this.authInterceptor = authInterceptor;
+        this.expiryGuard = expiryGuard;
         this.allowedOrigins = allowedOrigins;
     }
 
@@ -44,5 +46,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(authInterceptor);
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.interceptors(expiryGuard);
+    }
+
+    @Override
+    public void configureWebSocketTransport(org.springframework.web.socket.config.annotation.WebSocketTransportRegistration registration) {
+        registration.addDecoratorFactory(expiryGuard::decorate);
     }
 }

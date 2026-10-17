@@ -38,6 +38,7 @@ class WebSocketAuthInterceptorTest {
     void authenticatesConnectWithValidBearerToken() {
         User user = user(15L, "alice");
         when(jwtTokenProvider.getUserId("valid-token")).thenReturn(15L);
+        when(jwtTokenProvider.getExpiration("valid-token")).thenReturn(java.time.Instant.now().plusSeconds(60));
         when(userRepository.findById(15L)).thenReturn(Optional.of(user));
         StompHeaderAccessor accessor = accessor(StompCommand.CONNECT, null);
         accessor.addNativeHeader("Authorization", "Bearer valid-token");
@@ -94,6 +95,7 @@ class WebSocketAuthInterceptorTest {
 
     private StompHeaderAccessor accessor(StompCommand command, String destination) {
         StompHeaderAccessor accessor = StompHeaderAccessor.create(command);
+        accessor.setSessionId("test-session");
         if (destination != null) accessor.setDestination(destination);
         accessor.setLeaveMutable(true);
         return accessor;

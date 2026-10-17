@@ -27,6 +27,21 @@ ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_users_login_id ON users (login_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_users_google_sub ON users (google_sub);
 
+-- Google authentication attempts contain fingerprints only, never credentials or ID Tokens.
+CREATE TABLE IF NOT EXISTS google_auth_challenges (
+    id VARCHAR(36) PRIMARY KEY,
+    purpose VARCHAR(5) NOT NULL CHECK (purpose IN ('LOGIN','LINK')),
+    nonce_hash VARCHAR(64) NOT NULL,
+    binding_hash VARCHAR(64) NOT NULL,
+    user_id BIGINT REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    consumed_at TIMESTAMP WITH TIME ZONE,
+    CHECK ((purpose='LOGIN' AND user_id IS NULL) OR (purpose='LINK' AND user_id IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS idx_google_challenges_binding_created
+    ON google_auth_challenges(binding_hash, created_at);
+
 CREATE TABLE IF NOT EXISTS assets (
     id BIGSERIAL PRIMARY KEY,
     symbol VARCHAR(20) UNIQUE NOT NULL,
