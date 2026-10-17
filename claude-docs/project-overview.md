@@ -1,5 +1,7 @@
 # 프로젝트 개요 — 삼성전자 가격 추종 토큰 거래소
 
+2026-10-17 Google GIS 로그인/가입과 비밀번호 재인증 기반 명시 연결을 `feat/google-auth`에서 구현했다(기본 off). 내부 userId JWT·기존 자산 이력을 유지하고 Google 이메일 자동 병합은 하지 않는다. 신규 격리 PG/Anvil·오프라인 RSA/JWKS·웹 검증은 [구현 기록](google-auth-implementation.md), 실제 가입·연결·재로그인 PASS와 남은 수동 인수는 [실계정 기록](google-auth-live-acceptance-2026-10-17.md)으로 구분한다. 전량매도 정밀도 보완 후 최신 소스의 [새 인수·통합 진행](google-auth-finalization-and-integration.md)은 별도 환경을 사용한다. 이메일 발송·refresh/revoke·계정 복구·연결 해제는 후속 범위다. 기존 KRX 인수 환경은 그대로 보존했다.
+
 2026-10-12 추가 기능: Faucet 정책과 **Oracle 가격 조건부 BUY/SELL**을 통합 브랜치에 반영하고 신규 격리 검증을 완료했다(병합d8dea3e). [구현 기록](oracle-conditional-orders-implementation.md)에 실험별 결과/skip/미검증을 구분한다. 목표 가격 조건에 도달하면 새 EIP-712 견적으로 기존 Vault 거래를 시도하며 주문장·시간 지정 예약은 아니다. 실제 Toss/AI 최종 인수는 대기다.
 
 > 상세 목표와 Phase 기준의 원본은 루트의 `구현 계획.md`이며, 이 문서는 사람과 모든 개발 에이전트가 빠르게 현재 상태를 이해하기 위한 요약입니다.

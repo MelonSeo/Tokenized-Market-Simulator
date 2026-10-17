@@ -13,6 +13,12 @@
 
 ## 문서 목록
 
+- [`google-sell-all-integration-2026-10-18.md`](google-sell-all-integration-2026-10-18.md) — Google/전량매도 분리 커밋·원본 통합과 새 회귀, 기존환경 보존 및 최신 Phase B 준비 경계
+- [`google-auth-implementation.md`](google-auth-implementation.md) — GIS 로그인·명시 연결·서버 WS 만료 구현, 오프라인/신규 격리 검증과 실제 Google 계정 인수 경계
+- [`google-auth-live-acceptance-2026-10-17.md`](google-auth-live-acceptance-2026-10-17.md) — 실제 Google 가입·연결·재로그인, 자산 보존, 실제/fixture 증거와 남은 수동 인수 경계
+- [`google-auth-finalization-and-integration.md`](google-auth-finalization-and-integration.md) — 최신5174 격리 인수 준비, 남은 실제 실패 경계와 사용자 조작, 커밋·원본 통합 및 후속 Phase B/C 경계
+- [`sell-all-precision-design.md`](sell-all-precision-design.md), [`구현·검증`](sell-all-precision-implementation.md) — 승인된 전량 매도 문자열 API/버튼, 지연 응답 보호와 격리 검증. Google 인증과 별도 변경
+
 - [`project-overview.md`](project-overview.md) — 프로젝트 개요, 기술 스택, MVP 범위, Phase, 모듈 구조
 - [`implementation-log.md`](implementation-log.md) — 실제 구축된 코드 상태(모듈별 구현/스텁, 검증 명령, 환경, 임의 결정값)
 - [`reviewer.md`](reviewer.md) — 별도 검토자의 역할, 검토 기준과 보고 형식
