@@ -2872,3 +2872,12 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 새5174의로컬id2명시연결/Google재로그인/일반Chrome me.id2/연결후신규개인WS수신확인. Faucet1회100만mKRW·잠금0을DB에서확인. 사용자id3의중복계정거부및id4취소를수용하며정확409매핑·개별challenge소비는미검증유지. [진행·증거구분](google-auth-finalization-and-integration.md).
 - 사용자통합승인후Google40파일 `bc02330`, 전량매도15파일 `16b8988` 분리커밋. index-only분리·원본54파일byte보존·staged보안패턴/경로검사PASS. NXT문서/기존log구간제외, private/state/실제.env미추가.
 - 새Google-only export검증 backend인증/WS54PASS/2SKIP·web93PASS·Chrome desktop/mobile offlineGIS PASS. 독립review_google_sell_integration 소스/두index검토필수수정없음. 최종병합회귀아직미실행이며[새통합기록](google-sell-all-integration-2026-10-18.md)에별도추기한다. 실제키움/유료AI/배포/push없음.
+
+# Google·전량 매도 원본 melon-init 병합 후 새 회귀 (2026-10-18)
+
+- Google `bc02330`/전량 `16b8988`/인수문서 `c6a7b60` → 일반merge `426cb0b`. feature와merge tree동일·충돌없음. NXT log전용stash 보존→apply·미추적NXT파일hash동일. stash안전사본은유지하며NXT변경은커밋에포함하지않았다.
+- 새session phase-a-20261017180337-f3d6764c, backend533중495PASS/38SKIP/FAIL0/ERROR0·web107PASS·Chrome desktop/mobile offlineGIS/전량fixturePASS·Foundry36PASS·harness/clock15PASS. 기존수치와같더라도이전결과재사용이아닌새실행이다.
+- 신규Google 실제PG/Anvil google-a051627d 1PASS/0SKIP: 동시인증·연결·자산이력보존·BUY/SELL·두대사검증. 실제Google계정인수가아닌로컬RSA fixture다. 별도google-migration-d65b9cfc/sellall-5cfd3b4b/conditional-e42df94f 및별도JVM restart/faucet-cf92a75a/reserve-7f13ada3/audit-76283827 모두1PASS씩, **총8PASS/FAIL0/ERROR0/SKIP0**. migration은legacy users행보존·Faucet미활성·Google신규0원범위이며연결전후주문/자산이력보존은Google거래fixture의증거다.
+- 새fixture14개 exact ownerlabel/정지확인·데이터보존, 시각오차+불확실성최대1.067438초/기존2초guard통과, 현재product hash일치. 54통합파일보안패턴/경로·NXT제외최종확인.
+- checkout의LF→CRLF로기존5174 bytesourceguard가중단됨을확인했다. 정규화코드동일/imageID·mount소유권일치, 기존manifest변경·guard우회·재배포없음. 기존KRX worktree/image와새통합버전은구분하고최신PhaseB는신규환경으로준비한다. [상세및다음인수계획](google-sell-all-integration-2026-10-18.md).
+- 최종독립재검토 review_google_sell_integration: 발견된필수수정없음. Git부모/tree동일·제품추가변경없음·문서수치/범위와PhaseB준비제약확인. 직접테스트재실행/private/DB접근없음. 마지막문서4개만별도커밋하며제품테스트HEAD426cb0b와구분한다. NXT미커밋구간제외·원격push없음, PhaseB실키움/PhaseC유료AI는NOT_RUN이다.

@@ -97,7 +97,7 @@ melon-init의 실제 ref/공통 조상을 재확인하고 일반 merge로 반영
 
 ## 2026-10-18 사용자 승인 후 Git 통합 진행
 
-사용자가최신수동인수결과와미검증한계를수용하고로컬커밋/정상merge/병합후새회귀를명시승인했다. 앞절의커밋금지는승인이전시점기록이며현재실행결과는[최종통합기록](google-sell-all-integration-2026-10-18.md)을따른다. Google `bc02330`, 전량매도 `16b8988`을분리커밋했다. 공통파일은index에서분리하고제품작업파일은변경하지않았다. Google-only별도export는backend54PASS/2SKIP·web93PASS·Chrome desktop/mobile offline fixture PASS였고독립index검토필수수정없음이다. 최종melon-init병합과새전체회귀는아직진행전이며이결과로대체하지않는다.
+사용자가최신수동인수결과와미검증한계를수용하고로컬커밋/정상merge/병합후새회귀를명시승인했다. 앞절의커밋금지는승인이전시점기록이며현재실행결과는[최종통합기록](google-sell-all-integration-2026-10-18.md)을따른다. Google `bc02330`, 전량매도 `16b8988`을분리커밋했다. 공통파일은index에서분리하고커밋전제품작업파일은변경하지않았다. Google-only별도export는backend54PASS/2SKIP·web93PASS·Chrome desktop/mobile offline fixture PASS였고독립index검토필수수정없음이다. 이후melon-init `426cb0b`에정상merge했고새전체회귀backend495PASS/38SKIP·web107PASS·Chrome desktop/mobile PASS·Foundry36PASS를확인했다. 신규PG/Anvil세부결과와최종검토는통합기록에별도명시한다.
 
 ## 최종 Phase B와 Phase C 경계
 
