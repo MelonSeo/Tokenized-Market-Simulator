@@ -432,3 +432,7 @@ docker compose -p exchange ps
 계산식·상태·전용 fixture 재현·검증 경계는 [구현 보고서](../claude-docs/reserve-reconciliation-implementation.md)를 참고하세요. 기존 개발/acceptance `.env`와 체인에는 적용하지 않습니다.
 
 operator ETH 잔고도 지정 블록에서 읽어 ADMIN에 보여 주지만 Gas 비용 미추정이며 충분/부족·미래 거래 가능성을 보증하지 않습니다. ETH 관측 실패는 토큰 장부 판정을 대신하지 않습니다. 최신 실제PG 경합·CRLF 보완·전체 회귀는 [최종 검증](../claude-docs/reserve-reconciliation-final-validation.md)에 기록합니다. CRLF 수정은 테스트 fixture만 대상으로 하며 일반 Gradle 테스트에서 별도 resource 정규화가 필요하지 않습니다.
+
+## 정확한 전량 매도 수량
+
+`GET /api/portfolio`의 `tokenAvailableAmount`는 본인의 `mSEC amount - lockedAmount`를 `toPlainString()`으로 반환하는 문자열입니다. 기존 잔고 숫자 필드는 유지합니다. 주문 수량에는 반올림한 표시값이나 JS Number가 아니라 이 문자열을 사용하세요. 조회 후 동시 주문으로 가용 잔고가 바뀔 수 있으므로 최종 서버 검증이 우선하며, 자동 재주문하지 않습니다. 기존 개인 WS 포트폴리오 payload는 확장하지 않았습니다. [구현·검증](../claude-docs/sell-all-precision-implementation.md).

@@ -11,6 +11,7 @@ import { createFaucetPanel } from './faucet-panel.js';
 import { createConditionalPanel } from './conditional-panel.js';
 import { createTransactionObservationPanel } from './transaction-observation-panel.js';
 import { createGooglePanel } from './google-auth.js';
+import { createSellAllAction } from './sell-all.js';
 
 const $ = (id) => document.getElementById(id);
 const api = new ApiClient(); const requests = new RequestState();
@@ -28,7 +29,13 @@ const googlePanel = createGooglePanel({ api, document,
   session: () => ({ user: state.user, epoch: requests.generation }),
   login: completeAuthentication, notify: toast,
   begin: purpose => purpose === 'LOGIN' ? requests.begin('auth') : null });
-
+const sellAll = createSellAllAction({
+  context: () => ({ userId: state.user?.id, epoch: requests.generation, side: state.side,
+    blocked: requests.busy('quote') || requests.busy('trade') || Boolean(state.uncertain) }),
+  portfolio: () => api.portfolio(), invalidateQuote,
+  fill: value => { $('trade-amount').value = value; },
+  notify: text => message('trade-message', text), changed: updateTradeControls, unauthorized: expireSession,
+});
 
 function message(id, text = '', style = '') { $(id).textContent = text; $(id).className = `notice ${style}`; }
 function toast(text) { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5000); }
@@ -88,6 +95,7 @@ function renderIdentity() {
   $('admin-nav').hidden = state.user?.role !== 'ADMIN'; updateTradeControls();
 }
 function resetPrivate() {
+  sellAll.cancel();
   googlePanel.cancel();
   reservePanel.setContext(null, 'market');
   tradeAuditPanel.setContext(null, 'market');
@@ -212,7 +220,9 @@ function renderOrderDetail() {
     if (state.user?.role === 'ADMIN') container.append(button('ADMIN 정산 진단', () => { $('admin-order').value = id; navigate('admin'); }));
 }
 function updateTradeControls() {
-  const busy = requests.busy('quote') || requests.busy('trade');
+  const busy = requests.busy('quote') || requests.busy('trade') || sellAll.busy;
+  $('sell-all').hidden = state.side !== 'SELL';
+  $('sell-all').disabled = !state.user || busy || Boolean(state.uncertain);
   $('quote-request').disabled = busy || Boolean(state.uncertain); $('trade-amount').disabled = requests.busy('trade');
   $('side-buy').disabled = requests.busy('trade'); $('side-sell').disabled = requests.busy('trade');
   $('quote-confirm').disabled = !state.user || busy || Boolean(state.uncertain) || !quoteUsability(state.quote, $('trade-amount').value.trim()).usable;
@@ -235,9 +245,9 @@ function renderQuote() {
   }
   updateTradeControls();
 }
-function invalidateQuote() { state.quote = null; requests.invalidate('quote'); renderQuote(); }
+function invalidateQuote() { sellAll.cancel(); state.quote = null; requests.invalidate('quote'); renderQuote(); }
 async function issueQuote(event) {
-  event.preventDefault(); if (!requireUser('market') || requests.busy('quote') || requests.busy('trade') || state.uncertain) return;
+  event.preventDefault(); if (!requireUser('market') || requests.busy('quote') || requests.busy('trade') || sellAll.busy || state.uncertain) return;
   const amount = $('trade-amount').value.trim(); if (!positiveAmount(amount)) { message('trade-message', '0보다 큰 숫자를 소수점 18자리 이내로 입력해 주세요.', 'warning'); return; }
   const side = state.side; const ticket = requests.begin('quote'); state.quote = null; renderQuote(); message('trade-message', '견적을 확인하는 중입니다.');
   try {
@@ -246,7 +256,7 @@ async function issueQuote(event) {
   } catch (error) { if (!ticket.current()) return; ticket.finish('error'); renderQuote(); message('trade-message', friendlyTradeError(error.body, errorText(error)), 'warning'); if (error.status === 401) expireSession(); }
 }
 async function executeQuote() {
-  if (!requireUser('market') || requests.busy('trade') || state.uncertain) return;
+  if (!requireUser('market') || requests.busy('trade') || sellAll.busy || state.uncertain) return;
   const amount = $('trade-amount').value.trim(); const quote = state.quote;
   if (!quoteUsability(quote, amount).usable) { renderQuote(); return; }
   const side = state.side; const ticket = requests.begin('trade'); const ids = state.orders.map((item) => item.orderId);
@@ -348,6 +358,7 @@ $('logout').onclick = () => logout(); $('trade-form').onsubmit = issueQuote;
 $('quote-confirm').onclick = () => { if (!state.quote) return; $('quote-dialog').showModal(); renderQuote(); };
 $('quote-close').onclick = () => $('quote-dialog').close(); $('quote-submit').onclick = executeQuote;
 $('trade-amount').oninput = invalidateQuote;
+$('sell-all').onclick = () => void sellAll.run();
 for (const side of ['BUY', 'SELL']) $(`side-${side.toLowerCase()}`).onclick = () => { state.side = side; $('trade-amount').value = ''; $('amount-label').textContent = side === 'BUY' ? '사용할 모의 원화 (mKRW)' : '판매할 토큰 수량 (mSEC)'; $('side-buy').setAttribute('aria-pressed', side === 'BUY'); $('side-sell').setAttribute('aria-pressed', side === 'SELL'); invalidateQuote(); };
 $('quote-diagnose').onclick = () => { if (state.quote?.quoteId) selectAi('quote', state.quote.quoteId, '이 견적의 사용 가능 여부와 조건을 진단해주세요.'); };
 $('resolve-order').onclick = () => { navigate('history'); void loadActivity(); };

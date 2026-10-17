@@ -71,7 +71,7 @@ class UserWebSocketPublisherTest {
                 new BigDecimal("900000"), new BigDecimal("1.332"),
                 new BigDecimal("75000"), new BigDecimal("75075.07507508"),
                 new BigDecimal("99900"), new BigDecimal("-100"),
-                new BigDecimal("999900"));
+                new BigDecimal("999900"), "1.332");
         when(portfolioService.portfolio(15L)).thenReturn(portfolio);
 
         publisher.publishPortfolio(15L);

@@ -60,7 +60,7 @@ const server = createServer(async (req, res) => {
     else body = { provider: 'SIMULATED', candles: [{ startedAt: now, open: '75000', high: '76000', low: '74000', close: '75500', volume: '10' }], nextBefore: null };
   }
   else if (url.pathname === '/api/markets/mSEC') body = { price: '75000', change: '1000', changeRate: '1.35', provider: 'SIMULATED', marketStatus: 'UNKNOWN', priceStatus: 'SIMULATED', observedAt: now };
-  else if (url.pathname === '/api/portfolio') body = { krwBalance: '1000000', tokenBalance: '2', currentPrice: '75000', averageBuyPrice: '70000', tokenValue: '150000', unrealizedProfit: '10000', totalValue: '1150000' };
+  else if (url.pathname === '/api/portfolio') body = { krwBalance: '1000000', tokenBalance: '2', tokenAvailableAmount: '1.328161833310517989', currentPrice: '75000', averageBuyPrice: '70000', tokenValue: '150000', unrealizedProfit: '10000', totalValue: '1150000' };
   else if (url.pathname.startsWith('/api/quotes/')) body = { side: url.pathname.endsWith('buy') ? 'BUY' : 'SELL', price: '75000', fee: '100', expectedTokenAmount: '1.332', expectedKrwAmount: '74925', minimumOutputAmount: '1.332', quoteId, observedAt: now, validUntil: new Date(Date.now() + expiry * 1000).toISOString(), status: 'ISSUED' };
   else if (url.pathname === '/api/orders') body = orders;
   else if (url.pathname.endsWith('/buy') || url.pathname.endsWith('/sell')) {
@@ -132,6 +132,14 @@ try {
   assert.equal(await evaluate(`document.documentElement.scrollWidth<=window.innerWidth`),true,'conditional mobile overflow');
   await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await fill('trade-amount', '100000'); await submit('trade-form'); await waitText('quote-summary', '75,000');
+  assert.equal(await evaluate(`document.getElementById('sell-all').hidden`), true);
+  await click('side-sell');
+  const beforeAll = requests.filter(r => r.path.startsWith('/api/quotes/') || /^\/api\/orders\/(buy|sell)$/.test(r.path)).length;
+  await click('sell-all'); await waitText('trade-message', '현재 매도 가능 수량을 입력');
+  assert.equal(await evaluate(`document.getElementById('trade-amount').value`), '1.328161833310517989');
+  assert.equal(await evaluate(`document.getElementById('quote-confirm').disabled`), true);
+  assert.equal(requests.filter(r => r.path.startsWith('/api/quotes/') || /^\/api\/orders\/(buy|sell)$/.test(r.path)).length, beforeAll);
+  await click('side-buy'); await fill('trade-amount', '100000'); await submit('trade-form'); await waitText('quote-summary', '75,000');
   await fill('trade-amount', '110000'); assert.equal(await evaluate(`document.getElementById('quote-confirm').disabled`), true);
   await submit('trade-form'); await waitText('quote-summary', '75,000'); await click('quote-confirm'); await click('quote-submit'); await waitText('latest-order', '블록체인 확인 중');
   assert.equal(requests.filter((request) => request.path === '/api/orders/buy').length, 1);
@@ -176,7 +184,10 @@ try {
     await screenshot('mobile-' + route);
   }
   for (const interval of ['1m', '5m', '15m', '30m', '1h', '1d']) await evaluate(`document.querySelector('[data-interval="${interval}"]').click()`);
-  await evaluate(`location.hash='market'`); await click('side-sell'); await fill('trade-amount', '1'); expiry = 1; await submit('trade-form'); await waitText('quote-summary', '75,000');
+  await evaluate(`location.hash='market'`); await click('side-sell'); await click('sell-all'); await waitText('trade-message', '현재 매도 가능 수량을 입력');
+  assert.equal(await evaluate(`document.getElementById('trade-amount').value`), '1.328161833310517989');
+  assert.equal(await evaluate(`document.documentElement.scrollWidth<=window.innerWidth`), true, 'sell-all mobile overflow');
+  await fill('trade-amount', '1'); expiry = 1; await submit('trade-form'); await waitText('quote-summary', '75,000');
   // Wait for the real 1s UI timer rather than assuming its phase relative to a fixed 1300ms sleep.
   await waitText('quote-timer', '견적이 만료됐습니다');
   assert.equal(await evaluate(`document.getElementById('quote-confirm').disabled`), true); expiry = 30;

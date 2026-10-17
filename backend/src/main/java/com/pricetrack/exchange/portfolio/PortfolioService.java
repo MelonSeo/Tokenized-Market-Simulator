@@ -36,10 +36,11 @@ public class PortfolioService {
         BigDecimal tokenValue = token.getAmount().multiply(price).setScale(18, RoundingMode.HALF_UP);
         BigDecimal costBasis = token.getAmount().multiply(token.getAverageBuyPrice()).setScale(18, RoundingMode.HALF_UP);
         return new Portfolio(krw.getAmount(), token.getAmount(), price, token.getAverageBuyPrice(),
-                tokenValue, tokenValue.subtract(costBasis), krw.getAmount().add(tokenValue));
+                tokenValue, tokenValue.subtract(costBasis), krw.getAmount().add(tokenValue),
+                token.getAvailableAmount().toPlainString());
     }
 
     public record Portfolio(BigDecimal krwBalance, BigDecimal tokenBalance, BigDecimal currentPrice,
             BigDecimal averageBuyPrice, BigDecimal tokenValue, BigDecimal unrealizedProfit,
-            BigDecimal totalValue) {}
+            BigDecimal totalValue, String tokenAvailableAmount) {}
 }
