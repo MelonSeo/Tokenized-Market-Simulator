@@ -48,6 +48,10 @@ CREATE TABLE IF NOT EXISTS futures_transactions (
  created_at TIMESTAMP WITH TIME ZONE NOT NULL, submitted_at TIMESTAMP WITH TIME ZONE, confirmed_at TIMESTAMP WITH TIME ZONE,
  CONSTRAINT uk_futures_sender_nonce UNIQUE (sender,nonce)
 );
+-- Serializes sign admission only; it is not a distributed nonce allocator.
+CREATE TABLE IF NOT EXISTS futures_sender_guards (
+ sender VARCHAR(42) PRIMARY KEY, chain_id NUMERIC(78,0) NOT NULL, contract_address VARCHAR(42) NOT NULL
+);
 CREATE TABLE IF NOT EXISTS futures_journal (
  id VARCHAR(36) PRIMARY KEY, operation_id VARCHAR(36) NOT NULL REFERENCES futures_operations(id),
  position_id VARCHAR(36) NOT NULL REFERENCES futures_positions(id), user_id BIGINT NOT NULL,

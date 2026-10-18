@@ -47,3 +47,14 @@
 - 새 child `futures-db-only-3f20cf15`: 1 PASS/0 FAIL/0 SKIP. 실제 PG에서 담보100k/DB_ONLY950k거부, 현물700k vs 담보700k 경쟁의정확1성공, Faucet vs 선물 예약경합·잠금/금액보존을 확인했다. 이 테스트는 DB_ONLY 현물이며 onchain 현물/선물 실제Receipt 검증으로 확장하지 않는다. 신규 fixture는 run label 확인 후 정지, 데이터/실패자료 보존.
 - 동일 최신 제품 소스의 새 전체 회귀: backend548중508 PASS/40 SKIP/FAIL0/ERROR0, web107 PASS/0 FAIL/0 SKIP, 실제Chrome desktop/mobile **offline fixture** PASS(GIS실외부0), Foundry52 PASS/0 FAIL/0 SKIP. 이 run은 위 실제PG2종과 별개다. 실제 선물 signed 정산/house경쟁·Receipt·복구·브라우저chain은 아직 NOT_RUN이다.
 - 독립 첫 재검토 `review_futures_ledger`: 앞선 available 검증/실제PG 공유잔고경합 필수2건 해결, 발견된 추가 필수 수정 없음. 검토자 직접 실행/private열람은 없으며 위 새 전체 회귀는 구현자가 별도 수집했다. 이 단위는 준비/장부·DTO/보호 회귀까지만 검증됐고, 실제선물 청산 완료가 아니다.
+
+## Gate4a — 전용 EIP-712 codec·서명 선저장·동일 raw 복구 (진행 중)
+
+- Gate3 장부 단위는 `d966c0b886114509db86967a7c0814b3a1a9c5d3`로 로컬 커밋. 기존 사용자 문서는 포함하지 않았다.
+- `futures/chain/FuturesReport`, `FuturesReportCodec`: Solidity와 동일한 18필드 static tuple, 별도 Futures domain, chainId/engine/action/version/epoch/정책 결합, low-S/65byte 서명 검증. Public DTO/API에 report/signature를 추가하지 않았다.
+- `FuturesTransactionStore`: 새 sender guard, PREPARED operation/position과 report의 완전 일치 및 raw sender/chain/nonce/to/data/hash 확인, REQUIRES_NEW로 raw/report/signature 선커밋. sender별 미확정 SIGNED/SUBMITTED/REVIEW_REQUIRED가 있으면 다른 신규 서명 진입을 거절한다. 이는 분산 nonce 할당 구현이 아니다.
+- `FuturesTransactionSender`: 전용 executor만 사용하고 process-local synchronized. 전송 전 RPC 오류는 미서명 실패, 선저장 후 응답 유실/거부/hash 불일치는 SIGNED 유지. 복구는 저장 raw만 재전송하며 nonce 재조회/재서명하지 않는다. 확인/검토 상태를 지연된 SUBMITTED로 되돌리지 않는다.
+- `Transport`는 다음 실제 RPC 경계의 계약이다. 현재 프로덕션 Bean/worker/REST와 아직 연결하지 않았으며, 배포 identity 검증은 Transport 구현의 필수 조건이다. 이 단계에서 외부 RPC·키·환경 설정을 사용하지 않았다.
+- 선택 실행 `gradlew test --no-daemon --offline --tests '*FuturesTransactionSenderTest' --tests '*FuturesReportCodecTest' --tests '*FuturesLedgerTest' --tests '*FuturesMathTest' --rerun-tasks`: 25 PASS/0 FAIL/0 SKIP. 구성은 sender9(H2+fakeTransport), codec3(독립 StructuredDataEncoder 비교 포함), ledger8(H2), math5. 실제 Anvil/Receipt 성공으로 해석하지 않는다.
+- 실제 Solidity digest/ABI 상호운용, canonical Receipt/Event, failed Receipt 잠금 해제, 새 PG/Anvil 서명·응답유실 복구는 다음 Gate4b/5에서 검증한다. 별도 검토는 요청 예정이며 실제 모델/AI/브라우저 선물은 NOT_RUN이다.
+- 독립 `review_futures_signing`: 발견된 필수 수정 없음. 실제 코드/ABI/테스트를 읽었고 직접 테스트·private 열람은 하지 않았다. 다음 facade는 prepare 커밋 후 sender를 호출하고 응답의 status 대신 저장 상태를 정본으로 재조회해야 한다. 실제 Transport/canonical/PG 다중 sender 검증은 다음 단계의 필수 과제다.
