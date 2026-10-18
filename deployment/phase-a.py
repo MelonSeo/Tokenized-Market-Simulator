@@ -22,6 +22,8 @@ CASES = {'reserve': ('RESERVE_E2E', 'ReservePostgresAnvilE2ETest'),
          'conditional': ('CONDITIONAL_E2E', 'ConditionalPostgresAnvilE2ETest'),
          'google': ('GOOGLE_AUTH_E2E', 'GoogleAuthPostgresAnvilE2ETest'),
          'google-migration': ('GOOGLE_MIGRATION_E2E', 'GoogleMigrationPostgresE2ETest'),
+         'futures-ledger': ('FUTURES_LEDGER_E2E', 'FuturesLedgerPostgresE2ETest'),
+         'futures-db-only': ('FUTURES_DB_ONLY_E2E', 'FuturesSpotPostgresE2ETest'),
          'sellall': ('SELL_ALL_E2E', 'SellAllPostgresAnvilE2ETest')}
 
 def private(path, text):
@@ -213,7 +215,7 @@ def fixture(session,parent,case,clock_only=False):
     id=case+'-'+secrets.token_hex(4);name=session.name+'-'+id
     run=session/'fixtures'/id;run.mkdir()
     for child in ('secrets','chain','release','postgres'):(run/child).mkdir()
-    database='exchange_reserve_e2e' if case=='reserve' else 'exchange_trade_audit_e2e'
+    database='exchange_futures_e2e' if case in ('futures-ledger','futures-db-only') else ('exchange_reserve_e2e' if case=='reserve' else 'exchange_trade_audit_e2e')
     meta={'runId':id,'session':session.name,'name':name,'dbPort':dbport,'rpcPort':rpcport,'database':database}
     private(run/'run.json',json.dumps(meta,indent=2))
     password=secrets.token_urlsafe(32);operator='0x'+secrets.token_hex(32);signer='0x'+secrets.token_hex(32)
@@ -263,6 +265,7 @@ def fixture(session,parent,case,clock_only=False):
             'app.blockchain.price-oracle-address':addresses['PRICE_ORACLE_ADDRESS'],'app.blockchain.exchange-vault-address':addresses['EXCHANGE_VAULT_ADDRESS'],
             'app.blockchain.reconciliation.initial-delay-ms':'2147483647','app.admin.password':'','app.price.toss.base-url':'http://127.0.0.1:1',
             'app.ai.enabled':'false','app.ai.tools.enabled':'false','app.ai.agent.enabled':'false','app.ai.skills.enabled':'false','app.ai.diagnosis.enabled':'false'}
+        if case in ('futures-ledger','futures-db-only'):values['app.futures.enabled']='true'
         private(run/'secrets/test.properties',''.join(k+'='+v+'\n' for k,v in values.items()))
         inspect_owned(session,meta)
         private(run/'isolation.json',json.dumps({'runId':id,'database':database,'dbPort':dbport,'rpcPort':rpcport,

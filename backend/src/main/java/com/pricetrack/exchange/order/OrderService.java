@@ -133,7 +133,8 @@ public class OrderService {
     }
 
     private void requireBalanceOrFail(Order order, UserBalance balance, BigDecimal required) {
-        if (balance.getAmount().compareTo(required) < 0) {
+        // DB-only spot must not spend collateral reserved by futures or another pending operation.
+        if (balance.getAvailableAmount().compareTo(required) < 0) {
             order.setStatus(OrderStatus.FAILED);
             order.setUpdatedAt(Instant.now());
             userEvents.publishOrder(order);
