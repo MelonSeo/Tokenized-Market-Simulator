@@ -44,7 +44,8 @@ public final class FuturesTransactionSender {
             // REQUIRES_NEW returns only after durable COMMIT. No network send before this point.
             store.saveSigned(id,chain,report,signature,raw,hash,nonce.longValueExact());
             return broadcast(id,raw,hash);
-        } catch(IOException e) { throw new Failure("FUTURES_RPC_UNAVAILABLE"); }
+        } catch(FuturesRpcGateway.PrecheckFailure rejected) { throw new Failure(rejected.code); }
+        catch(IOException e) { throw new Failure("FUTURES_RPC_UNAVAILABLE"); }
     }
 
     public synchronized Submission recover(String id) {

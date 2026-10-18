@@ -92,7 +92,7 @@ public class FuturesLedger {
         String id=UUID.randomUUID().toString();
         insertOperation(id,pid,uid,action,p.version(),p.callEpoch(),key,request,price,observedAt,p.collateral(),after,reservedMargin,houseReservation,realized,debt);
         String state=action==Action.CLOSE?"CLOSING":action==Action.LIQUIDATE?"LIQUIDATING":"OPEN";
-        jdbc.update("UPDATE futures_positions SET pending_operation=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",id,state,pid);
+        jdbc.update("UPDATE futures_positions SET pending_operation=?,status=?,block_reason=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",id,state,pid);
         if(reservedMargin.signum()>0) journal(id,pid,uid,"RESERVE",ZERO,reservedMargin,ZERO,ZERO);
         return operation(id);
     }
@@ -130,7 +130,7 @@ public class FuturesLedger {
         writeBalance(b,amount,b.locked().subtract(unlock));
         jdbc.update("UPDATE futures_house SET amount=?,reserved=reserved-? WHERE id=1",decimal(houseAfter),decimal(op.reservedHouse()));
         String state=terminal?(op.action()==Action.CLOSE?"CLOSED":"LIQUIDATED"):"OPEN";
-        jdbc.update("UPDATE futures_positions SET status=?,risk_status=?,collateral=?,version=?,call_epoch=?,deadline=?,last_observed_at=?,pending_operation=NULL,realized=?,bad_debt=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        jdbc.update("UPDATE futures_positions SET status=?,risk_status=?,collateral=?,version=?,call_epoch=?,deadline=?,last_observed_at=?,pending_operation=NULL,block_reason=NULL,realized=?,bad_debt=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
             state,risk,decimal(op.collateralAfter()),e.version(),epoch,deadline,op.observedAt(),terminal?decimal(e.realized()):null,terminal?decimal(e.badDebt()):null,p.id());
         if(terminal) jdbc.update("UPDATE futures_user_guards SET active_position=NULL WHERE user_id=? AND active_position=?",op.userId(),p.id());
         jdbc.update("UPDATE futures_operations SET state='CONFIRMED',active_position_id=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",op.id());
@@ -153,6 +153,41 @@ public class FuturesLedger {
         jdbc.update("UPDATE futures_positions SET status=?,pending_operation=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",op.action()==Action.OPEN?"OPEN_FAILED":"OPEN",p.id());
         if(op.action()==Action.OPEN) jdbc.update("UPDATE futures_user_guards SET active_position=NULL WHERE user_id=?",op.userId());
         journal(id,p.id(),op.userId(),"RELEASE",ZERO,op.reservedMargin().negate(),ZERO,ZERO);
+    }
+
+    /** Only a verified canonical status=0 receipt may release a durably signed operation's new reservations. */
+    @Transactional(timeout=5)
+    public void settleReverted(String id,String hash,long blockNumber,String blockHash) {
+        if(blockNumber<0 || blockHash==null || !blockHash.matches("0x[0-9a-fA-F]{64}")) throw new Failure("INVALID_FAILURE_PROOF");
+        Operation hint=operation(id); guard(hint.userId()); Position p=positionForUpdate(hint.positionId(),hint.userId());
+        Operation op=operationForUpdate(id);
+        var tx=jdbc.queryForMap("SELECT status,tx_hash,block_number,block_hash FROM futures_transactions WHERE operation_id=? FOR UPDATE",id);
+        if(!Objects.equals(tx.get("tx_hash"),hash)) throw new Failure("TRANSACTION_NOT_VERIFIABLE");
+        if(op.state().equals("REVERTED")) {
+            if(!Objects.equals(tx.get("block_hash"),blockHash) || ((Number)tx.get("block_number")).longValue()!=blockNumber) throw new Failure("DUPLICATE_EVIDENCE_CONFLICT");
+            return;
+        }
+        if(!Objects.equals(p.pendingOperation(),id) || !Set.of("SIGNED","SUBMITTED").contains(tx.get("status"))) throw new Failure("TRANSACTION_NOT_VERIFIABLE");
+        House h=lockHouse(); Balance b=balance(op.userId());
+        if(b.locked().compareTo(op.reservedMargin())<0 || h.reserved().compareTo(op.reservedHouse())<0) throw new Failure("RESERVATION_NOT_VERIFIABLE");
+        writeBalance(b,b.amount(),b.locked().subtract(op.reservedMargin()));
+        jdbc.update("UPDATE futures_house SET reserved=reserved-? WHERE id=1",decimal(op.reservedHouse()));
+        jdbc.update("UPDATE futures_operations SET state='REVERTED',active_position_id=NULL,reason='RECEIPT_REVERTED',updated_at=CURRENT_TIMESTAMP WHERE id=?",id);
+        jdbc.update("UPDATE futures_transactions SET status='REVERTED',block_number=?,block_hash=?,confirmed_at=CURRENT_TIMESTAMP WHERE operation_id=?",blockNumber,blockHash,id);
+        jdbc.update("UPDATE futures_positions SET status=?,pending_operation=NULL,block_reason='RECEIPT_REVERTED',updated_at=CURRENT_TIMESTAMP WHERE id=?",op.action()==Action.OPEN?"OPEN_FAILED":"OPEN",p.id());
+        if(op.action()==Action.OPEN) jdbc.update("UPDATE futures_user_guards SET active_position=NULL WHERE user_id=?",op.userId());
+        journal(id,p.id(),op.userId(),"REVERT_RELEASE",ZERO,op.reservedMargin().negate(),ZERO,ZERO);
+    }
+
+    /** Ambiguous evidence is quarantined without altering balances, house reservations, raw, nonce or signatures. */
+    @Transactional(timeout=5)
+    public void markReview(String id) {
+        Operation hint=operation(id); guard(hint.userId()); Position p=positionForUpdate(hint.positionId(),hint.userId());
+        Operation op=operationForUpdate(id);
+        if(!Objects.equals(p.pendingOperation(),id) || !Set.of("SIGNED","SUBMITTED").contains(op.state())) return;
+        jdbc.update("UPDATE futures_operations SET state='REVIEW_REQUIRED',reason='EVIDENCE_NOT_VERIFIABLE',updated_at=CURRENT_TIMESTAMP WHERE id=?",id);
+        jdbc.update("UPDATE futures_transactions SET status='REVIEW_REQUIRED' WHERE operation_id=? AND status IN ('SIGNED','SUBMITTED')",id);
+        jdbc.update("UPDATE futures_positions SET status='REVIEW_REQUIRED',block_reason='EVIDENCE_NOT_VERIFIABLE',updated_at=CURRENT_TIMESTAMP WHERE id=?",p.id());
     }
 
     /** Invoked by the facade only AFTER the failed prepare transaction has rolled back. No asset changes. */

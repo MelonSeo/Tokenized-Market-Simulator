@@ -71,6 +71,17 @@ class PhaseAGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             d=Path(folder);(d/'TEST-x.xml').write_text('<testsuite tests="5" failures="1" errors="0" skipped="2"/>')
             self.assertEqual(a.aggregate(d),{'tests':5,'failures':1,'errors':0,'skipped':2,'passed':2})
+    def test_futures_periodic_block_configuration_is_checked(self):
+        meta={'name':'new-only','dbPort':30001,'rpcPort':30002,'miningBlockTimeSeconds':2}
+        def inspect(port,internal,command):
+            return json.dumps([{'Config':{'Labels':{'phase-a.fixture':'new-only'},'Cmd':command},'State':{'Running':True},
+                'HostConfig':{'PortBindings':{internal:[{'HostIp':'127.0.0.1','HostPort':str(port)}]}}}])
+        pg=inspect(30001,'5432/tcp',[])
+        for command in ([],['--block-time','1'],['--block-time','2']):
+            with patch.object(a,'execute',side_effect=[pg,inspect(30002,'8545/tcp',command)]):
+                if command==['--block-time','2']:a.inspect_owned(Path('new'),meta)
+                else:
+                    with self.assertRaisesRegex(RuntimeError,'periodic blocks'):a.inspect_owned(Path('new'),meta)
     def test_clock_alignment_retains_existing_two_second_limit(self):
         a.require_clock_alignment({'hostEpochBefore':10,'hostEpochAfter':10.2,'dbMinusHostSeconds':1.5})
         with self.assertRaisesRegex(RuntimeError,'BLOCKED_CLOCK_SKEW'):

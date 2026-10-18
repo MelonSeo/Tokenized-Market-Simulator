@@ -56,6 +56,29 @@ class FuturesLedgerTest {
     BigInteger wallet(String field) { return TokenUnits.toWei(jdbc.queryForObject("SELECT "+field+" FROM user_balances WHERE user_id=1",BigDecimal.class)); }
     BigInteger house() { return jdbc.queryForObject("SELECT amount FROM futures_house WHERE id=1",BigDecimal.class).toBigIntegerExact(); }
 
+    @Test void canonicalRevertedOpenReleasesExactlyOnceAndConflictingProofIsRejected() {
+        var op=open(); signed(op); String hash=Hash.sha3String(op.id()),block="0x"+"44".repeat(32);
+        ledger.settleReverted(op.id(),hash,7,block); ledger.settleReverted(op.id(),hash,7,block);
+        assertThat(wallet("locked_amount")).isZero(); assertThat(wallet("amount")).isEqualTo(BigInteger.TEN.pow(24));
+        assertThat(ledger.position(op.positionId(),1).status()).isEqualTo("OPEN_FAILED");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM futures_journal WHERE entry_type='REVERT_RELEASE'",Long.class)).isEqualTo(1);
+        assertThatThrownBy(()->ledger.settleReverted(op.id(),hash,8,block)).hasMessage("DUPLICATE_EVIDENCE_CONFLICT");
+    }
+    @Test void canonicalRevertedCloseAndTopupKeepOriginalCollateralWhileReviewReleasesNothing() {
+        var op=open();confirm(op,0,0);var p=ledger.position(op.positionId(),1);
+        var close=ledger.prepare(1,p.id(),key(),Action.CLOSE,1,new BigInteger("8250000000000"),1010,BigInteger.ZERO);signed(close);
+        ledger.settleReverted(close.id(),Hash.sha3String(close.id()),7,"0x"+"44".repeat(32));
+        assertThat(wallet("locked_amount")).isEqualTo(C); assertThat(house()).isEqualTo(FuturesLedger.INITIAL_CAPITAL);
+        assertThat(jdbc.queryForObject("SELECT reserved FROM futures_house",BigDecimal.class)).isZero();
+        var topup=ledger.prepare(1,p.id(),key(),Action.TOP_UP,1,ENTRY,1011,C);signed(topup);
+        assertThat(wallet("locked_amount")).isEqualTo(C.multiply(BigInteger.TWO));
+        ledger.settleReverted(topup.id(),Hash.sha3String(topup.id()),8,"0x"+"55".repeat(32));
+        assertThat(wallet("locked_amount")).isEqualTo(C); assertThat(ledger.position(p.id(),1).collateral()).isEqualTo(C);
+        var pending=ledger.prepare(1,p.id(),key(),Action.CLOSE,1,ENTRY,1012,BigInteger.ZERO);signed(pending);
+        ledger.markReview(pending.id());ledger.markReview(pending.id());
+        assertThat(wallet("locked_amount")).isEqualTo(C);assertThat(ledger.position(p.id(),1).status()).isEqualTo("REVIEW_REQUIRED");
+        assertThatThrownBy(()->ledger.settleReverted(pending.id(),Hash.sha3String(pending.id()),9,"0x"+"66".repeat(32))).hasMessage("TRANSACTION_NOT_VERIFIABLE");
+    }
     @Test void reserveReplayRejectAndSameKeyDifferentRequest() {
         String k=key(); var op=ledger.prepareOpen(1,k,Side.LONG,C,10,ENTRY,1000);
         assertThat(wallet("amount")).isEqualTo(BigInteger.TEN.pow(24)); assertThat(wallet("locked_amount")).isEqualTo(C);

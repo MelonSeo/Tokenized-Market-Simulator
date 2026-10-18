@@ -7,7 +7,10 @@ COPY --from=compiler /root/.svm/0.8.24/solc-0.8.24 /root/.svm/0.8.24/solc-0.8.24
 COPY contracts/src ./src
 COPY contracts/lib ./lib
 COPY contracts/script/DeployPublic.s.sol ./script/DeployPublic.s.sol
+COPY contracts/script/DeployFuturesFixture.s.sol ./script/DeployFuturesFixture.s.sol
 COPY deployment/foundry.toml ./foundry.toml
 COPY deployment/init-chain.sh /init-chain.sh
+COPY deployment/init-futures-fixture.sh /init-futures-fixture.sh
+RUN sed -i 's/\r$//' /init-futures-fixture.sh && chmod 755 /init-futures-fixture.sh
 RUN sed -i 's/\r$//' /init-chain.sh && chmod 755 /init-chain.sh && forge build --offline
 ENTRYPOINT ["/bin/sh", "/init-chain.sh"]
