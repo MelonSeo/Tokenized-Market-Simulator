@@ -39,31 +39,13 @@ contract Scenario is Script {
         console2.log("PriceOracle   :", address(oracle));
         console2.log("ExchangeVault :", address(vault));
 
-        uint256 buyInput = 750_000 ether;
-        (uint256 buyMinimum,) = vault.quoteBuyAtPrice(buyInput, PRICE_75K);
-        PriceReportTypes.PriceReport memory buyReport =
-            _report(keccak256("scenario-buy"), PriceReportTypes.SIDE_BUY, buyInput, PRICE_75K, buyMinimum, user);
-        bytes memory buySignature = _sign(oracle, buyReport);
-
-        vm.startBroadcast(userKey);
-        krw.faucet();
-        uint256 krwBeforeBuy = krw.balanceOf(user);
-        krw.approve(address(vault), buyInput);
-        uint256 tokenOut = vault.buy(buyReport, buySignature);
-        vm.stopBroadcast();
+        (uint256 tokenOut, uint256 krwBeforeBuy) = _buy(vault, oracle, krw, userKey);
 
         console2.log("=== After signed BUY @75,000 ===");
         console2.log("user mSEC :", token.balanceOf(user));
         console2.log("user mKRW :", krw.balanceOf(user));
 
-        (uint256 sellMinimum,) = vault.quoteSellAtPrice(tokenOut, PRICE_80K);
-        PriceReportTypes.PriceReport memory sellReport =
-            _report(keccak256("scenario-sell"), PriceReportTypes.SIDE_SELL, tokenOut, PRICE_80K, sellMinimum, user);
-        bytes memory sellSignature = _sign(oracle, sellReport);
-
-        vm.startBroadcast(userKey);
-        uint256 krwOut = vault.sell(sellReport, sellSignature);
-        vm.stopBroadcast();
+        uint256 krwOut = _sell(vault, oracle, tokenOut, userKey);
 
         uint256 krwAfter = krw.balanceOf(user);
         console2.log("=== After signed SELL @80,000 ===");
@@ -72,11 +54,40 @@ contract Scenario is Script {
         console2.log("krwOut    :", krwOut);
 
         require(token.balanceOf(user) == 0, "mSEC should be 0 after full sell");
-        require(krwOut > buyInput, "price-up proceeds should exceed buy input");
+        require(krwOut > 750_000 ether, "price-up proceeds should exceed buy input");
         require(krwAfter > krwBeforeBuy, "final mKRW should exceed pre-buy balance");
-        require(oracle.usedQuoteIds(buyReport.quoteId), "buy quote was not consumed");
-        require(oracle.usedQuoteIds(sellReport.quoteId), "sell quote was not consumed");
+        require(oracle.usedQuoteIds(keccak256("scenario-buy")), "buy quote was not consumed");
+        require(oracle.usedQuoteIds(keccak256("scenario-sell")), "sell quote was not consumed");
         console2.log("[OK] Signed-price round trip verified on-chain.");
+    }
+
+    // Limit local-variable lifetime without viaIR or changing the scenario's trade/signature contract.
+    function _buy(ExchangeVault vault, PriceOracle oracle, MockKRW krw, uint256 userKey)
+        internal returns (uint256 tokenOut, uint256 krwBeforeBuy)
+    {
+        uint256 input = 750_000 ether;
+        (uint256 minimum,) = vault.quoteBuyAtPrice(input, PRICE_75K);
+        PriceReportTypes.PriceReport memory report =
+            _report(keccak256("scenario-buy"), PriceReportTypes.SIDE_BUY, input, PRICE_75K, minimum, vm.addr(userKey));
+        bytes memory signature = _sign(oracle, report);
+        vm.startBroadcast(userKey);
+        krw.faucet();
+        krwBeforeBuy = krw.balanceOf(vm.addr(userKey));
+        krw.approve(address(vault), input);
+        tokenOut = vault.buy(report, signature);
+        vm.stopBroadcast();
+    }
+
+    function _sell(ExchangeVault vault, PriceOracle oracle, uint256 tokenOut, uint256 userKey)
+        internal returns (uint256 krwOut)
+    {
+        (uint256 minimum,) = vault.quoteSellAtPrice(tokenOut, PRICE_80K);
+        PriceReportTypes.PriceReport memory report =
+            _report(keccak256("scenario-sell"), PriceReportTypes.SIDE_SELL, tokenOut, PRICE_80K, minimum, vm.addr(userKey));
+        bytes memory signature = _sign(oracle, report);
+        vm.startBroadcast(userKey);
+        krwOut = vault.sell(report, signature);
+        vm.stopBroadcast();
     }
 
     function _report(
