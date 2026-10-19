@@ -23,8 +23,13 @@ public class ReserveStore {
     private static final int MAX=10000;
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
+    private final boolean futuresEnabled;
     public ReserveStore(DataSource ds,ObjectMapper json) {
-        this.jdbc=new JdbcTemplate(ds); this.jdbc.setQueryTimeout(3); this.json=json;
+        this(ds,json,false);
+    }
+    @org.springframework.beans.factory.annotation.Autowired
+    public ReserveStore(DataSource ds,ObjectMapper json,@org.springframework.beans.factory.annotation.Value("${app.futures.enabled:false}") boolean futuresEnabled) {
+        this.jdbc=new JdbcTemplate(ds); this.jdbc.setQueryTimeout(3); this.json=json;this.futuresEnabled=futuresEnabled;
     }
     @PostConstruct void immutableEvidence() throws SQLException {
         try(var connection=jdbc.getDataSource().getConnection()) {
@@ -40,6 +45,12 @@ public class ReserveStore {
     }
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ,propagation=Propagation.REQUIRES_NEW,timeout=5)
     public DbCut cut() {
+        var impact=futuresEnabled?com.pricetrack.exchange.futures.audit.FuturesAuditAccounting.impact(
+            com.pricetrack.exchange.futures.audit.FuturesAuditSnapshot.read(jdbc,json),json):FuturesImpact.none();
+        return readSpot(jdbc,impact);
+    }
+    /** Shared bounded reader; caller must already own the read-only consistent transaction. */
+    public static DbCut readSpot(JdbcTemplate jdbc,FuturesImpact impact) {
         Instant at=jdbc.queryForObject("SELECT CURRENT_TIMESTAMP",Timestamp.class).toInstant();
         var balances=bounded(jdbc.query("SELECT user_id,symbol,amount,locked_amount FROM user_balances ORDER BY user_id,symbol LIMIT 10001",
                 (r,n)->new Balance(r.getLong(1),r.getString(2),wei(r,3),wei(r,4))));
@@ -52,7 +63,7 @@ public class ReserveStore {
                 (r,n)->new TxRow(r.getLong(1),r.getObject(2,Long.class),r.getString(3),r.getString(4),r.getString(5),r.getString(6),r.getObject(7,Long.class),r.getObject(8,Long.class))));
         var grants=bounded(jdbc.query("SELECT id,user_id,amount,created_at FROM faucet_grants ORDER BY id LIMIT 10001",
                 (r,n)->new Grant(r.getString(1),r.getLong(2),wei(r,3),r.getTimestamp(4).toInstant())));
-        return new DbCut(at,balances,orders,trades,txs,grants);
+        return new DbCut(at,balances,orders,trades,txs,grants,impact);
     }
     private static <T> List<T> bounded(List<T> rows) {
         if(rows.size()>MAX) throw new CutLimitException(); return List.copyOf(rows);

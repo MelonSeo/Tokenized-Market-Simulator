@@ -56,4 +56,9 @@ public class FuturesRuntimeConfig {
     @Bean FuturesPriceListener futuresPriceListener(FuturesWorker worker) { return new FuturesPriceListener(worker); }
     @Bean FuturesService futuresService(FuturesIntentStore intents,FuturesMarketGate market,FuturesWorker worker,FuturesLedger ledger) { return new FuturesService(intents,market,worker,ledger); }
     @Bean com.pricetrack.exchange.futures.read.FuturesReadService futuresReadService(DataSource ds,FuturesLedger ledger,FuturesMarketGate market) { return new com.pricetrack.exchange.futures.read.FuturesReadService(ds,ledger,market); }
+    @Bean(destroyMethod="close") com.pricetrack.exchange.futures.audit.FuturesAuditService futuresAuditService(
+            com.pricetrack.exchange.futures.audit.FuturesAuditStore store,FuturesChainIdentity identity,FuturesRpcGateway rpc,Environment e) {
+        return new com.pricetrack.exchange.futures.audit.FuturesAuditService(store,identity,rpc,
+            e.getProperty("app.futures.audit.execution-id",e.getProperty("app.reserve.execution-id","")),e.getRequiredProperty("app.futures.code-hash"));
+    }
 }

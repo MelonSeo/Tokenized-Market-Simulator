@@ -178,3 +178,14 @@
 - staged22개는 이 기능의 명시 경로만이다. 최초 보안 검사에서 Java runtime 패키지를 데이터폴더로 오인한 후 검사 범위만 바로잡아 신규fixture secret33개 대조0/금지경로0/cached diff PASS를 확인했다. 기존 NXT/계획/사용자 변경 제외, 전체 검증 전 커밋 보류다.
 - 최종 새 JVM 전체 recheck `futures-gate7-backend-full-recheck`: **605중560 PASS/45 SKIP/0 FAIL/0 ERROR**. 첫548/45/12 FAIL과 선택17 PASS는 각각 별도 실행으로 보존한다. 제품/테스트 소스 변경·실패 제외·환경 정책 완화 없이 새 JVM에서 전체 재실행한 결과이며 native socket 실패 원인을 영구 해결했다고 단정하지 않는다.
 - Gate7의 UI/확정거절 marker/PG 경합/실HTTP·개인STOMP/실제두JVM/최신 auto 및 영향 회귀를 마쳐 위22개 명시 경로만 로컬 커밋한다. 코드에 대한 이전 UI/marker 독립검토와 새 실제 검증 단위 독립검토를 구분하며, 보고서 원인 과장은 지적대로 수정했다. melon-init9a9197b·기존사용자dirty5개/보존환경/모든이전증거 유지. 다음 필수는 선물 감사·자산 대사→제품Synthetic/실Chrome→read-only AI다. 전체 Futures/Phase D 완료 또는 원본 통합은 선언하지 않는다.
+
+### Gate7 커밋 확인 및 Futures 감사 후속 — 2026-10-19
+
+- 시작 HEAD `92ab26199a7c6fdfea40d791ad2feec2a17a1333`의 Gate7 22경로 커밋 완료를 실제 Git에서 확인했다. melon-init9a9197b 및 사용자 dirty5경로는 보존했다.
+- [선물 감사·자산 대사 구현과 실행별 증거](futures-audit-implementation.md): 기존 현물 불변 baseline을 변경하지 않고 DB 수탁형 담보·실현손익·house/journal과 별도 Engine Receipt/Event/과거·현재 position 및 역방향 coverage를 대조한다. ADMIN 수동, bounded 별도worker, append-only 별도 baseline/history이며 금융 원장 변경 기능은 없다.
+- 최초 실제 감사 fixture 0fbae169 PASS 후 독립 검토에서 terminal realized/badDebt projection 비교 누락을 발견했다. 최소 보완 및 변조 단위 테스트 추가, 신규4b86bb80 실제 PostgreSQL/Anvil 감사1 PASS(정상MATCH, 미확정INCONCLUSIVE, 의도적house1wei차이MISMATCH, reserve호환, API401/403/200). 수정 후 단위/기존reserve52 PASS/1환경SKIP, Python18 PASS. 1차 재검토 필수 수정 없음; 검토자는 직접 DB/private/테스트를 실행하지 않았다.
+- 새 session `phase-a-20261019094753-bffb06d2` 전체 회귀는 진행 중이다. 기존 실행 PASS를 이 소스의 전체 PASS로 대체하지 않는다. 실제 제품Synthetic/Chrome, CONFIRMED 별도JVM 복구, AI 연결과 전체최종인수는 아직 남아 있다.
+- 별도 Scenario.s.sol 스택 한계 최소 helper분리: whole `forge build --offline` PASS, Foundry52 PASS, RPC/broadcast없는 `forge script ... --offline` 로컬EVM dryrun PASS. script 변경은 별도 독립 검토 중이며 실제 보존 chain에 배포한 결과가 아니다.
+
+- 감사 수정 후 전체 새 회귀 완료: productHash `6c5c6930acb3d6dc4d17b98e20dd1acfea4a4d0592274fa4eb96dbcc97ba3246`, backend629중583 PASS/46 SKIP/0FAIL/0ERROR, web119 PASS/0SKIP, Chrome desktop/mobile **offline fixture** PASS, Foundry52 PASS/0SKIP. 실제 감사 E2E1PASS는 별도 child4b86bb80 결과이며 전체 회귀 SKIP과 혼합하지 않는다.
+- 감사 1차 재검토 `review_futures_audit` 필수 수정 없음, Scenario 별도 `review_futures_scenario` 필수 수정 없음. 두 검토자 모두 직접 실행/DB/private 접근 없이 실제 소스·diff·테스트를 검토했다. [Scenario 빌드 복구 기록](futures-scenario-build-fix.md)은 원래 동작 보존 및 외부RPC없는 로컬EVM 검증을 구분한다.

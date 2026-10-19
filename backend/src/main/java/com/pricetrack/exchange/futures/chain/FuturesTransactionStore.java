@@ -86,7 +86,7 @@ public class FuturesTransactionStore {
         var row=jdbc.queryForMap("SELECT chain_id,contract_address FROM futures_sender_guards WHERE sender=? FOR UPDATE",c.executor());
         if(!c.chainId().equals(((java.math.BigDecimal)row.get("chain_id")).toBigIntegerExact()) || !c.engine().equals(row.get("contract_address"))) fail("SENDER_DEPLOYMENT_CONFLICT");
     }
-    static void validateRaw(FuturesChainIdentity c,FuturesReport report,String signature,String raw,String hash,long nonce) {
+    public static void validateRaw(FuturesChainIdentity c,FuturesReport report,String signature,String raw,String hash,long nonce) {
         try {
             if(raw==null || !raw.matches("0x[0-9a-fA-F]+") || hash==null
                     || !hash.equalsIgnoreCase(Numeric.toHexString(Hash.sha3(Numeric.hexStringToByteArray(raw))))) fail("RAW_HASH_CONFLICT");

@@ -22,7 +22,7 @@ public class FuturesSchema {
             c->c.getMetaData().getDatabaseProductName().equals("PostgreSQL")));
         if(pg) {
             jdbc.execute("CREATE OR REPLACE FUNCTION reject_futures_evidence_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'append-only futures evidence'; END $$");
-            for(String table:java.util.List.of("futures_policy","futures_journal")) {
+            for(String table:java.util.List.of("futures_policy","futures_journal","futures_audit_baselines","futures_audit_runs")) {
                 if(jdbc.queryForObject("SELECT count(*) FROM pg_trigger WHERE tgname=? AND tgrelid=?::regclass",Integer.class,table+"_immutable",table)==0)
                     jdbc.execute("CREATE TRIGGER "+table+"_immutable BEFORE UPDATE OR DELETE OR TRUNCATE ON "+table+" FOR EACH STATEMENT EXECUTE FUNCTION reject_futures_evidence_mutation()");
             }

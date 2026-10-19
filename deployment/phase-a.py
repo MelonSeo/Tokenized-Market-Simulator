@@ -28,6 +28,7 @@ CASES = {'reserve': ('RESERVE_E2E', 'ReservePostgresAnvilE2ETest'),
          'futures-auto': ('FUTURES_AUTO_E2E', 'FuturesAutoPostgresAnvilE2ETest'),
          'futures-restart': ('FUTURES_RESTART_E2E', 'FuturesRestartPostgresAnvilE2ETest'),
          'futures-api': ('FUTURES_API_E2E', 'FuturesApiPostgresAnvilE2ETest'),
+         'futures-audit': ('FUTURES_AUDIT_E2E', 'FuturesAuditPostgresAnvilE2ETest'),
          'futures-requests': ('FUTURES_REQUESTS_E2E', 'FuturesRequestsPostgresE2ETest'),
          'sellall': ('SELL_ALL_E2E', 'SellAllPostgresAnvilE2ETest')}
 
@@ -232,7 +233,7 @@ def fixture(session,parent,case,clock_only=False):
     for child in ('secrets','chain','release','postgres'):(run/child).mkdir()
     database='exchange_futures_e2e' if case.startswith('futures-') else ('exchange_reserve_e2e' if case=='reserve' else 'exchange_trade_audit_e2e')
     meta={'runId':id,'session':session.name,'name':name,'dbPort':dbport,'rpcPort':rpcport,'database':database,
-          'miningBlockTimeSeconds':2 if case in ('futures-chain','futures-auto','futures-restart','futures-api') else 0}
+          'miningBlockTimeSeconds':2 if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit') else 0}
     private(run/'run.json',json.dumps(meta,indent=2))
     password=secrets.token_urlsafe(32);operator='0x'+secrets.token_hex(32);signer='0x'+secrets.token_hex(32)
     while operator==signer:signer='0x'+secrets.token_hex(32)
@@ -240,7 +241,7 @@ def fixture(session,parent,case,clock_only=False):
     futures_executor='0x'+secrets.token_hex(32);futures_signer='0x'+secrets.token_hex(32)
     if len({operator,signer,futures_executor,futures_signer})!=4:raise RuntimeError('Distinct fixture keys required')
     secret_text='OPERATOR_PRIVATE_KEY='+operator+'\nPRICE_SIGNER_PRIVATE_KEY='+signer+'\n'
-    if case in ('futures-chain','futures-auto','futures-restart','futures-api'):secret_text+='FUTURES_EXECUTOR_PRIVATE_KEY='+futures_executor+'\nFUTURES_PRICE_SIGNER_PRIVATE_KEY='+futures_signer+'\n'
+    if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit'):secret_text+='FUTURES_EXECUTOR_PRIVATE_KEY='+futures_executor+'\nFUTURES_PRICE_SIGNER_PRIVATE_KEY='+futures_signer+'\n'
     private(run/'secrets/application.properties',secret_text)
     network=name+'-network';created=[]
     try:
@@ -254,7 +255,7 @@ def fixture(session,parent,case,clock_only=False):
             '--network',network,'--network-alias','anvil','-p',f'127.0.0.1:{rpcport}:8545','-v',str(run/'chain')+':/data',
             '--entrypoint','anvil',FOUNDRY,'--host','0.0.0.0','--accounts','0','--chain-id','31337',
             '--state','/data/state.json','--state-interval','5','--preserve-historical-states','--quiet',
-            *(['--block-time','2'] if case in ('futures-chain','futures-auto','futures-restart','futures-api') else [])],id+'-anvil');created.append(name+'-anvil')
+            *(['--block-time','2'] if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit') else [])],id+'-anvil');created.append(name+'-anvil')
         for service,args in [('postgres',['psql','-X','-U','reserve','-d',database,'-tAc','SELECT 1']),('anvil',['cast','rpc','eth_chainId','--rpc-url','http://127.0.0.1:8545'])]:
             deadline=time.monotonic()+90
             while time.monotonic()<deadline:
@@ -287,7 +288,7 @@ def fixture(session,parent,case,clock_only=False):
             'app.blockchain.reconciliation.initial-delay-ms':'2147483647','app.admin.password':'','app.price.toss.base-url':'http://127.0.0.1:1',
             'app.ai.enabled':'false','app.ai.tools.enabled':'false','app.ai.agent.enabled':'false','app.ai.skills.enabled':'false','app.ai.diagnosis.enabled':'false'}
         if case.startswith('futures-'):values['app.futures.enabled']='true'
-        if case in ('futures-chain','futures-auto','futures-restart','futures-api'):
+        if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit'):
             execute(session,['docker','run','--pull=never','--rm','--network',network,
                 '-v',str(run/'secrets')+':/run/secrets:ro','-v',str(run/'release')+':/release',
                 '--entrypoint','/bin/sh',parent['toolsImage'],'/init-futures-fixture.sh'],id+'-futures-deploy')
@@ -296,7 +297,7 @@ def fixture(session,parent,case,clock_only=False):
             values.update({'app.futures.engine-address':futures['FUTURES_ENGINE_ADDRESS'],'app.futures.code-hash':futures['FUTURES_ENGINE_CODE_HASH'],
                 'app.futures.executor-private-key':futures_executor,'app.futures.signer-private-key':futures_signer,'app.futures.fixture-block-time-seconds':'2',
                 'app.futures.chain-id':'31337','app.futures.rpc-url':f'http://127.0.0.1:{rpcport}'})
-        if case in ('futures-auto','futures-restart','futures-api'):values['app.futures.runtime-enabled']='true'
+        if case in ('futures-auto','futures-restart','futures-api','futures-audit'):values['app.futures.runtime-enabled']='true'
         private(run/'secrets/test.properties',''.join(k+'='+v+'\n' for k,v in values.items()))
         inspect_owned(session,meta)
         private(run/'isolation.json',json.dumps({'runId':id,'database':database,'dbPort':dbport,'rpcPort':rpcport,

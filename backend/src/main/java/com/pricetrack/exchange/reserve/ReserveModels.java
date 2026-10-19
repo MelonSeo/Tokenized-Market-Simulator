@@ -22,8 +22,15 @@ public final class ReserveModels {
     public record TxRow(long id,Long orderId,String type,String status,String hash,String sender,
             Long nonce,Long block) {}
     public record Grant(String id,long userId,BigInteger amount,Instant createdAt) {}
+    public record FuturesImpact(Map<Long,BigInteger> walletDeltas,Map<Long,BigInteger> locks,List<Check> checks,
+            String fingerprint,boolean unsettled,boolean emptyLedger) {
+        public static FuturesImpact none(){return new FuturesImpact(Map.of(),Map.of(),List.of(),"DISABLED",false,true);}
+    }
     public record DbCut(Instant at,List<Balance> balances,List<OrderRow> orders,
-            List<TradeRow> trades,List<TxRow> transactions,List<Grant> grants) {}
+            List<TradeRow> trades,List<TxRow> transactions,List<Grant> grants,FuturesImpact futures) {
+        public DbCut {if(futures==null)futures=FuturesImpact.none();}
+        public DbCut(Instant at,List<Balance> balances,List<OrderRow> orders,List<TradeRow> trades,List<TxRow> transactions,List<Grant> grants){this(at,balances,orders,trades,transactions,grants,FuturesImpact.none());}
+    }
     public record Baseline(String id,String executionId,Instant dbAt,long actorId,Chain chain) {}
     public record Check(String name,String expected,String actual,String difference,boolean matches) {}
     public record Liquidity(String operatorBuyFunds,String buyAllowance,String operatorSellTokens,

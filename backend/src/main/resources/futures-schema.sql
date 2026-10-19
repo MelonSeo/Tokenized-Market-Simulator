@@ -81,3 +81,13 @@ CREATE TABLE IF NOT EXISTS futures_journal (
  CONSTRAINT uk_futures_journal_entry UNIQUE (operation_id,entry_type),
  CHECK (wallet_delta+house_delta=0)
 );
+
+-- Independent futures-domain provenance; never rewrites the spot reserve baseline.
+CREATE TABLE IF NOT EXISTS futures_audit_baselines (
+ id INT PRIMARY KEY CHECK (id=1), payload TEXT NOT NULL, actor_id BIGINT NOT NULL,
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS futures_audit_runs (
+ id VARCHAR(36) PRIMARY KEY, payload TEXT NOT NULL, actor_id BIGINT NOT NULL,
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);

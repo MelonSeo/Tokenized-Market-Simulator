@@ -55,6 +55,17 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
         var b=rpc.ethGetBlockByNumber(DefaultBlockParameter.valueOf(number),false).send(); check(b);
         if(b.getBlock()==null) throw new IOException("CANONICAL_BLOCK_UNAVAILABLE"); return b.getBlock();
     }
+    /** Bounded read-only reverse audit includes reverted transactions that emitted no events. */
+    public java.util.List<org.web3j.protocol.core.methods.response.Transaction> engineTransactions(BigInteger number)throws IOException {
+        var response=rpc.ethGetBlockByNumber(DefaultBlockParameter.valueOf(number),true).send();check(response);
+        if(response.getBlock()==null || response.getBlock().getTransactions().size()>2000)throw new IOException("AUDIT_BLOCK_UNAVAILABLE");
+        var found=new java.util.ArrayList<org.web3j.protocol.core.methods.response.Transaction>();
+        for(var item:response.getBlock().getTransactions()) {
+            if(!(item.get() instanceof org.web3j.protocol.core.methods.response.Transaction tx))throw new IOException("AUDIT_BLOCK_TRANSACTION_UNAVAILABLE");
+            if(chain.engine().equalsIgnoreCase(tx.getTo()))found.add(tx);
+        }
+        return java.util.List.copyOf(found);
+    }
     public BigInteger height()throws IOException { var b=rpc.ethBlockNumber().send(); check(b); return b.getBlockNumber(); }
     /** Candidate block time is a preflight hint only; the mined receipt remains authoritative. */
     public long pendingTimestamp()throws IOException {
@@ -64,6 +75,17 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
     }
     public String position(String positionId,BigInteger block)throws IOException {
         return call(selector("getPosition(bytes32)")+Numeric.cleanHexPrefix(Hash.sha3String(positionId)),DefaultBlockParameter.valueOf(block));
+    }
+    /** Read-only explicit-block log scan. No provider-error text escapes this boundary. */
+    public java.util.List<Log> logs(BigInteger from,BigInteger to)throws IOException {
+        if(from.signum()<0 || to.compareTo(from)<0 || to.subtract(from).compareTo(BigInteger.valueOf(249))>0)throw new IOException("AUDIT_LOG_RANGE_LIMIT");
+        var filter=new org.web3j.protocol.core.methods.request.EthFilter(DefaultBlockParameter.valueOf(from),DefaultBlockParameter.valueOf(to),chain.engine());
+        filter.addOptionalTopics(FuturesReceiptVerifier.APPLIED,FuturesReceiptVerifier.CONSUMED);
+        var response=rpc.ethGetLogs(filter).send();check(response);
+        if(response.getLogs().size()>2000)throw new IOException("AUDIT_LOG_RESULT_LIMIT");
+        var result=new java.util.ArrayList<Log>();
+        for(var item:response.getLogs())if(item.get() instanceof Log log)result.add(log);else throw new IOException("AUDIT_LOG_UNAVAILABLE");
+        return java.util.List.copyOf(result);
     }
     private String call(String data,DefaultBlockParameter block)throws IOException {
         var value=rpc.ethCall(Transaction.createEthCallTransaction(chain.executor(),chain.engine(),data),block).send(); check(value);
