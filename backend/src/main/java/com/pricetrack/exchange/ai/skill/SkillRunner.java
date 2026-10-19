@@ -26,9 +26,29 @@ public final class SkillRunner {
             case "settlement-debugging" -> settlement(request);
             case "signed-quote-diagnosis" -> quote(request);
             case "market-availability-diagnosis" -> market();
+            case "futures-liquidation-diagnosis" -> futures(request);
             default -> throw new AgentFailure("UNKNOWN_SKILL",400);
         }
         trace("CHECK_EVIDENCE","EXECUTED","OBSERVE",List.of(),inconsistent?"INVALID_LINK":"OBSERVED",0);
+    }
+    private void futures(AgentRequest request){
+        var position=load("LOAD_POSITION","getFuturesPosition",Map.of("positionId",request.positionId()));
+        if(!success(position)){skip("LOAD_FUTURES_EVIDENCE","getFuturesLiquidationEvidence");return;}
+        if(!request.positionId().equals(position.data().path("position").path("id").asText())){mismatch(refs(position));skip("LOAD_FUTURES_EVIDENCE","getFuturesLiquidationEvidence");return;}
+        var evidence=load("LOAD_FUTURES_EVIDENCE","getFuturesLiquidationEvidence",Map.of("positionId",request.positionId()));
+        if(!success(evidence)){run.uncertainty("FUTURES_EVIDENCE_UNVERIFIED");return;}
+        if(!request.positionId().equals(evidence.data().path("positionId").asText())){mismatch(refs(position,evidence));return;}
+        var p=position.data().path("position");
+        if(!FuturesEvidenceConsistency.samePosition(p,evidence.data())){
+            classification="FUTURES_CUT_CHANGED";finding(classification,refs(position,evidence));run.uncertainty(classification);return;
+        }
+        if(!"VERIFIED".equals(evidence.data().path("verification").asText())||p.hasNonNull("pendingOperation")||p.path("status").asText().equals("REVIEW_REQUIRED")){
+            classification="FUTURES_EVIDENCE_UNVERIFIED";finding(classification,refs(position,evidence));run.uncertainty(classification);return;
+        }
+        boolean liquidated=evidence.data().path("operations").isArray()&&java.util.stream.StreamSupport.stream(evidence.data().path("operations").spliterator(),false)
+            .anyMatch(o->"LIQUIDATE".equals(o.path("action").asText())&&"VERIFIED".equals(o.path("verification").asText()));
+        classification=liquidated&&p.path("status").asText().equals("LIQUIDATED")?"FUTURES_LIQUIDATION_VERIFIED":"FUTURES_CALL_VERIFIED";
+        finding(classification,refs(position,evidence));
     }
     private void settlement(AgentRequest request){
         var order=load("LOAD_ORDER","getOrder",Map.of("orderId",request.orderId()));

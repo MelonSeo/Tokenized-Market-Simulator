@@ -9,7 +9,8 @@ import java.util.*;
 public final class AgentEvidence {
     private static final Set<String> PRIVATE_FIELDS=Set.of("userId","orderId","quoteId","txHash","senderAddress",
             "executor","signature","nonce","rawTransaction","loginId","password","passwordHash",
-            "privateKey","apiKey","apiSecret","secret","jwt","accessToken","refreshToken","dbPassword");
+            "privateKey","apiKey","apiSecret","secret","jwt","accessToken","refreshToken","dbPassword",
+            "id","positionId","operationId","journalId","pendingOperation","accountRef");
     public static ObjectNode modelInput(ObjectMapper json,List<KnowledgeHit> knowledge,List<AgentResponse.ToolEvidence> tools){
         ObjectNode out=json.createObjectNode();out.set("knowledge",json.valueToTree(knowledge));
         var array=out.putArray("tools");

@@ -89,7 +89,7 @@ public final class FuturesAuditAccounting {
         catch(Exception failure){throw new FuturesAuditSnapshot.Unavailable();}
     }
     /** Terminal projections must agree with the final canonical operation, not merely its wallet journal. */
-    static boolean settlementMatches(Position p,List<Operation> operations) {
+    public static boolean settlementMatches(Position p,List<Operation> operations) {
         if(!Set.of("CLOSED","LIQUIDATED").contains(p.status()))return p.realized()==null&&p.badDebt()==null;
         var last=operations.stream().filter(o->o.positionId().equals(p.id())&&o.state().equals("CONFIRMED"))
             .max(Comparator.comparingLong(Operation::expectedVersion)).orElse(null);

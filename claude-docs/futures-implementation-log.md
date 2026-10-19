@@ -197,3 +197,14 @@
 - 실제 제품 Synthetic/Chrome 신규 browser-c1767e1e1 PASS. Long2/Short5 정상 거래·추가담보·31초 preview 만료, Long10/Short10 자동 마진콜 후 실제64초/77초 청산, 유예 중 회복/추가담보, 실제 DOM과 개인 WS42건을 확인했다. Futures audit MATCH/coverage complete(19tx/38event), 기존 reserve MATCH, 잠금0·journal 보존. 이전 실패 fixture6개와 원인 미확정 항목도 보존했다.
 - 새 전체 회귀 session phase-a-20261019112424-f30234f2: backend632중584 PASS/48 SKIP/0FAIL. 단위·Mock과 실제PG/Anvil/Chrome 결과를 합산하지 않는다. 독립 최종2차 검토 필수 수정 없음(직접 private/DB/테스트 실행 없는 소스 검토).
 - 다음은 기존 Agent의 선물 read-only Tool/Skill/RAG 연결이다. 유료 실제 LLM, KRX 실환경 인수, 원본 melon-init 통합은 아직 미완료다. 기존 사용자 dirty5경로/보존환경은 유지했다.
+
+### Futures AI 조회·진단 통합 — 2026-10-19
+
+- 제품 Synthetic/Chrome와 CONFIRMED 재시작 단위는 `266465e`로 안전한10경로만 로컬 커밋했다. 이후 [AI 선물 통합](futures-ai-integration.md)의 기존8Tool+2/3Skill+1, positionId 소유권·고정handler·선택 canonical/journal 조회·기존9문서 갱신·웹 진단 대상 선택을 구현했다. AI mutation/실제유료공급자/기존index 변경은 없다.
+- 최초 소스 actualPG/Anvil ai7e12ff301PASS 및 AI170PASS/26SKIP/웹119/Python18. 독립 최초검토에서 terminalR/D projection누락과 교차Tool 시점혼합2건을 지적했다. 기존 순수감사 함수재사용·positionSnapshot exact비교·Skill/일반MIXED PARTIAL 및 종합차단으로 수정, 관련18PASS/웹120PASS. 1차재검토 필수 수정 없음.
+- 수정 후 새session phase-a-20261019120028-4ac049a3/productHash172e90d1…: ai0841d476 actualPG/Anvil1PASS(Mock모델/검색), 제품browser655a2024 actualChrome1PASS(양방향62초청산/개인WS38/Futures감사complete19tx38event와reserveMATCH), confirmed46c6222d 두JVM 각각1PASS. 모두새fixture이며 실패/기존환경 보존. 최신전체회귀·AI로컬커밋은 진행중이며 실제LLM평가/원본통합/PhaseD PASS는 선언하지 않는다.
+
+- 최종 전수: 처음단일worker643중591PASS/49SKIP/3FAIL, 새JVM593PASS/49SKIP/1FAIL은 서로 다른loopback fixture의 native Badaddress bind/listen으로 보존. 선택적 실행-only forkEvery20/maxParallelForks1로 같은643개를 새worker수명으로 검증하여 **594PASS/49SKIP/0FAIL/0ERROR**, 웹120/Chrome desktop-mobile offlinefixture/Foundry52/Node8/Python20 PASS. 제품가격·정산·경제·기본build설정/검증assertion을 변경하거나 테스트를 제외하지 않았다. 단일worker 오류의 정확한 원인과 영구 해결은 미확정이다.
+- `review_futures_ai`최종2차 필수 수정 없음. [발표·재현 가이드](futures-final-demo-guide.md)에 실제 제품Synthetic/체인 데모와 Mock AI/유료실제모델NOT_RUN을 분리했다. staged38명시경로, 신규생성비밀15개 대조0·금지경로0·diff check PASS. 보존 사용자5개와 melon-init9a9197b·외부환경 유지. 최종 현물 전량매도 actualPG/Anvil 회귀를 추가 확인한 뒤 이 범위만 로컬 커밋한다.
+
+- 최종 새 현물 sellall-8fbaf77a actualPG/Anvil1PASS/0SKIP/0FAIL: BUY/부분SELL/정확전량SELL3건FILLED·성공Receipt·mSEC잔여/잠금0, 기존reserveMATCH·현물거래감사MATCH와양방향coverage/cutStable 검증. 이로써 이번 승인된 기능의 무과금 통합 검증과 독립검토 단위를 마쳤다. 실제LLM·유료색인·최신KRX실환경/기존계획의기타미완료·최종PhaseD는별도이며 완료로 승격하지 않는다.

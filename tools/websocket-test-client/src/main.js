@@ -16,7 +16,7 @@ import { createFuturesPanel } from './futures-panel.js';
 
 const $ = (id) => document.getElementById(id);
 const api = new ApiClient(); const requests = new RequestState();
-const futuresPanel = createFuturesPanel(api, expireSession);
+const futuresPanel = createFuturesPanel(api, expireSession, id => selectAi('futures', id, '이 선물 포지션의 마진콜과 청산 근거를 설명해 주세요.'));
 const reservePanel = createReservePanel(api);
 const tradeAuditPanel = createTradeAuditPanel(api);
 const faucetPanel = createFaucetPanel(api, () => void loadPortfolio(), expireSession);
@@ -302,7 +302,8 @@ function socketEvent(channel, event) {
   if (channel === 'order' && state.user) { acceptOrder(event.data); void loadActivity(); void loadPortfolio(); toast(`주문 #${event.data.orderId} · ${label(event.data.status)}`); }
   if (channel === 'portfolio' && state.user) { portfolioRevision++; state.portfolio = event.data; renderPortfolio(); }
 }
-function syncAiTarget() { $('ai-target-wrap').hidden = !['quote', 'order'].includes($('ai-kind').value); }
+$('ai-kind').add(new Option('내 선물 포지션·청산 진단', 'futures'));
+function syncAiTarget() { $('ai-target-wrap').hidden = !['quote', 'order', 'futures'].includes($('ai-kind').value); }
 function selectAi(kind, target, question) { if (!requireUser('ai')) return; $('ai-kind').value = kind; $('ai-target').value = target || ''; $('ai-question').value = question; syncAiTarget(); navigate('ai'); }
 async function runAi(event) {
   event.preventDefault(); if (!requireUser('ai') || requests.busy('ai')) return;
@@ -311,6 +312,7 @@ async function runAi(event) {
   if (kind === 'order') { const id = Number(value); if (!Number.isSafeInteger(id) || id <= 0) { message('ai-message', '양의 정수 주문 번호를 입력해 주세요.', 'warning'); return; } target = { orderId: id }; }
   if (kind === 'quote') { if (!/^0x[0-9a-fA-F]{64}$/.test(value)) { message('ai-message', '발급된 견적 번호를 선택하거나 정확히 입력해 주세요.', 'warning'); return; } target = { quoteId: value }; skill = 'signed-quote-diagnosis'; }
   if (kind === 'market') skill = 'market-availability-diagnosis';
+  if (kind === 'futures') { if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value)) { message('ai-message', '선물 포지션에서 진단을 선택하거나 정확한 UUID를 입력해 주세요.', 'warning'); return; } target = { positionId: value }; skill = 'futures-liquidation-diagnosis'; }
   if (new TextEncoder().encode(JSON.stringify({ question, target, skillId: skill })).length > 4000) { message('ai-message', '질문을 조금 더 짧게 입력해 주세요.', 'warning'); return; }
   $('ai-submit').disabled = true; empty($('ai-result'), '근거를 조회하고 있습니다.');
   const generation = requests.generation;

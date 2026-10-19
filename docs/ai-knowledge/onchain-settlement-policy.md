@@ -2,13 +2,27 @@
 title: "온체인 체결과 DB 정산 확정"
 domain: settlement
 type: policy
-version: 2
+version: 3
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-19
 ---
 
 # 온체인 체결과 DB 정산 확정
+
+## 선물 FuturesEngine의 별도 확정 경계
+
+선물 담보는 PostgreSQL 사용자 모의자산 장부에 잠그며 ERC-20을 온체인 MarginVault에 예치하지 않는다. FuturesEngine은 별도 executor 및 가격 signer로 서명된 포지션 operation과 청산 조건을 검증한다. 현물 ExchangeVault와 ABI 및 경제 정책은 별개다.
+
+Long과 Short, 2배 5배 10배의 격리증거금 C를 사용한다. 수량 Q는 최초 C 곱하기 배수를 진입가격으로 나눈 값이며 정수 나눗셈은 내림한다. 미실현손익 U는 방향에 따른 Q 곱하기 현재가격과 진입가격의 차이다. equity E는 C 더하기 U, 유지증거금 MM은 현재 명목가치의 5퍼센트를 올림한 값이다. E가 MM 이하일 때 마진콜 위험이다. 실제 계산은 FuturesMath와 Solidity의 정수 단위를 따르며 표시 숫자로 재계산하지 않는다.
+
+서버 Worker가 유효한 새 가격으로 마진콜 transaction을 제출하고 계약이 검증한다. 온체인 마진콜 확정 블록 시각부터 실제 60초 유예다. 유예 후 새 관측 가격에서도 위험해야 강제청산한다. 가격 회복 또는 추가담보로 위험이 해소되면 기존 규칙으로 해제한다. 계약이 스스로 실행되거나 AI가 청산을 결정하는 구조가 아니다.
+
+선물도 raw/hash/nonce 선저장과 같은 raw 복구, canonical Receipt 및 OperationApplied와 FuturesReportConsumed 이벤트, DB operation과 journal의 단일 정산을 검증한다. 사용자 손실은 담보 한도로 제한하고 악성 부채는 별도 기록한다. 이익은 초기 10,000,000 mKRW의 유한 모의 house pool에서 지급한다. 풀이 부족하면 지급을 성공 처리하거나 자동 mint하지 않는다. 미래 지급 능력을 보장하지 않는다.
+
+AI의 getFuturesPosition과 getFuturesLiquidationEvidence 및 futures-liquidation-diagnosis는 인가된 포지션의 조회와 설명만 수행한다. evidence의 VERIFIED는 최대 두 건의 마진콜 및 청산 canonical Receipt/Event와 journal 검증 범위다. 전체 거래 coverage, 사용자별 온체인 소유권 또는 지급 보증이 아니다. pending, BLOCKED, REVIEW_REQUIRED, INCONCLUSIVE는 청산 확정으로 설명하지 않는다. 서명 원문, raw transaction, nonce, accountRef와 키는 AI 근거에 포함하지 않는다.
+
+근거: backend/src/main/java/com/pricetrack/exchange/futures/math/FuturesMath.java, futures/chain/FuturesReceiptVerifier.java, futures/runtime/FuturesWorker.java, ai/tool/read/FuturesToolReader.java. 실제 LLM 평가 및 이 갱신본의 유료 재색인은 별도 승인 전 미실행이다.
 
 > 2026-10-13 통합 추가 기능 및 키움 기능 소스 기준 갱신. 기존9문서 역할·active 승인 경계를 유지하며 manifest의 버전/내용 해시와 일치할 때만 ingest한다. 기존 AI DB 재색인이나 최신 실환경 인수 완료를 의미하지 않는다.
 

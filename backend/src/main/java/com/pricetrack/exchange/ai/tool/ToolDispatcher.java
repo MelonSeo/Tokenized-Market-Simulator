@@ -20,6 +20,8 @@ public final class ToolDispatcher implements AutoCloseable {
     private final ThreadPoolExecutor workers;
     private final Duration timeout;
     private com.pricetrack.exchange.ai.observability.AiObservability observation;
+    private java.util.function.Supplier<com.pricetrack.exchange.ai.tool.read.FuturesToolReader> futures=()->null;
+    public ToolDispatcher futures(java.util.function.Supplier<com.pricetrack.exchange.ai.tool.read.FuturesToolReader> value){futures=value;return this;}
     public ToolDispatcher observe(com.pricetrack.exchange.ai.observability.AiObservability value){observation=value;return this;}
 
     public ToolDispatcher(ToolProperties properties, ToolRegistry registry, ToolReadFacade reads,
@@ -85,9 +87,12 @@ public final class ToolDispatcher implements AutoCloseable {
             case "getCurrentReferencePrice" -> reads.market(context, true);
             case "getPortfolio" -> reads.portfolio(context);
             case "listAbnormalOrders" -> reads.abnormal(context, args);
+            case "getFuturesPosition" -> futures().position(context,args.positionId());
+            case "getFuturesLiquidationEvidence" -> futures().evidence(context,args.positionId());
             default -> throw new ToolFailure("TOOL_NOT_ALLOWED");
         };
     }
+    private com.pricetrack.exchange.ai.tool.read.FuturesToolReader futures(){var reader=futures.get();if(reader==null)throw new ToolFailure("TOOL_DISABLED");return reader;}
     private static String safeError(Throwable e) {
         if (e instanceof ToolFailure f) return f.code();
         for (Throwable cause = e; cause != null; cause = cause.getCause()) {
@@ -100,7 +105,7 @@ public final class ToolDispatcher implements AutoCloseable {
     }
     private static String source(String name) {
         return switch (name) {
-            case "getReceiptSummary" -> "TRADING_DB+RPC";
+            case "getReceiptSummary", "getFuturesLiquidationEvidence" -> "TRADING_DB+RPC";
             case "getMarketStatus", "getCurrentReferencePrice" -> "MARKET_SNAPSHOT";
             case "getPortfolio" -> "TRADING_DB+MARKET_SNAPSHOT";
             default -> "TRADING_DB";

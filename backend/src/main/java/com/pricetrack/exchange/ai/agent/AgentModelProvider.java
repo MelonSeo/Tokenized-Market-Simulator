@@ -7,7 +7,7 @@ import java.util.List;
 /** Two bounded structured operations, no executable tool schema or unbounded model loop. */
 public interface AgentModelProvider {
     enum Route { KNOWLEDGE, STATE, MIXED, CLARIFY, UNSUPPORTED }
-    enum Subject { NONE, ORDER, QUOTE, MARKET, PRICE, PORTFOLIO, ABNORMAL }
+    enum Subject { NONE, ORDER, QUOTE, MARKET, PRICE, PORTFOLIO, ABNORMAL, FUTURES }
     record Usage(long inputTokens,long outputTokens){public static Usage none(){return new Usage(0,0);}}
     record Plan(Route route,Subject subject,Usage usage,String skillId) {
         public Plan(Route route,Subject subject,Usage usage){this(route,subject,usage,"NONE");}

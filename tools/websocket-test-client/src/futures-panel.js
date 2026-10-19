@@ -13,7 +13,7 @@ export async function futureIntent(uid, request, storage = localStorage, locks =
   return locks ? locks.request(`futures-intent:${uid}`, choose) : choose();
 }
 const STATES = { OPEN_PENDING: '개설 확인 중', OPEN: '포지션 유지', CLOSING: '전체 종료 확인 중', LIQUIDATING: '자동청산 확인 중', CLOSED: '종료 확정', LIQUIDATED: '자동청산 확정', OPEN_FAILED: '개설 실패', REVIEW_REQUIRED: '수동 확인 필요 · 잠금 유지' };
-export function createFuturesPanel(api, unauthorized = () => {}) {
+export function createFuturesPanel(api, unauthorized = () => {}, diagnose = () => {}) {
   const $ = id => document.getElementById(id); let user = null, route = '', epoch = 0, revision = 0, previewRevision = 0, busy = false, preview = null, poll = null;
   const marginDrafts = new Map();
   const notice = text => { $('futures-message').textContent = text; };
@@ -39,6 +39,7 @@ export function createFuturesPanel(api, unauthorized = () => {}) {
           const add = button('증거금 추가', () => { try { void write({ path: `/positions/${p.id}/margin`, body: { amount: futuresAmount(input.value.trim()), expectedVersion: p.version } }); } catch (e) { notice(e.message); } }); add.disabled = busy;
           card.append(close, label, add);
         }
+        card.append(button('AI 읽기 전용 근거 진단', () => diagnose(p.id)));
         return card;
       }));
       if (!body.length) $('futures-positions').append(node('p', '아직 선물 포지션이 없습니다.'));

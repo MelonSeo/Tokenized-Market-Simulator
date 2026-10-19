@@ -2,6 +2,8 @@
 
 지식은 규칙·설계·상태 해석이다. 개인 잔고/주문·가격·진단 결과·대화·비밀키는 corpus에 넣지 않는다. 현재 승인 지식9개 구조와 역할을 유지한다.
 
+2026-10-19 선물 후속: onchain-settlement-policy v3/승인 hash에 DB 수탁 담보, 5퍼센트 유지증거금, canonical60초 유예, 유한 모의 house pool, read-only 진단의 한계를 추가했다. loader/Mock 검증과 **실제 embedding/index 갱신은 별개**다. 이번 작업에서 유료 색인·실제 검색 품질 평가를 수행하지 않았으며, 이전 corpus의 검색 수치를 이 갱신본의 수치로 재사용하지 않는다. [상세](../../claude-docs/futures-ai-integration.md).
+
 ## 승인·색인 경계
 
 `docs/ai-knowledge/`의 Markdown metadata(`title/domain/type/version/status/minimum_role/updated_at`)와 `docs/ai/ingest-manifest.json`의 승인 목록·version·정규화 content hash가 일치해야 한다. `active` 문서만 로드한다. CRLF는 LF로 정규화한 뒤 SHA-256을 계산한다. 단순 파일 추가나 Agent 이력 저장으로 자동 ingest하지 않는다.

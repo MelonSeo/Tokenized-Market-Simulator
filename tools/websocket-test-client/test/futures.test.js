@@ -26,16 +26,23 @@ class Element {
   append(...x) { this.children.push(...x); } replaceChildren(...x) { this.text = ''; this.children = x; }
   addEventListener(name, fn) { this['on' + name] = fn; }
 }
-function setup(t, api) {
+function setup(t, api, diagnose = () => {}) {
   const ids = new Map(['message','confirm','preview','preview-open','retry','positions','side','leverage','margin','refresh'].map(x => ['futures-' + x, new Element()]));
   globalThis.document = { getElementById: x => ids.get(x), createElement: () => new Element() };
   const store = storage(); store.removeItem = k => store.setItem(k, null); globalThis.localStorage = store;
   ids.get('futures-side').value = 'LONG'; ids.get('futures-leverage').value = '10'; ids.get('futures-margin').value = '100000.000000000000000001';
-  const panel = createFuturesPanel({ futuresPositions: async () => ({ body: [] }), ...api });
+  const panel = createFuturesPanel({ futuresPositions: async () => ({ body: [] }), ...api }, () => {}, diagnose);
   t.after(() => panel.setContext(null, 'market')); panel.setContext({ id: 1 }, 'futures'); return { panel, ids };
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const preview = id => ({ body: { previewId: id, action: 'OPEN', price: '75000', margin: '100000.000000000000000001', expiresAt: '2099-01-01T00:00:00Z', notice: 'fixture' } });
+
+test('futures diagnosis selects the exact position without invoking AI or trading', async t => {
+  let selected = null, calls = 0; const position = { id: '11111111-1111-1111-1111-111111111111', side: 'LONG', leverage: 10, quantity: '1', entryPrice: '75000', collateral: '100000', status: 'LIQUIDATED', riskStatus: 'GRACE', deadline: 100 };
+  const { ids } = setup(t, { futuresPositions: async () => ({ body: [position] }), agent: () => { calls++; }, futuresWrite: () => { calls++; } }, id => { selected = id; }); await flush();
+  const diagnose = ids.get('futures-positions').children[0].children.find(x => x.textContent === 'AI 읽기 전용 근거 진단'); assert.ok(diagnose); diagnose.onclick();
+  assert.equal(selected, position.id); assert.equal(calls, 0);
+});
 test('preview never sends an order and explicit confirm retains exact decimal intent', async t => {
   let writes = 0, received; const { ids } = setup(t, { futuresPreview: async r => { received = r; return preview('p'); }, futuresWrite: async () => { writes++; return { body: { id: 'operation', state: 'PREPARED' } }; } });
   ids.get('futures-preview-open').onclick(); await flush(); assert.equal(writes, 0); assert.equal(received.marginAmount, '100000.000000000000000001');

@@ -10,6 +10,22 @@ spec=importlib.util.spec_from_file_location('phase_a',Path(__file__).with_name('
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 
 class PhaseAGuardTest(unittest.TestCase):
+    def test_worker_isolation_keeps_full_selection_and_clean_environment(self):
+        counts={'tests':3,'failures':0,'errors':0,'skipped':1,'passed':2}
+        with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',return_value={'SAFE':'same'}),patch.object(a,'aggregate',return_value=counts):
+            run=Path(folder);(run/'evidence').mkdir()
+            a.java_test(run,'default');a.java_test(run,'isolated',isolate_workers=True)
+            first,second=execute.call_args_list
+            self.assertEqual(first.args[1],[str(a.REPO/'backend/gradlew.bat'),'test','--offline','--no-daemon','--rerun-tasks'])
+            self.assertEqual(second.args[1],first.args[1]+['--init-script',str(a.ROOT/'phase-a-test-isolation.gradle')])
+            self.assertEqual(first.args[4],second.args[4]);self.assertNotIn('--tests',second.args[1]);self.assertNotIn('-x',second.args[1])
+            self.assertEqual(json.loads((run/'evidence/isolated/summary.json').read_text()),counts)
+    def test_optional_regression_retains_web_browser_and_foundry(self):
+        for isolated in (False,True):
+            with patch.object(a,'java_test') as java,patch.object(a,'execute') as execute:
+                session=Path('unused');a.regression(session,isolated)
+                java.assert_called_once_with(session,'backend-full-isolated-workers' if isolated else 'backend-full',isolate_workers=isolated)
+                self.assertEqual([c.args[2] for c in execute.call_args_list],['web-deps','web-unit','web-browser','futures-browser-unit','foundry'])
     def test_futures_restart_uses_two_explicit_stages_without_observation_suite(self):
         counts={'tests':1,'failures':0,'errors':0,'skipped':0,'passed':1}
         with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',side_effect=lambda _:{}),patch.object(a,'aggregate',return_value=counts):
