@@ -2,10 +2,10 @@
 title: "WebSocket 알림과 REST 재동기화"
 domain: realtime
 type: policy
-version: 2
+version: 3
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # WebSocket 알림과 REST 재동기화
@@ -30,8 +30,11 @@ WebSocketDeliveryListener는 AFTER_COMMIT을 사용한다. DB 트랜잭션 안�
 | /topic/markets/mSEC/trades | 공개 체결 |
 | /user/queue/orders | 인증된 본인의 주문 |
 | /user/queue/portfolio | 인증된 본인의 포트폴리오 |
+| /user/queue/futures | 인증된 본인의 선물 변경 알림; REST 재조회 필요 |
 
 Native WebSocket과 SockJS 모두 STOMP 구독 정책을 따른다. CONNECT의 Bearer JWT로 신원을 설정한다. 익명은 공개 destination만 구독할 수 있다. 임의 destination과 클라이언트 STOMP SEND는 거부한다.
+
+기존 연결도 JWT가 만료되면 서버가 개인 전달을 차단한다. 이는 Refresh/서버 폐기·기기 세션 관리 구현과 다르다. FuturesPersonalEvents는 DB AFTER_COMMIT에 positionId/operationId 최소 무효화 알림을 본인에게 전달한다. 현재 수치·상태는 본인 REST로 재조회하며 전송 실패가 확정 DB 정산을 되돌리지는 않는다.
 
 ## 연결 복구와 화면 해석
 
@@ -47,7 +50,7 @@ Native WebSocket과 SockJS 모두 STOMP 구독 정책을 따른다. CONNECT의 B
 
 Faucet 최초 지급의 포트폴리오 알림은 commit 후 전달하며 성공 키 replay는 새 지급·추가 알림을 만들지 않는다. 응답 유실 시 동일 키로 결과를 조회하고 현재 잔고는 별도 REST로 재확인한다. 조건부 상태 알림과 실제 실행 Order 결과는 별도이며 취소·대기를 온체인 체결 완료로 표시하지 않는다.
 
-Toss/KIWOOM 실제 tick은 공급자 스트림이고 사용자 거래 체결이 아니다. KIWOOM의 체결량은 기초 주식 수량이며 Synthetic는 합성 수량이다. 실제 키움 stream/차트 시간 경계는 아직 실환경 미검증이다. 같은 초의 서로 다른 체결량을 무조건 timestamp 중복으로 버리지 않는다. 로그아웃·계정 전환 후 늦은 REST/개인 WS가 다른 계정을 덮지 않도록 기존 화면 세대 경계를 유지한다.
+Toss/KIWOOM 실제 tick은 공급자 스트림이고 사용자 거래 체결이 아니다. KIWOOM의 체결량은 기초 주식 수량이며 Synthetic는 합성 수량이다. 실제 읽기 capture 분석과 최신 제품 서버 차트 인수는 구분한다. 같은 초의 서로 다른 체결량을 무조건 timestamp 중복으로 버리지 않는다. 로그아웃·계정 전환 후 늦은 REST/개인 WS가 다른 계정을 덮지 않도록 기존 화면 세대 경계를 유지한다.
 
 - [websocket/publisher/WebSocketDeliveryListener.java](../../backend/src/main/java/com/pricetrack/exchange/websocket/publisher/WebSocketDeliveryListener.java)
 - [websocket/config/WebSocketAuthInterceptor.java](../../backend/src/main/java/com/pricetrack/exchange/websocket/config/WebSocketAuthInterceptor.java)

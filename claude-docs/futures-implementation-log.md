@@ -210,3 +210,14 @@
 - 최종 새 현물 sellall-8fbaf77a actualPG/Anvil1PASS/0SKIP/0FAIL: BUY/부분SELL/정확전량SELL3건FILLED·성공Receipt·mSEC잔여/잠금0, 기존reserveMATCH·현물거래감사MATCH와양방향coverage/cutStable 검증. 이로써 이번 승인된 기능의 무과금 통합 검증과 독립검토 단위를 마쳤다. 실제LLM·유료색인·최신KRX실환경/기존계획의기타미완료·최종PhaseD는별도이며 완료로 승격하지 않는다.
 
 - AI기능38경로는 `e8ba5cd28b1450d13f6233680a95ed98709f51f8`로 로컬 커밋했다. 최종새현물fixture까지 신규생성비밀18개대조0/보호사용자경로0, 원본melon-init9a9197b·사용자dirty5개유지. [최종 무과금 통합 보고서](futures-final-integration-2026-10-19.md)에 실행별 결과·이전native실패·실제모델NOT_RUN·시연 및 보존경계를 정리한다. 원격push/배포/원본merge는 수행하지 않았다.
+
+### 최종 원본 통합 사전 검증·지식 대조 — 2026-10-20 진행 중
+
+- 원본216ede/기준melon-init9a9197b를 보존하고 별도 integration/futures-final-20261020에 정상 merge f70c1eb. tree는 Futures 부모와 동일, 충돌0. 사용자 NXT/계획 dirty5경로는 그대로다.
+- 새 worktree 공개 Foundry 의존성 누락으로 tools build2회 실패를 보존했다. 제품을 바꾸지 않고 원본 공개 source/metadata만 오프라인 해시 대조 복사한 새 session phase-a-20261019153910-daf57837에서 준비 성공. 실패session/기존환경 재사용·초기화 없음.
+- 이 session의 새 전체 회귀(corpus 최신화 전)는643중594 PASS/49 SKIP/0FAIL/0ERROR, 웹120/Chrome desktop-mobile offline fixture/Foundry52/Node8 PASS. 이전10-19 실행을 재사용한 결과가 아니다. corpus 최신화 후 재검증 및 새 실제 PG/Anvil/Chrome·두 JVM은 후속이다.
+- review_final_integration 최초검토가 RAG의 옛0s/UNKNOWN 정책·현재Tool8/Skill3만 설명하는 충돌을 지적했다. 기존9문서/역할은 유지하고8문서·manifest·KnowledgeLoaderTest만 최소 보완했다. Google/전량·WS만료·선물/DB담보 경계를 포함하며 제품 거래 정책 변경은 없다. 1차 재검토 필수 수정 없음(직접 테스트/private 접근 없음).
+- [새 통합 실행/AI 비용 승인안](futures-final-integration-2026-10-20.md), [원본76ID 보존 대조](../docs/PROJECT_COMPLETION_AUDIT_2026-10-20.md)를 작성했다. 실제LLM/embedding/index는 미실행이며 별도 비용 승인 대기. KRX/NXT와 전체PhaseD 완료로 승격하지 않는다.
+
+- 새통합 session의 실제 성공10case/12JVM(API/경합/감사/confirmed2/conditional2/Faucet/Googleoffline/현물전량/MockAI/Chrome)과 이전native환경실패·감사CUT_CHANGED assertion실패를 분리 보존했다. 감사의4회이내새관측 guard만 보완하여 실제1PASS·guard4PASS·전체648중599PASS/49SKIP. 독립review_audit_fixture_cut 필수수정없음, `5a727ee`3경로로 로컬커밋했다. 제품대사/경제정책은 변경없다.
+- 원설계F14 ADMIN 감사최소화면 누락을 발견해 기존API만 연결했다. 웹127PASS/새actualChrome bf973f2e1PASS(일반거래/양방향65·62초청산/WS40/ADMINbaseline·실행·이력·상세desktopmobile), 선물감사complete19tx38events/기존reserveMATCH, Node소유descendants28생존0. UI반영후새전체648중599PASS/49SKIP/0FAIL, Node8/Foundry52/전체forgebuildPASS(lint잔존). review_futures_admin_ui 필수수정없음, review_final_integration최종2차도필수수정없음. 실제모델/키움호출0이며 원본병합후결과는 별도누적한다.

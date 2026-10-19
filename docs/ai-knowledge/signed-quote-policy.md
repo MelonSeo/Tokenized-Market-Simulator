@@ -2,10 +2,10 @@
 title: "서명 견적의 소유권과 유효성"
 domain: trading
 type: policy
-version: 2
+version: 3
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 서명 견적의 소유권과 유효성
@@ -18,7 +18,7 @@ updated_at: 2026-10-13
 
 ## 정상 발급 조건
 
-온체인 견적은 선택된 공급자의 시장 스냅샷에서 발급한다. 실제 공급자는 OPEN + LIVE이며 관측 후5초 이내/미래2초 이내여야 한다. RPC 전후 원본 가격의 신선도와 최신 실제 시장 상태·공급자 동일성을 확인하되 보고서 가격·최소수령량·관측시각을 최신 스냅샷 가격으로 교체하지 않는다. Synthetic 및 DB-only 계약은 별도이며 이 경계를 실환경 인수 완료로 해석하지 않는다.
+온체인 견적은 선택된 공급자의 TradingPriceContext에서 발급한다. Toss는 OPEN + LIVE, 키움은 현재 generation의 정상 정규0B(290=2)·연결·LIVE와 차단 상태 없음이 필요하며 UNKNOWN에서도 모의 견적이 가능하다. UNKNOWN이나0B만으로 OPEN을 확정하지 않는다. 명시적 CLOSED와 지원하지 않는 시장 상태가 우선한다. 관측 후5초 이내/미래2초 이내 기준은 유지한다. RPC 전후 원본 가격의 신선도·공급자·가용성과 연결 generation 동일성을 확인하되 보고서 가격·최소수령량·관측시각을 최신 스냅샷 가격으로 교체하지 않는다. Synthetic 및 DB-only 계약은 별도이며 이 경계를 실환경 인수 완료로 해석하지 않는다.
 
 | PriceReport 필드 | 의미 |
 |---|---|

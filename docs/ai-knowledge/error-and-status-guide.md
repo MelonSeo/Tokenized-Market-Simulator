@@ -2,10 +2,10 @@
 title: "상태·오류 코드 해석"
 domain: support
 type: reference
-version: 2
+version: 3
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 상태·오류 코드 해석
@@ -67,6 +67,8 @@ custom error가 위 이름 그대로 REST code로 변환되는 구현은 아니�
 사용자는 입력 조건·시장 상태·견적 만료와 본인 주문 REST 결과를 확인한다. 운영자 원인 진단은 권한 있는 조회로 거래 상태·실패 단계를 확인해야 한다. 문서에는 특정 사용자의 잔고, txHash, receipt 또는 현재 장애 여부를 저장하지 않는다.
 
 ## 추가 기능의 상태와 한계
+
+선물 operation/position 상태는 현물 OrderStatus와 별도다. pending, BLOCKED, REVIEW_REQUIRED 또는 조회 INCONCLUSIVE를 청산 확정으로 설명하지 않는다. 선물 read-only evidence의 VERIFIED도 선택한 마진콜/청산 증거 범위이며 전체 감사 coverage와 다르다. 유한 house pool 지급 차단은 성공 지급이나 담보의 온체인 예치 증명이 아니다. 정확한 선물 실행 결과는 인가된 포지션/operation·canonical Receipt/Event·DB journal 조회가 필요하다.
 
 조건부 의도는 WAITING/PREPARING/EXECUTING/SUCCEEDED/FAILED/CANCELLED/EXPIRED/REVIEW_REQUIRED다. 기존 Order의 CANCELED enum과 조건부 CANCELLED를 혼동하지 않는다. 조건부 취소 API는 구현됐지만 이미 실행된 즉시 주문의 강제 취소 API는 아니다.
 
