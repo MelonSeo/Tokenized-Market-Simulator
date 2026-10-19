@@ -208,3 +208,5 @@
 - `review_futures_ai`최종2차 필수 수정 없음. [발표·재현 가이드](futures-final-demo-guide.md)에 실제 제품Synthetic/체인 데모와 Mock AI/유료실제모델NOT_RUN을 분리했다. staged38명시경로, 신규생성비밀15개 대조0·금지경로0·diff check PASS. 보존 사용자5개와 melon-init9a9197b·외부환경 유지. 최종 현물 전량매도 actualPG/Anvil 회귀를 추가 확인한 뒤 이 범위만 로컬 커밋한다.
 
 - 최종 새 현물 sellall-8fbaf77a actualPG/Anvil1PASS/0SKIP/0FAIL: BUY/부분SELL/정확전량SELL3건FILLED·성공Receipt·mSEC잔여/잠금0, 기존reserveMATCH·현물거래감사MATCH와양방향coverage/cutStable 검증. 이로써 이번 승인된 기능의 무과금 통합 검증과 독립검토 단위를 마쳤다. 실제LLM·유료색인·최신KRX실환경/기존계획의기타미완료·최종PhaseD는별도이며 완료로 승격하지 않는다.
+
+- AI기능38경로는 `e8ba5cd28b1450d13f6233680a95ed98709f51f8`로 로컬 커밋했다. 최종새현물fixture까지 신규생성비밀18개대조0/보호사용자경로0, 원본melon-init9a9197b·사용자dirty5개유지. [최종 무과금 통합 보고서](futures-final-integration-2026-10-19.md)에 실행별 결과·이전native실패·실제모델NOT_RUN·시연 및 보존경계를 정리한다. 원격push/배포/원본merge는 수행하지 않았다.
