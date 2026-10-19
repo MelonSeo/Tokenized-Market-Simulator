@@ -189,3 +189,11 @@
 
 - 감사 수정 후 전체 새 회귀 완료: productHash `6c5c6930acb3d6dc4d17b98e20dd1acfea4a4d0592274fa4eb96dbcc97ba3246`, backend629중583 PASS/46 SKIP/0FAIL/0ERROR, web119 PASS/0SKIP, Chrome desktop/mobile **offline fixture** PASS, Foundry52 PASS/0SKIP. 실제 감사 E2E1PASS는 별도 child4b86bb80 결과이며 전체 회귀 SKIP과 혼합하지 않는다.
 - 감사 1차 재검토 `review_futures_audit` 필수 수정 없음, Scenario 별도 `review_futures_scenario` 필수 수정 없음. 두 검토자 모두 직접 실행/DB/private 접근 없이 실제 소스·diff·테스트를 검토했다. [Scenario 빌드 복구 기록](futures-scenario-build-fix.md)은 원래 동작 보존 및 외부RPC없는 로컬EVM 검증을 구분한다.
+
+### 실제 제품 Synthetic/Chrome 및 CONFIRMED 두 JVM — 2026-10-19
+
+- 감사 `ded9b79`, Scenario `f5c5a28` 로컬 커밋 완료. [실행별 결과와 실패 보존](futures-product-browser-and-restart.md)에 신규 테스트-only 마일스톤의 상세를 기록했다. 제품 Java/Solidity/경제 정책은 변경하지 않았다.
+- 신규 confirmed-05ae4a77: prepare1 PASS + 별도 JVM recover1 PASS, 동일 raw/hash/nonce 및 canonical 성공 Receipt로 CONFIRMED 단일 정산. 기존 REVERTED 복구와 별도 결과다.
+- 실제 제품 Synthetic/Chrome 신규 browser-c1767e1e1 PASS. Long2/Short5 정상 거래·추가담보·31초 preview 만료, Long10/Short10 자동 마진콜 후 실제64초/77초 청산, 유예 중 회복/추가담보, 실제 DOM과 개인 WS42건을 확인했다. Futures audit MATCH/coverage complete(19tx/38event), 기존 reserve MATCH, 잠금0·journal 보존. 이전 실패 fixture6개와 원인 미확정 항목도 보존했다.
+- 새 전체 회귀 session phase-a-20261019112424-f30234f2: backend632중584 PASS/48 SKIP/0FAIL. 단위·Mock과 실제PG/Anvil/Chrome 결과를 합산하지 않는다. 독립 최종2차 검토 필수 수정 없음(직접 private/DB/테스트 실행 없는 소스 검토).
+- 다음은 기존 Agent의 선물 read-only Tool/Skill/RAG 연결이다. 유료 실제 LLM, KRX 실환경 인수, 원본 melon-init 통합은 아직 미완료다. 기존 사용자 dirty5경로/보존환경은 유지했다.
