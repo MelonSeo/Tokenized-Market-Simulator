@@ -2,7 +2,9 @@
 
 ## 현재 상태
 
-**진행 중.** 이 문서는 이전 실행을 새 PASS로 옮기지 않는다. 최종 Phase D, 실제 KRX/NXT 제품 거래, 실제 LLM 평가를 완료로 선언하지 않는다.
+**Git 통합·병합 후 오프라인 회귀 완료 / 병합 후 실제 E2E BLOCKED.** 이 문서는 이전 실행을 새 PASS로 옮기지 않는다. 최종 Phase D, 실제 KRX/NXT 제품 거래, 실제 LLM 평가를 완료로 선언하지 않는다.
+
+원본 Git 통합은 정상 merge로 완료했다. 병합 후 최초 회귀의6FAIL을 보존하고 제품·테스트 코드 변경 없이 수행한 새 전체 제어실행은599PASS/49SKIP이다. **병합 후 실제 PG/Anvil/Chrome·두JVM 재검증은 Docker 장애로 BLOCKED**이며 기존 분리 통합 PASS로 대체하지 않는다. 실제 AI 비용 승인은 아직 없으므로 외부 호출0을 유지한다.
 
 - 원본 `feat/futures-engine` HEAD `216ede45729907c2cc17de4d5a66fd1b39565cd9`, `melon-init` `9a9197b290c57ce3351452fcf7f0794e6f24cdfc`에서 조사 시작.
 - 별도 `integration/futures-final-20261020`에 정상 merge `f70c1eb5eb21e2bb848c132734402747a6182189`. 충돌0, merge tree는 Futures 부모와 동일. 원본 사용자 dirty5개는 보존한다.
@@ -112,3 +114,46 @@
 UI 반영 후 전체 backend648중599PASS/49SKIP, 웹127/Node8/Foundry52PASS, 빌드와 desktop/mobile offlineChromePASS를 새로 확인했다. 전체 `forge build --offline` 성공이며 lint 경고/노트는 남는다. staged UI8경로에 신규 fixture private값60개 대조0/금지경로0·diffcheckPASS. 실제 LLM/index·실시장 거래는 여전히 NOT_RUN이다.
 
 기존 KRX/Google/playground/NXT/실패 session의 image·DB·Anvil·manifest·baseline·private evidence는 변경/초기화/삭제하지 않는다. 신규 fixture만 소유권 검사 후 정지하고 상태를 남긴다. 원격 push·배포·실제 금융거래는 하지 않는다. 새 통합 branch에서 검증된 명시 경로만 로컬 커밋하고, 원본 merge는 사용자 dirty와 충돌 여부를 재확인한 뒤 판단한다.
+
+## 원본 병합과 병합 후 검증 — 진행 중
+
+- 별도 통합 로컬 커밋: `5a727ee` 감사fixture3경로, `7c896cc` ADMIN UI8경로, `40eaa50` 지식/manifest/테스트/대조기록13경로. 명시 staged path·diffcheck·신규 private값60개 대조0·금지경로0을 확인했다.
+- 원본에서 사용자 dirty5경로의 SHA-256·내용/충돌경로를 재확인하고 `git switch melon-init` 후 정상 `--no-ff` merge **`0d36ebab2b7dba3e845dd46d80d4a5f253e13dc1`**. 충돌0, tree는40eaa50과 동일, 사용자5개 해시는 그대로다. 무단stash/reset/push/worktree제거 없음.
+- 보존 Google4서비스 실행 상태 유지. 기존 Anvil/PostgreSQL bind entrypoint/readiness 두 파일은 통합 diff0. 기존 KRX image·sourceHead/hash·baseline·manifest는 갱신하지 않는다. 옛 이미지에는 신규 Futures/지식/UI가 없으므로 최신 인수 증거로 쓰지 않는다.
+- 병합 후 새 원본 session **`phase-a-20261019172936-37e73d39`**, 준비 당시sourceHead=0d36ebab, productHash **`e186511df351864ee2709fe7d858ebeb75412d7f08dda8a389fb81888e3255af`**, 외부provider false. 분리 worktree의 b34a2d…와 값을 같다고 가정하지 않고 새tools image/fixture로 검증한다. 기존manifest를 덮어쓰지 않았다.
+- 이 session의 전체 회귀, 실제Chrome/PG/Anvil 및 CONFIRMED 두 JVM을 순차 실행한다. 결과가 확정되기 전에는 이전 통합 worktree599PASS/Chrome PASS를 원본 재실행으로 표시하지 않는다.
+
+원본/분리 worktree의 productHash 대상303파일을 읽기 전용 대조했다. raw byte 차이는1파일, CRLF→LF 정규화 후 내용/목록 차이0이다. 같은Git tree라도 ignored 실행 경로의 파일 byte가 다를 수 있으므로 기존hash를 새값으로 수정하지 않는다. KRX `kiwoom-live-run.py`는실행시 `sourceHash`/소유권을 확인하고 `sourceHead`는준비출처로기록한다. 커밋만으로 무조건차단된다고 단정하지 않지만, 이번Futures/AI/UI 제품변경은옛준비source와다르므로 옛인수환경으로최신검증을진행하거나manifest를덮어쓰지않는다.
+
+### 병합 후 실패와 환경 차단 — 이전 PASS와 분리
+
+새 원본 전체 회귀는 **648중593 PASS /6 FAIL /49 SKIP /0ERROR**다.6개 모두 `OpenAiProviderTest`의 `@BeforeEach start():17`에서 `HttpServer.create(new InetSocketAddress("127.0.0.1",0),0)`가 Windows native `sun.nio.ch.Net.listen`의 `SocketException: Bad address: listen`으로 실패했다. 서버 생성 실패 후 `@AfterEach stop():30`의 null server NPE가 suppressed로 붙는다. AI 실제 공급자나 응답 assertion에서 발생한6개 실패가 아니다. 다만 실제 FAIL이므로 합격으로 바꾸지 않는다. 실패XML/summary/log는 새session evidence에 보존했다.
+
+이 실행도 Java21.0.10과 동일 worker격리를 사용했으므로 Java23/21 차이가 확정 원인이거나 영구 해결이라는 주장은 철회하지 않고 처음부터 미확정으로 유지한다. 이후 독립 로컬 JShell/JDK21에서 동일127.0.0.1 임시HttpServer 생성·시작·종료20회는 실패0이었다. 전역적인 지속 listen 불능은 재현되지 않았지만 Gradle 내 순서/자원/OS 원인은 확정되지 않았다. 초반 JShell2회는 모듈 로딩/PowerShell 인자 문제로0회 실행되어 NOT_RUN이며20회 성공에 포함하지 않는다. Windows dynamic TCP 범위49152~65535와 제외구간을 읽었지만 그것만으로 원인을 단정하거나 포트 설정을 바꾸지 않았다.
+
+첫 분리 클래스 재현 준비는 `verify_session`의 Docker tools image inspect가 **HTTP500**으로 실패하여 실제 테스트 NOT_RUN이다. 이 명령 후 진단 폴더 `loopback-provider-default-java21`에 복사된XML은 파일시각상 앞선전체실행의 실패XML이며 새 실행 증거로 사용하지 않는다. 새검증 원칙을 엄격히 유지하기 위해 뒤의 독립오프라인 실행은 별도step과시각guard로 구분한다.
+
+Docker Server를 제한시간15초로 읽기 전용 확인한 명령도 timeout이었다. Docker/WSL/공유서비스를 재시작하거나 이미지·데이터를 정리하지 않았다. **병합 후 실제Chrome·두JVM은 순차중단 gate에 따라 NOT_RUN**, 신규거래/fixture 재생성으로 우회하지 않는다. Docker 정상화 확인 및 로컬회귀 원인/제어 재검증 전 전체원본인수PASS를 선언하지 않는다. 기존 실패session과 이전 정상 환경을 유지한다.
+
+별도 `loopback-provider-isolated-java21`은 Docker가 전혀 필요 없는7개 로컬HTTP 테스트만 새 프로세스로 실행했고 **7PASS/0SKIP/0FAIL** 및새XML시각을 확인했다. 앞의기본분리실행NOT_RUN과다른step이다. 제품/harness코드·시각허용·assertion은바꾸지않았다. 이것만으로전체6FAIL을소급해PASS로바꾸거나원인을확정하지않는다. 이후 원본의외부opt-in전부OFF/localhost-onlyproxy/명시Java21/동일648개worker격리로 **1회** `backend-postmerge-offline-control-java21` 전체제어실행을진행한다. 실제E2E는별도차단상태이며Docker image/ownership/clock guard를생략해체인거래를실행하지않는다.
+
+보존Google4서비스의실행상태는merge직후조회당시확인값이다. Docker500/timeout이후현재Server운영상태는확정할수없다. 코드병합이기존image/container/data를갱신하거나재시작한것은아니며자동전역조치는하지않는다.
+
+### 마지막 원본 무과금 제어실행 — 완료
+
+동일 `melon-init@0d36ebab` 제품·테스트 코드에서 `backend-postmerge-offline-control-java21` **648중599PASS/49SKIP/0FAIL/0ERROR**. JDK21/동일worker격리/동일648개를 사용했고 테스트 제외·assertion 변경·문제클래스 전용 skip·제품수정은 없다. 앞선593PASS/6FAIL/49SKIP은 별도 실패로 남는다. 이 성공은 Windows native 오류의 영구 원인 규명 또는 재발 방지 보증이 아니다.
+
+같은 명령에서 새 웹127PASS/0SKIP, Chrome desktop/mobile offline fixture PASS, Node8PASS, Foundry52PASS/0SKIP, `forge build --offline` 성공을 확인했다. 전체빌드의 lint warning16건과 note는 남는다. 추가 Python guard/clock20PASS도 원본에서 새 실행했다. 모든 외부 AI/시세 gate OFF 및 localhost-only proxy를 유지했고 Docker가 필요 없는 단위·H2/Mock/오프라인 범위만 수행했다. Docker image·ownership·clock guard를 생략해 실제 E2E를 수행하지 않았다.
+
+| 최종 구분 | 판정 |
+|---|---|
+| Git 통합 | 완료 — 정상merge0d36ebab, 제품 tree=검토된40eaa50 |
+| 병합 전 새 실제PG/Anvil/Chrome/복구·호환 검증 | PASS — 앞 표의 session daf57837 실행 범위 |
+| 병합 후 최초 전체 회귀 | FAIL —6native listen 실패 보존 |
+| 병합 후 별도 클래스 재현 | PASS7 — actualLLM 아님 |
+| 병합 후 마지막 전체 무과금 제어 회귀 | PASS599/49SKIP·웹127·Foundry52·offlineChrome |
+| 병합 후 새 실제Chrome/두JVM | BLOCKED/NOT_RUN — Docker image500/Server timeout, root 신규child 없음 |
+| 실제 LLM/index/갱신retrieval 품질 | NOT_RUN — 모델32/embedding80/최대US$2 제안, 별도승인 필요 |
+| 최신 KRX/NXT 제품 거래·최종PhaseD | NOT_RUN — Synthetic 또는Mock결과로 대체하지 않음 |
+
+재개 조건: 사용자가 Docker Desktop/WSL/공유서비스 영향과 중단을 검토해 정상화 조치를 수행하거나 별도 승인한다. 기존Google서비스가 중단될 수 있으나 DB/chain은 삭제·초기화하지 않는다. Server 정상응답/현재소유권/image/productHash/clock를 다시 확인한 뒤 **새child**로 원본 futures-browser 및 futures-confirmed를 수행한다. 기존실패·정상fixture와baseline은 그대로 둔다. 실제 AI는 별도의 비용승인과 사전 예산guard오프라인검증 후 신규AI환경에서만 수행한다.

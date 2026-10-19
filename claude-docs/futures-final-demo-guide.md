@@ -32,6 +32,16 @@ python deployment/phase-a.py fixture --session $futuresSession --case futures-co
 
 ## 발표에서 밝힐 한계
 
+### 2026-10-20 통합 후 시연 보완
+
+원본 `melon-init`에 Futures를 정상 통합했다. 실행별 최신 출처와 병합 후 결과는 [10-20 통합 보고](futures-final-integration-2026-10-20.md)를 우선 확인한다. 앞의10-19 fixture는 당시 기록이며 덮어쓰지 않는다. 현재 기존 Google/KRX 보존 이미지는 최신Futures UI를 포함한 데모 서버가 아니다.
+
+새 ADMIN 시연은 일반 사용자 선물 흐름을 마친 뒤 별도 ADMIN 로그인→운영 화면→**선물 장부·체인 감사**에서 불변 기준점 조회→수동 감사→coverage→이력·상세 순서다. 현물 Vault/Oracle 감사와 별도 범위를 설명하고, MATCH를 실제 담보 예치/지급 능력으로 해석하지 않는다. 기준점 재설정이나 거래 보정 버튼은 없다. 실제 신규 `futures-browser-bf973f2e`의 화면/서버/DB대조·desktop/mobile까지 통과했으며 병합 후 새 실행은 통합보고서에 별도로 누적한다.
+
+재현 시 이 프로젝트의 Java toolchain과 같은 JDK21을 **해당 PowerShell 프로세스의 JAVA_HOME에만** 지정하는 것이 이번 제어 실행 조건이었다. 로컬 설치 경로는 사용자별로 확인한다. Windows Java23 native socket 오류의 영구 원인 해결로 설명하지 않는다. fresh clone의 `contracts/lib` pin/bootstrap 누락도 남아 있으므로 공개 의존성 준비가 선행되어야 한다. 기존 secret/private/runtime을 다른 환경으로 복사하지 않는다.
+
+AI 발표는 지금은10개 read-only Tool/4개 Skill의 구현·Mock 평가와 실제체인 근거 조회까지만 입증됐다. 갱신9문서의 실제 embedding/index·실제모델 답변은 비용승인 후 별도 인수다. 승인 전 모델의 실제 청산 원인 분석 영상이나 답변이 존재한다고 발표하지 않는다.
+
 - DB 담보 정본과 온체인 상태/서명 검증의 역할 분리, operator 및 전용 Futures executor/가격 signer 신뢰가 필요하다.
 - 유한한 10,000,000 mKRW 모의 pool은 실제 원화가 아니며 지급 부족을 막연히 보증하지 않는다.
 - preview와 실행 가격이 다르면 재확인이 필요하다. 1초 Synthetic 갱신 중 사람이 오래 읽으면 반복 확인이 필요할 수 있다. 이를 숨기려고 허용 편차/TTL을 바꾸지 않았다.

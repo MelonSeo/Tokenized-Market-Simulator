@@ -8,6 +8,12 @@
 
 아래 **구현**은 코드 존재, **증거**는 실제 실행 범위다. 이전 실행과 이번 실행을 혼합하지 않는다. `완료(로컬)`은 선택된 구현·로컬 검증 범위이며 최종 실환경 인수 완료가 아니다. 전체 완료율을 단일 백분율로 표시하지 않는다. 현재 새 통합 소스 검증은 진행 중이며 결과는 별도 실행 보고서에 연결한다.
 
+이후 별도통합 검증/검토를 마치고 원본 `melon-init@0d36ebab`에 정상merge했다. 사용자5경로는 SHA-256 동일, 보존환경/기존인수manifest는 유지한다. 병합후 새 원본회귀는 진행 중이며 상세 실행별 결과·SKIP·이전실패는 [10-20 통합보고](../claude-docs/futures-final-integration-2026-10-20.md)에 누적한다. 실제 AI·KRX·PhaseD 미완료 판정은 바뀌지 않는다.
+
+병합후 새 결과: backend648중593PASS/6FAIL/49SKIP.6FAIL은AI 로컬HTTP fixture의 Windows native listen 준비 오류이며 최신전체회귀PASS로 처리하지 않는다. 이후 Docker image API500/Server timeout으로 원본의실제Chrome·두JVM은NOT_RUN/BLOCKED. 별도통합의599PASS와실제E2E는당시증거로유효하지만 원본재실행결과가아니다. Git정상병합 완료와최종검증완료는구분하며 환경복구후재개가필요하다.
+
+그 후 제품/테스트코드변경없이 새로 실행한 원본 전체제어회귀는648중599PASS/49SKIP/0FAIL, 웹127/Foundry52/Node8·offlineChrome/전체Solidity빌드PASS였다. 앞의6FAIL은지우지않는다. 원본실제PG/Anvil/Chrome 재검증과실제AI·최신KRX·최종D는여전히미완료이며 환경/비용승인이선행한다. 전체완료율로합산하지않는다.
+
 주요 증거: `claude-docs/google-sell-all-integration-2026-10-18.md`, `futures-final-integration-2026-10-19.md`, `futures-ai-integration.md`, `futures-product-browser-and-restart.md`, `futures-audit-implementation.md`. 10-19의 backend594 PASS/49 SKIP·web120·Foundry52 및 실제 fixture 결과는 **이전 실행**이다.
 
 ## 1. 원본 ID별 대조
@@ -142,6 +148,6 @@ F01=X09 포지션·DB 담보, F02=X10 산식/유한 house pool, F03=X11 Worker·
 - Q01 U05~U12는 명시 후속. 현재 완료선으로 승격할지 사용자가 결정하며 이번 작업에서는 구현하지 않는다.
 - Q03~Q05 NXT 제품·Toss 전체 인수·분산 nonce/PoR/Sepolia·운영/EC2·제출물 범위는 기존 결정을 유지한다.
 - 실제 모델 비용/호출 상한 및 최신 KRX 환경 외부 실행은 별도 승인. 이전 run 승인을 신규 환경에 자동 이전하지 않는다.
-- 단일 worker의 Windows native socket 오류는 과거 실패를 남기고 선택적 테스트 worker 격리로 전수 확인한다. 영구 원인 해결로 주장하지 않는다.
+- Windows native socket 오류는 단일worker뿐 아니라 병합후Java21/격리worker에서도 재발했다. 실패클래스 단독7PASS와로컬listener20PASS만으로 영구해결을주장하지않는다. 전체제어재실행과실제E2E환경정상화를구분한다.
 
 소요 추정(실행 결과 아님): 무과금 통합 검증 수십 분~수 시간, 실제 모델 배치30~90분+승인, KRX 새 환경/장중 창 수 시간+시장·승인 대기, 최종 증거 정리 반일. U05~U12·운영·공개망·논문을 이 추정에 포함했다고 주장하지 않는다.

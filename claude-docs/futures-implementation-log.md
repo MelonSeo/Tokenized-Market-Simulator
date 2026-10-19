@@ -221,3 +221,7 @@
 
 - 새통합 session의 실제 성공10case/12JVM(API/경합/감사/confirmed2/conditional2/Faucet/Googleoffline/현물전량/MockAI/Chrome)과 이전native환경실패·감사CUT_CHANGED assertion실패를 분리 보존했다. 감사의4회이내새관측 guard만 보완하여 실제1PASS·guard4PASS·전체648중599PASS/49SKIP. 독립review_audit_fixture_cut 필수수정없음, `5a727ee`3경로로 로컬커밋했다. 제품대사/경제정책은 변경없다.
 - 원설계F14 ADMIN 감사최소화면 누락을 발견해 기존API만 연결했다. 웹127PASS/새actualChrome bf973f2e1PASS(일반거래/양방향65·62초청산/WS40/ADMINbaseline·실행·이력·상세desktopmobile), 선물감사complete19tx38events/기존reserveMATCH, Node소유descendants28생존0. UI반영후새전체648중599PASS/49SKIP/0FAIL, Node8/Foundry52/전체forgebuildPASS(lint잔존). review_futures_admin_ui 필수수정없음, review_final_integration최종2차도필수수정없음. 실제모델/키움호출0이며 원본병합후결과는 별도누적한다.
+
+- 통합 로컬커밋 `5a727ee`/`7c896cc`/`40eaa50`을 원본melon-init에 정상merge `0d36ebab`. 사용자dirty5경로 SHA-256불변·충돌0, 기존환경/manifest변경없음. 원본새session37e73d39/productHashe186511d…에서 전체회귀를 시작했으나648중593PASS/6FAIL/49SKIP이다.6건모두OpenAiProviderTest의 로컬HttpServer준비 Windows native Badaddresslisten이며 이전599PASS를 전기하지않는다. 이후Docker image500/Server15초timeout으로 원본실제Chrome/2JVM은NOT_RUN. 상세는10-20통합보고. 자동daemon재시작·prune·제품정책변경·외부호출없음.
+
+- 이후단독로컬HTTP7PASS와독립listener20PASS, 같은제품/테스트코드의새원본전체제어실행648중599PASS/49SKIP/0FAIL을확인했다. root웹127/Node8/Foundry52/Chrome desktop-mobile offline/전체forge buildPASS(lint warning16잔존), Python20PASS. 앞의6FAIL을삭제하거나영구원인해결로주장하지않는다. Docker가필요없는범위만진행했으며 실제원본Chrome/2JVM은여전히BLOCKED/NOT_RUN. 비용미승인실제LLM/index·최신KRX/NXT·PhaseD는미완료다. 보존사용자5경로는해시동일, 안전한4개결과문서만추가로컬커밋한다.
