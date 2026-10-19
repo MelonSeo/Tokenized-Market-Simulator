@@ -10,12 +10,14 @@ import com.pricetrack.exchange.futures.ledger.FuturesRecords.*;
 import com.pricetrack.exchange.futures.math.FuturesMath.Side;
 import com.pricetrack.exchange.futures.runtime.*;
 import com.pricetrack.exchange.reserve.ReserveService;
+import com.pricetrack.exchange.reserve.ReserveModels;
 import com.pricetrack.exchange.wallet.WalletService;
 import java.math.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,16 @@ class FuturesAuditPostgresAnvilE2ETest {
         for(int i=0;i<4;i++){result=audits.run(uid);if(!result.reason().equals("CUT_CHANGED"))return result;Thread.sleep(100);}
         return result;
     }
+    /** New read-only observations only: never retry a trade, reset a baseline or promote an inconclusive result. */
+    static ReserveModels.Result stableReserve(Supplier<ReserveModels.Result> observe)throws InterruptedException {
+        ReserveModels.Result result=null;
+        for(int i=0;i<4;i++) {
+            result=observe.get();
+            if(!"CUT_CHANGED".equals(result.reason()))return result;
+            if(i<3)Thread.sleep(100);
+        }
+        return result;
+    }
     @Test void canonicalHistoryDbConservationPendingAndDeliberateMismatch()throws Exception {
         await("CLOCK_BLOCKED",25,()->{try{return rpc.block(rpc.height()).getTimestamp().longValueExact()<=Instant.now().getEpochSecond()+1;}catch(Exception failure){return false;}});
         ledger.initializeEmptyFixture();
@@ -72,7 +84,8 @@ class FuturesAuditPostgresAnvilE2ETest {
         assertThat((BigDecimal)balance.get("locked_amount")).isZero();
         var result=stableAudit(1);assertThat(result.status()).as(result.reason()).isEqualTo("MATCH");assertThat(result.coverage().complete()).isTrue();assertThat(result.coverage().verifiedTransactions()).isEqualTo(3);assertThat(result.coverage().verifiedEvents()).isEqualTo(6);
         assertThat(result.items()).hasSize(3).allMatch(i->i.verdict().equals("MATCH"));
-        assertThat(reserves.run(1).status()).isEqualTo("MATCH");
+        var reserveMatch=stableReserve(()->reserves.run(1));
+        assertThat(reserveMatch.status()).as(reserveMatch.reason()).isEqualTo("MATCH");
         assertThat(jdbc.queryForMap("SELECT amount,locked_amount FROM user_balances WHERE user_id=? AND symbol='mKRW'",uid)).isEqualTo(balance);
         assertThat(store.baseline().orElseThrow()).isEqualTo(baseline);assertThat(reserves.baseline()).contains(reserveBaseline);
         assertThat(store.result(result.id())).contains(result);
@@ -82,8 +95,9 @@ class FuturesAuditPostgresAnvilE2ETest {
         // Deliberate test-fixture mutation only. Preserve it and the resulting mismatches as evidence.
         jdbc.update("UPDATE futures_house SET amount=amount-1 WHERE id=1");
         var mismatch=stableAudit(1);assertThat(mismatch.status()).as(mismatch.reason()).isEqualTo("MISMATCH");assertThat(mismatch.coverage().complete()).isTrue();assertThat(mismatch.dbMismatchCount()).isPositive();
-        assertThat(reserves.run(1).status()).isEqualTo("MISMATCH");assertThat(store.baseline().orElseThrow()).isEqualTo(baseline);
+        var reserveMismatch=stableReserve(()->reserves.run(1));
+        assertThat(reserveMismatch.status()).as(reserveMismatch.reason()).isEqualTo("MISMATCH");assertThat(store.baseline().orElseThrow()).isEqualTo(baseline);
         var folder=java.nio.file.Path.of(System.getenv("FUTURES_AUDIT_E2E_RUN")).toRealPath();
-        java.nio.file.Files.writeString(folder.resolve("audit.evidence.json"),new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules().writeValueAsString(Map.of("match",result,"deliberateMismatch",mismatch,"dbWalletUnchanged",true,"baselineUnchanged",true)),java.nio.file.StandardOpenOption.CREATE_NEW);
+        java.nio.file.Files.writeString(folder.resolve("audit.evidence.json"),new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules().writeValueAsString(Map.of("match",result,"deliberateMismatch",mismatch,"reserveMatch",reserveMatch,"reserveDeliberateMismatch",reserveMismatch,"dbWalletUnchanged",true,"baselineUnchanged",true)),java.nio.file.StandardOpenOption.CREATE_NEW);
     }
 }
