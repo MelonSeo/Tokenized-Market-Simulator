@@ -22,6 +22,17 @@ CASES = {'reserve': ('RESERVE_E2E', 'ReservePostgresAnvilE2ETest'),
          'conditional': ('CONDITIONAL_E2E', 'ConditionalPostgresAnvilE2ETest'),
          'google': ('GOOGLE_AUTH_E2E', 'GoogleAuthPostgresAnvilE2ETest'),
          'google-migration': ('GOOGLE_MIGRATION_E2E', 'GoogleMigrationPostgresE2ETest'),
+         'futures-ledger': ('FUTURES_LEDGER_E2E', 'FuturesLedgerPostgresE2ETest'),
+         'futures-db-only': ('FUTURES_DB_ONLY_E2E', 'FuturesSpotPostgresE2ETest'),
+         'futures-chain': ('FUTURES_CHAIN_E2E', 'FuturesChainPostgresAnvilE2ETest'),
+         'futures-auto': ('FUTURES_AUTO_E2E', 'FuturesAutoPostgresAnvilE2ETest'),
+         'futures-restart': ('FUTURES_RESTART_E2E', 'FuturesRestartPostgresAnvilE2ETest'),
+         'futures-api': ('FUTURES_API_E2E', 'FuturesApiPostgresAnvilE2ETest'),
+         'futures-audit': ('FUTURES_AUDIT_E2E', 'FuturesAuditPostgresAnvilE2ETest'),
+         'futures-confirmed': ('FUTURES_CONFIRMED_E2E', 'FuturesConfirmedRestartPostgresAnvilE2ETest'),
+         'futures-browser': ('FUTURES_BROWSER_E2E', 'FuturesBrowserPostgresAnvilE2ETest'),
+         'futures-ai': ('FUTURES_AI_E2E', 'FuturesAiPostgresAnvilE2ETest'),
+         'futures-requests': ('FUTURES_REQUESTS_E2E', 'FuturesRequestsPostgresE2ETest'),
          'sellall': ('SELL_ALL_E2E', 'SellAllPostgresAnvilE2ETest')}
 
 def private(path, text):
@@ -56,7 +67,8 @@ def load_session(path):
 def product_hash():
     digest=hashlib.sha256()
     files=sorted([*(REPO/'backend/src/main').rglob('*'),*(REPO/'contracts/src').rglob('*'),
-        REPO/'contracts/script/DeployPublic.s.sol',ROOT/'init-chain.sh',ROOT/'foundry.toml'])
+        REPO/'contracts/script/DeployPublic.s.sol',REPO/'contracts/script/DeployFuturesFixture.s.sol',
+        ROOT/'init-chain.sh',ROOT/'init-futures-fixture.sh',ROOT/'foundry.toml',ROOT/'Dockerfile.phase-a-tools'])
     for f in files:
         if f.is_file():digest.update(f.relative_to(REPO).as_posix().encode()+b'\0'+f.read_bytes())
     return digest.hexdigest()
@@ -98,6 +110,9 @@ def init():
     who=subprocess.run(['whoami'],check=True,capture_output=True).stdout.decode().strip()
     subprocess.run(['icacls',str(session),'/inheritance:r','/grant:r',who+':(OI)(CI)F','SYSTEM:(OI)(CI)F'],check=True,capture_output=True)
     for child in ('logs','fixtures','evidence'):(session/child).mkdir()
+    # Fail before image build/fixture creation if Desktop's Server is unhealthy. Never restart the daemon here.
+    server=execute(session,['docker','version','--format','{{.Server.Version}}'],'server-health',timeout=15)
+    if not re.fullmatch(r'\d+\.\d+\.\d+(?:[-+].*)?',server):raise RuntimeError('Docker Server version unavailable')
     source=execute(session,['git','rev-parse','HEAD'],'source')
     image='tokenized-phase-a-tools:'+name
     # Source-built current contracts. No pull/download, no old tool image shortcuts.
@@ -116,13 +131,16 @@ def aggregate(directory):
     result['passed']=result['tests']-result['failures']-result['errors']-result['skipped']
     return result
 
-def java_test(session, step, case=None, config=None, restart=False):
+def java_test(session, step, case=None, config=None, restart=False, isolate_workers=False):
     env=clean_env(session)
     args=[str(REPO/'backend/gradlew.bat'),'test','--offline','--no-daemon','--rerun-tasks']
+    if isolate_workers:args+=['--init-script',str(ROOT/'phase-a-test-isolation.gradle')]
     if case:
         gate,clazz=CASES[case];env[gate+'_RUN']=str(config)
-        env['OBSERVATION_RESTART_TESTS' if restart else gate+'_TESTS']='true'
-        args+=['--tests','*'+('ObservationRestartPostgresTest' if restart else clazz)]
+        if case in ('futures-restart','futures-confirmed'):env['FUTURES_RESTART_STAGE']='recover' if restart else 'prepare'
+        observation_restart=restart and case=='conditional'
+        env['OBSERVATION_RESTART_TESTS' if observation_restart else gate+'_TESTS']='true'
+        args+=['--tests','*'+('ObservationRestartPostgresTest' if observation_restart else clazz)]
     started=time.time()
     try:execute(session,args,step,REPO/'backend',env)
     finally:
@@ -139,12 +157,13 @@ def java_test(session, step, case=None, config=None, restart=False):
         raise RuntimeError('Invalid test result counts; no success from SKIP')
     print(step+': '+json.dumps(counts))
 
-def regression(session):
-    java_test(session,'backend-full')
+def regression(session,isolate_workers=False):
+    java_test(session,'backend-full-isolated-workers' if isolate_workers else 'backend-full',isolate_workers=isolate_workers)
     web=REPO/'tools/websocket-test-client'
     execute(session,['npm.cmd','ci','--offline','--ignore-scripts'],'web-deps',web)
     execute(session,['npm.cmd','test'],'web-unit',web)
     execute(session,['npm.cmd','run','test:browser'],'web-browser',web)
+    execute(session,['node','--test',str(ROOT/'test_futures_browser.mjs')],'futures-browser-unit')
     execute(session,['forge','test','--offline'],'foundry',REPO/'contracts')
     print('Regression commands completed; exact web/Foundry counts in private logs')
 
@@ -167,6 +186,10 @@ def inspect_owned(session,meta):
         internal='5432/tcp' if suffix=='postgres' else '8545/tcp'
         bindings=actual['HostConfig']['PortBindings'][internal]
         if bindings != [{'HostIp':'127.0.0.1','HostPort':str(port)}]:raise RuntimeError('Wrong loopback binding')
+        if suffix=='anvil' and meta.get('miningBlockTimeSeconds',0)==2:
+            command=actual['Config'].get('Cmd',[])
+            if '--block-time' not in command or command[command.index('--block-time')+1:command.index('--block-time')+2]!=['2']:
+                raise RuntimeError('Futures fixture requires real periodic blocks')
 
 def require_clock_alignment(result):
     # Account for the round-trip uncertainty, not just a midpoint estimate.
@@ -213,13 +236,18 @@ def fixture(session,parent,case,clock_only=False):
     id=case+'-'+secrets.token_hex(4);name=session.name+'-'+id
     run=session/'fixtures'/id;run.mkdir()
     for child in ('secrets','chain','release','postgres'):(run/child).mkdir()
-    database='exchange_reserve_e2e' if case=='reserve' else 'exchange_trade_audit_e2e'
-    meta={'runId':id,'session':session.name,'name':name,'dbPort':dbport,'rpcPort':rpcport,'database':database}
+    database='exchange_futures_e2e' if case.startswith('futures-') else ('exchange_reserve_e2e' if case=='reserve' else 'exchange_trade_audit_e2e')
+    meta={'runId':id,'session':session.name,'name':name,'dbPort':dbport,'rpcPort':rpcport,'database':database,
+          'miningBlockTimeSeconds':2 if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit','futures-confirmed','futures-browser','futures-ai') else 0}
     private(run/'run.json',json.dumps(meta,indent=2))
     password=secrets.token_urlsafe(32);operator='0x'+secrets.token_hex(32);signer='0x'+secrets.token_hex(32)
     while operator==signer:signer='0x'+secrets.token_hex(32)
     private(run/'secrets/db-password',password)
-    private(run/'secrets/application.properties','OPERATOR_PRIVATE_KEY='+operator+'\nPRICE_SIGNER_PRIVATE_KEY='+signer+'\n')
+    futures_executor='0x'+secrets.token_hex(32);futures_signer='0x'+secrets.token_hex(32)
+    if len({operator,signer,futures_executor,futures_signer})!=4:raise RuntimeError('Distinct fixture keys required')
+    secret_text='OPERATOR_PRIVATE_KEY='+operator+'\nPRICE_SIGNER_PRIVATE_KEY='+signer+'\n'
+    if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit','futures-confirmed','futures-browser','futures-ai'):secret_text+='FUTURES_EXECUTOR_PRIVATE_KEY='+futures_executor+'\nFUTURES_PRICE_SIGNER_PRIVATE_KEY='+futures_signer+'\n'
+    private(run/'secrets/application.properties',secret_text)
     network=name+'-network';created=[]
     try:
         # Explicit subnet avoids exhaustion of Docker's predefined pools. No old networks inspected/removed.
@@ -231,7 +259,8 @@ def fixture(session,parent,case,clock_only=False):
         execute(session,['docker','run','--pull=never','-d','--name',name+'-anvil','--label','phase-a.fixture='+name,
             '--network',network,'--network-alias','anvil','-p',f'127.0.0.1:{rpcport}:8545','-v',str(run/'chain')+':/data',
             '--entrypoint','anvil',FOUNDRY,'--host','0.0.0.0','--accounts','0','--chain-id','31337',
-            '--state','/data/state.json','--state-interval','5','--preserve-historical-states','--quiet'],id+'-anvil');created.append(name+'-anvil')
+            '--state','/data/state.json','--state-interval','5','--preserve-historical-states','--quiet',
+            *(['--block-time','2'] if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit','futures-confirmed','futures-browser','futures-ai') else [])],id+'-anvil');created.append(name+'-anvil')
         for service,args in [('postgres',['psql','-X','-U','reserve','-d',database,'-tAc','SELECT 1']),('anvil',['cast','rpc','eth_chainId','--rpc-url','http://127.0.0.1:8545'])]:
             deadline=time.monotonic()+90
             while time.monotonic()<deadline:
@@ -263,13 +292,24 @@ def fixture(session,parent,case,clock_only=False):
             'app.blockchain.price-oracle-address':addresses['PRICE_ORACLE_ADDRESS'],'app.blockchain.exchange-vault-address':addresses['EXCHANGE_VAULT_ADDRESS'],
             'app.blockchain.reconciliation.initial-delay-ms':'2147483647','app.admin.password':'','app.price.toss.base-url':'http://127.0.0.1:1',
             'app.ai.enabled':'false','app.ai.tools.enabled':'false','app.ai.agent.enabled':'false','app.ai.skills.enabled':'false','app.ai.diagnosis.enabled':'false'}
+        if case.startswith('futures-'):values['app.futures.enabled']='true'
+        if case in ('futures-chain','futures-auto','futures-restart','futures-api','futures-audit','futures-confirmed','futures-browser','futures-ai'):
+            execute(session,['docker','run','--pull=never','--rm','--network',network,
+                '-v',str(run/'secrets')+':/run/secrets:ro','-v',str(run/'release')+':/release',
+                '--entrypoint','/bin/sh',parent['toolsImage'],'/init-futures-fixture.sh'],id+'-futures-deploy')
+            futures=dict(line.split('=',1) for line in (run/'release/futures.properties').read_text().splitlines() if '=' in line)
+            if set(futures)!={'FUTURES_ENGINE_ADDRESS','FUTURES_ENGINE_CODE_HASH'} or not re.fullmatch('0x[0-9a-fA-F]{40}',futures['FUTURES_ENGINE_ADDRESS']) or not re.fullmatch('0x[0-9a-fA-F]{64}',futures['FUTURES_ENGINE_CODE_HASH']):raise RuntimeError('Invalid futures deployment')
+            values.update({'app.futures.engine-address':futures['FUTURES_ENGINE_ADDRESS'],'app.futures.code-hash':futures['FUTURES_ENGINE_CODE_HASH'],
+                'app.futures.executor-private-key':futures_executor,'app.futures.signer-private-key':futures_signer,'app.futures.fixture-block-time-seconds':'2',
+                'app.futures.chain-id':'31337','app.futures.rpc-url':f'http://127.0.0.1:{rpcport}'})
+        if case in ('futures-auto','futures-restart','futures-api','futures-audit','futures-confirmed','futures-browser','futures-ai'):values['app.futures.runtime-enabled']='true'
         private(run/'secrets/test.properties',''.join(k+'='+v+'\n' for k,v in values.items()))
         inspect_owned(session,meta)
         private(run/'isolation.json',json.dumps({'runId':id,'database':database,'dbPort':dbport,'rpcPort':rpcport,
             'ownedLoopbackBindings':True,'import':'disabled','providers':'simulated/AI-disabled','contracts':addresses,'verifiedBeforeTests':True},indent=2))
         print('Isolation verified before test: '+id+f' DB={dbport} RPC={rpcport}')
         java_test(session,id,case,run)
-        if case=='conditional':java_test(session,id+'-restart',case,run,True)
+        if case in ('conditional','futures-restart','futures-confirmed'):java_test(session,id+'-restart',case,run,True)
     finally:
         # Only exact owned containers created by this call. Data/logs/state always remain.
         for container in created:
@@ -316,12 +356,13 @@ def main():
         p=sub.add_parser(action);p.add_argument('--session',required=True)
         if action=='fixture':p.add_argument('--case',choices=CASES,required=True)
         if action=='fixture':p.add_argument('--clock-only',action='store_true')
+        if action=='regression':p.add_argument('--isolate-test-workers',action='store_true')
         if action=='clock-evidence':p.add_argument('--child',required=True)
     args=parser.parse_args()
     if args.action=='init':init();return
     session,meta=load_session(args.session)
     verify_session(session,meta)
-    if args.action=='regression':regression(session)
+    if args.action=='regression':regression(session,args.isolate_test_workers)
     elif args.action=='fixture':fixture(session,meta,args.case,args.clock_only)
     else:clock_evidence(session,args.child)
 

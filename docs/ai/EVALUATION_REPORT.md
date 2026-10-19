@@ -2,6 +2,8 @@
 
 > 2026-10-03 / Phase8 구현·평가·전체 검증·별도 검토 완료, 사용자 완료 승인 대기.
 
+2026-10-19 후속 Futures 평가는 [별도 구현·실행 보고서](../../claude-docs/futures-ai-integration.md)에 기록한다. 수정 후 신규 실제 PG/Anvil의 canonical60초 청산→Tool/Skill/Mock Agent1 PASS, USER/ADMIN 및 교차Tool·손익 projection 보완 단위18 PASS다. 실제 LLM/새 corpus embedding·검색 평가는 NOT_RUN이다. 아래 Phase8 실제 공급자/검색 수치는 당시 corpus·모델의 과거 기록이며 신규 Futures 평가로 재사용하지 않는다.
+
 ## 평가 범위
 
 고정 golden12·무관8·식별자8과 별도8분류 manifest (`backend/src/test/resources/ai/final-evaluation-manifest.json`)를 구분한다. 기존 단위/통합을 재사용하고 질문·문서·Tool 문자열 주입, recursive secret canary, 관측 동시성/권한/장애, fingerprint/TTL/legacy marker 테스트를 추가했다. 모델/검색 설정을 바꾸지 않았다.

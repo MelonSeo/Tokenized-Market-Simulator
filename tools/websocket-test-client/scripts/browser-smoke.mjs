@@ -14,6 +14,7 @@ let role = 'USER', orders = [], failWrite = false, failAi = false, delayedAi = f
 let googleUser = false, googleLinked = false;
 const faucetClaims=new Map();let loseFaucetResponse=false;
 const conditionalClaims=new Map();
+const futuresPreviews=new Map();let futuresPositions=[];
 const quoteId = '0x' + '1'.repeat(64); let expiry = 30;
 const agent = { status: 'PARTIAL', answer: '<img src=x onerror=alert(1)> 관측 가능한 범위에서 설명합니다.', uncertainties: ['receipt를 확인할 수 없습니다.'],
   toolEvidence: [{ tool: 'getOrder', status: 'OK', data: { status: 'PENDING_ONCHAIN' } }],
@@ -40,6 +41,13 @@ const server = createServer(async (req, res) => {
   }
   else if (url.pathname.startsWith('/api/auth/')) { googleUser=false; role = input.loginId === 'admin' ? 'ADMIN' : 'USER'; body = { accessToken: 'fixture-token', expiresIn: 3600 }; }
   else if (url.pathname === '/api/me') body = { id:googleUser?3:role==='ADMIN'?2:1,loginId:googleUser?null:'fixture-local',nickname: googleUser?'Google 사용자':role === 'ADMIN' ? '관리자' : '모의 사용자', role };
+  else if(url.pathname==='/api/futures/previews') {body={previewId:'future-preview-'+(futuresPreviews.size+1),action:input.action,side:input.side||'LONG',leverage:input.leverage||10,margin:input.marginAmount||'0',price:'75000',expiresAt:new Date(Date.now()+30000).toISOString(),notice:'Offline fixture · 온체인 예치 아님 · 유한 손익 풀'};futuresPreviews.set(body.previewId,body);}
+  else if(url.pathname==='/api/futures/positions'&&req.method==='POST') {
+    const p=futuresPreviews.get(input.previewId);assert.ok(p);assert.ok(req.headers['idempotency-key']);
+    futuresPositions=[{id:'fixture-future',side:p.side,leverage:p.leverage,quantity:'13.333333333333333333',entryPrice:p.price,collateral:p.margin,status:'OPEN',riskStatus:'HEALTHY',version:1,callEpoch:0,deadline:0,pendingOperation:null,blockReason:null,markPrice:'75000',unrealized:'0',equity:p.margin,maintenance:'50000',realized:null,badDebt:null,priceAvailable:true,observedAt:now,createdAt:now}];
+    body={id:'fixture-future-open',positionId:'fixture-future',action:'OPEN',state:'PREPARED'};status=202;
+  }
+  else if(url.pathname==='/api/futures/positions')body=futuresPositions;
   else if(url.pathname==='/api/conditional-orders/capabilities')body={registrationEnabled:true};
   else if(url.pathname==='/api/conditional-orders/requests'){body=conditionalClaims.get(req.headers['idempotency-key']);if(!body){status=404;body={code:'CONDITIONAL_NOT_FOUND'};}}
   else if(url.pathname==='/api/conditional-orders'&&req.method==='POST'){const key=req.headers['idempotency-key'];body=conditionalClaims.get(key)||{...input,id:'condition-'+(conditionalClaims.size+1),state:'WAITING',createdAt:now,updatedAt:now};conditionalClaims.set(key,body);}
@@ -151,6 +159,19 @@ try {
     await evaluate(`location.hash='portfolio'`); await waitText('portfolio-summary', '평균 매수가');await waitText('faucet-policy','KST');
     loseFaucetResponse=true;await click('faucet');await waitText('faucet-message','응답이 유실');loseFaucetResponse=false;assert.equal(faucetClaims.size,1);
     await click('faucet-resolve');await waitText('faucet-message','이전 성공');assert.equal(faucetClaims.size,1);await screenshot('desktop-portfolio');
+  // Product UI + deterministic HTTP/STOMP fixtures only; NOT an actual Engine/liquidation E2E.
+  await evaluate(`location.hash='futures'`);await fill('futures-margin','100000.000000000000000001');await fill('futures-leverage','10');
+  const futuresBefore=requests.filter(r=>r.path==='/api/futures/positions'&&r.method==='POST').length;
+  await click('futures-preview-open');await waitText('futures-preview','75000');
+  assert.equal(requests.filter(r=>r.path==='/api/futures/positions'&&r.method==='POST').length,futuresBefore);
+  await click('futures-confirm');await waitText('futures-positions','포지션 유지');
+  assert.equal(futuresPositions[0].collateral,'100000.000000000000000001');
+  futuresPositions[0].riskStatus='GRACE';futuresPositions[0].deadline=Math.floor(Date.now()/1000)+60;
+  await evaluate(`window.__sockets.at(-1).emit('/user/queue/futures',{eventId:'future-call',type:'FUTURES_UPDATED',data:{positionId:'fixture-future',operationId:'fixture-call'}})`);
+  await waitText('futures-positions','마진콜');await screenshot('desktop-futures-grace');
+  futuresPositions[0].status='LIQUIDATED';futuresPositions[0].realized='-100000';futuresPositions[0].badDebt='100000';
+  await evaluate(`window.__sockets.at(-1).emit('/user/queue/futures',{eventId:'future-liquidated',type:'FUTURES_UPDATED',data:{positionId:'fixture-future',operationId:'fixture-liquidation'}})`);
+  await waitText('futures-positions','자동청산 확정');
   await evaluate(`location.hash='ai'`); await click('ask-policy'); await submit('ai-form'); await waitText('ai-result', '정책 출처');
   assert.equal(await evaluate(`document.getElementById('ai-result').querySelector('img')===null`), true); await screenshot('desktop-ai');
   failAi = true; await submit('ai-form'); await waitText('ai-message', '준비되지'); failAi = false;
@@ -177,7 +198,7 @@ try {
   await waitText('audit-items', 'HISTORICAL_CONFIG_UNAVAILABLE');
   await click('audit-refresh'); await waitText('audit-history', 'INCONCLUSIVE');
   await command('Emulation.setDeviceMetricsOverride', { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
-  for (const route of ['market', 'history', 'portfolio', 'ai', 'admin']) {
+  for (const route of ['market', 'futures', 'history', 'portfolio', 'ai', 'admin']) {
     await evaluate(`location.hash=${JSON.stringify(route)}`); await new Promise((done) => setTimeout(done, 120));
     assert.equal(await evaluate(`document.documentElement.scrollWidth<=window.innerWidth`), true, 'horizontal overflow: ' + route);
     assert.equal(await evaluate("document.getElementById('custody-notice').getBoundingClientRect().height > 0"), true, 'custody notice hidden: ' + route);
@@ -214,7 +235,7 @@ try {
   assert.equal(await evaluate(`document.getElementById('auth-form').contains(document.getElementById('google-start')) && document.getElementById('google-start').getClientRects().length>0`),true);
   await click('google-start'); await poll(()=>evaluate(`Boolean(document.getElementById('fixture-google-button'))`)); await click('fixture-google-button');
   await waitText('identity','Google 사용자');
-  assert.deepEqual(errors, []); console.log('PASS browser smoke: existing desktop/mobile regression + offline GIS LOGIN/LINK, null loginId, no external SDK load.');
+  assert.deepEqual(errors, []); console.log('PASS browser smoke: desktop/mobile + offline futures preview/call/liquidation UI + GIS LOGIN/LINK, no external SDK or real chain.');
 } finally {
   if (ws?.readyState === WebSocket.OPEN) { try { await command('Browser.close'); } catch {} ws.close(); }
   else child.kill(); server.close();

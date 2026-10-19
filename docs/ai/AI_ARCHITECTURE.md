@@ -2,6 +2,8 @@
 
 > AI Phase 8 기준. 검증/완료 상태는 [평가 보고서](EVALUATION_REPORT.md)를 따른다.
 
+2026-10-19 Futures 확장: 기존 구조와 권한/예산을 재사용해 선물 Tool2개·Skill1개·positionId target 및 기존9문서의 선물 정산 정책을 연결했다. 거래 Worker/원장/계약을 호출·변경하는 Agent는 아니다. [후속 구현·실행별 증거](../../claude-docs/futures-ai-integration.md)의 실제 DB/Anvil과 Mock 모델을 구분한다. 실제 LLM 및 새 corpus의 유료 embedding/index 평가는 별도 승인 전 미실행이다.
+
 AI는 거래 실행자가 아니라 승인된 지식과 조회 사실을 결합하는 보조 진단 모듈이다. Spring Boot 내부 모듈과 얇은 provider adapter를 사용하며 Spring AI/외부 Agent 프레임워크는 도입하지 않았다.
 
 ```text

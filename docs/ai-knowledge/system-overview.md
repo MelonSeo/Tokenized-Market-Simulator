@@ -2,10 +2,10 @@
 title: "시스템 책임과 지식의 경계"
 domain: architecture
 type: overview
-version: 8
+version: 9
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 시스템 책임과 지식의 경계
@@ -41,6 +41,10 @@ DB와 체인은 하나의 ACID 트랜잭션이 아니다. 먼저 입력 자산�
 
 ## AI 범위 — 계획과 현재의 구분
 
+현재 합계는 기존8개에 선물2개를 더한 **10개 read-only Tool**, 기존3개에 선물1개를 더한 **4개 Skill**이다. 아래 Phase4/6의 숫자는 당시 구현 이력이다. getFuturesPosition은 포지션·담보·손익·위험을, getFuturesLiquidationEvidence는 선택한 마진콜/청산의 canonical Receipt/Event와 DB journal 근거를 조회한다. futures-liquidation-diagnosis는 positionId 사전 인가 후 두 Tool과 정책을 결합한다. USER는 본인, ADMIN은 명시적 포지션 운영 조회가 가능하다. 미확정/불일치 또는 두 Tool snapshot 불일치는 PARTIAL이며 확인되지 않은 청산을 확정하지 않는다. 전체 감사 coverage나 미래 지급 보증을 뜻하지 않는다.
+
+선물은 Long/Short·2/5/10배·PostgreSQL 격리 담보·유한 모의 house pool이다. 서버 Worker가 자동 마진콜/청산을 호출하고 FuturesEngine이 가격 서명·위험·실제60초 chain 유예·상태를 검증한다. 온체인 담보 예치가 아니며 AI는 거래·청산·잔고 수정·복구를 실행하지 않는다. 자세한 수학과 책임은 onchain-settlement-policy를 따른다.
+
 AI Phase 2 Basic RAG와 Phase 3 검색 품질 개선은 실제 공급자 평가와 사용자 승인을 완료했다. 문서 검색·출처 기반 답변 API는 ADMIN 전용이다. 기본 검색은 pgvector semantic 검색, threshold 0.25, 충분한 후보 중 문서당 최대 2개·최종 5개 선택이다. Hybrid Search는 비교 실험이며 기본 경로가 아니다.
 
 Phase 4에는 독립적인 읽기 Tool 8개를 구현했다. getOrder/getQuote/getBlockchainTransaction/getReceiptSummary는 인가된 거래 상태를, getMarketStatus/getCurrentReferencePrice는 시장 스냅샷을, getPortfolio는 본인 자산을, listAbnormalOrders는 관리자용 이상 주문 목록을 조회한다. AI_TOOLS_ENABLED는 기본 false이며 AI DB·외부 AI API 없이도 Tool 조회가 동작한다.
@@ -61,9 +65,9 @@ Phase 7은 커밋된 blockchain_transactions의 REVIEW_REQUIRED를 별도 pollin
 
 ## 추가 기능과 검증 경계
 
-공식 모델은 A: 운영자 통합 지갑 + PostgreSQL 사용자별 모의자산 장부다. 사용자별 지갑·CustodyVault·사용자 서명·사용자 간 호가장은 도입하지 않는다. DB Faucet 정책, 가격 조건부 BUY/SELL, 두 ADMIN 대사, SIGNED/SUBMITTED 정체 관측은 구현 및 격리 검증 대상이다. Google/이메일 인증·Sepolia·AWS 배포·Android 기기 인수 완료를 뜻하지 않는다.
+공식 모델은 A: 운영자 통합 지갑 + PostgreSQL 사용자별 모의자산 장부다. 사용자별 지갑·CustodyVault·사용자 서명·사용자 간 호가장은 도입하지 않는다. DB Faucet 정책, 가격 조건부 BUY/SELL, 두 현물 ADMIN 대사, 별도 선물 감사, SIGNED/SUBMITTED 정체 관측은 구현 및 격리 검증 대상이다. Google GIS 로그인·명시적 연결과 정확한 전량 매도는 구현·해당 인수 증거가 있다. 이메일 발송 인증·Refresh/Rotation/서버 폐기·계정 복구·Google 해제는 후속 미구현이며 Sepolia·AWS 배포·Android 기기 인수도 완료되지 않았다.
 
-키움 읽기 전용 공급자는 Toss/Synthetic와 별도로 선택한다. 실제 키움 App Key 연결은 아직 NOT_RUN이며 장중 Toss 최종 인수와 최신 통합 AI 유료 인수도 별도 승인 후 수행한다. 승인 지식9문서 갱신은 기존 AI DB 활성 index의 유료 재색인 완료가 아니다. 새 manifest/hash/index version을 확인하지 못하면 낡은 내용을 최신 정책이라고 응답하지 않는다.
+키움 읽기 전용 공급자는 Toss/Synthetic와 별도로 선택한다. 실제 App Key 읽기 진단/capture와 최신 제품 서버 KRX 거래 인수는 구분하며 후자는 미완료다. NXT는 진단 관측과 제품 지원을 구분한다. 장중 Toss 최종 인수와 최신 통합 AI 유료 인수도 별도 승인 후 수행한다. 승인 지식9문서 갱신은 기존 AI DB 활성 index의 유료 재색인 완료가 아니다. 새 manifest/hash/index version을 확인하지 못하면 낡은 내용을 최신 정책이라고 응답하지 않는다.
 
 - [자산 보관 확정](../../claude-docs/asset-custody-final-check.md)
 - [최종 인수 계획](../../claude-docs/final-integration-acceptance-plan.md)

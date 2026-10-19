@@ -9,9 +9,8 @@ import java.util.*;
 /** Exact quantity conservation, deliberately independent of market valuation or solvency promises. */
 public final class ReserveCalculator {
     private ReserveCalculator() {}
-    public static List<Check> calculate(DbCut db,Chain initial,Chain actual) {
+    public static List<Check> walletChecks(DbCut db) {
         var checks=new ArrayList<Check>();
-        BigInteger k=BigInteger.ZERO,s=BigInteger.ZERO,dk=BigInteger.ZERO,ds=BigInteger.ZERO;
         var expected=new TreeMap<String,BigInteger>();
         for(Grant grant:db.grants()) expected.merge(grant.userId()+":mKRW",grant.amount(),BigInteger::add);
         for(TradeRow trade:db.trades()) {
@@ -20,17 +19,26 @@ public final class ReserveCalculator {
             BigInteger sec=buy?trade.base():trade.base().negate();
             expected.merge(trade.userId()+":mKRW",krw,BigInteger::add);
             expected.merge(trade.userId()+":mSEC",sec,BigInteger::add);
-            if(trade.mode().equals("ONCHAIN")) { dk=dk.add(krw); ds=ds.add(sec); }
         }
+        db.futures().walletDeltas().forEach((uid,value)->expected.merge(uid+":mKRW",value,BigInteger::add));
         for(Balance b:db.balances()) {
             String key=b.userId()+":"+b.symbol();
             checks.add(check("USER_"+key,expected.getOrDefault(key,BigInteger.ZERO),b.amount()));
             expected.remove(key);
-            if(b.symbol().equals("mKRW")) k=k.add(b.amount()); else if(b.symbol().equals("mSEC")) s=s.add(b.amount());
             boolean valid=b.amount().signum()>=0 && b.locked().signum()>=0 && b.locked().compareTo(b.amount())<=0;
-            checks.add(check("LOCK_"+key,BigInteger.ZERO,valid?b.locked():BigInteger.valueOf(-1)));
+            BigInteger lock=b.symbol().equals("mKRW")?db.futures().locks().getOrDefault(b.userId(),BigInteger.ZERO):BigInteger.ZERO;
+            checks.add(check("LOCK_"+key,lock,valid?b.locked():BigInteger.valueOf(-1)));
         }
         for(var missing:expected.entrySet()) checks.add(check("MISSING_USER_"+missing.getKey(),missing.getValue(),BigInteger.ZERO));
+        checks.addAll(db.futures().checks());
+        return List.copyOf(checks);
+    }
+    public static List<Check> calculate(DbCut db,Chain initial,Chain actual) {
+        var checks=new ArrayList<>(walletChecks(db));
+        BigInteger dk=BigInteger.ZERO,ds=BigInteger.ZERO;
+        for(TradeRow trade:db.trades())if(trade.mode().equals("ONCHAIN")) {
+            boolean buy=trade.side().equals("BUY");dk=dk.add(buy?trade.quote().negate():trade.quote());ds=ds.add(buy?trade.base():trade.base().negate());
+        }
         checks.add(check("OPERATOR_KRW",initial.operatorKrw().add(dk),actual.operatorKrw()));
         checks.add(check("VAULT_KRW",initial.vaultKrw().subtract(dk),actual.vaultKrw()));
         checks.add(check("OPERATOR_SEC",initial.operatorSec().add(ds),actual.operatorSec()));

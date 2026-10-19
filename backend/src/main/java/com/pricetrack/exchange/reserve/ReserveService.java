@@ -30,6 +30,7 @@ public class ReserveService {
             Block block=chain.head(); DbCut db=store.cut();
             // Only a fresh zero-ledger environment can establish independent provenance.
             if(!db.orders().isEmpty() || !db.trades().isEmpty() || !db.transactions().isEmpty() || !db.grants().isEmpty()
+                    || !db.futures().emptyLedger() || db.futures().checks().stream().anyMatch(c->!c.matches())
                     || db.balances().stream().anyMatch(b->b.amount().signum()!=0 || b.locked().signum()!=0))
                 throw conflict("FRESH_ZERO_LEDGER_REQUIRED");
             Chain snapshot=chain.read(block);
@@ -91,6 +92,7 @@ public class ReserveService {
                 baseline,db==null?null:db.at(),snapshot,checks,liquidity));
     }
     private String boundary(Baseline baseline,DbCut db,Chain snapshot) {
+        if(db.futures().unsettled())return "UNSETTLED_FUTURES_OR_REVIEW";
         if(!baseline.executionId().equals(executionId) || !baseline.chain().identity().equals(snapshot.identity())
                 || !chain.canonical(baseline.chain().block())) return "BASELINE_ENVIRONMENT_NOT_VERIFIABLE";
         if(snapshot.block().number().compareTo(baseline.chain().block().number())<0) return "CHAIN_BEFORE_BASELINE";
@@ -124,7 +126,7 @@ public class ReserveService {
         return fingerprint(first).equals(fingerprint(second)) && block.equals(chain.head()) && chain.canonical(block);
     }
     private String fingerprint(DbCut db) {
-        return store.encode(List.of(db.balances(),db.orders(),db.trades(),db.transactions(),db.grants()));
+        return store.encode(List.of(db.balances(),db.orders(),db.trades(),db.transactions(),db.grants(),db.futures()));
     }
     private void acquire() { if(!job.tryAcquire()) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,"RECONCILIATION_BUSY"); }
     private ResponseStatusException conflict(String code) { return new ResponseStatusException(HttpStatus.CONFLICT,code); }

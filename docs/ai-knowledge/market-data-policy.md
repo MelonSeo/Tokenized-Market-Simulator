@@ -2,10 +2,10 @@
 title: "시세·장 상태·차트 데이터의 의미"
 domain: market
 type: policy
-version: 3
+version: 4
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 시세·장 상태·차트 데이터의 의미
@@ -40,7 +40,7 @@ Toss는 저장된 시장 일정과 현재 시각으로 OPEN/CLOSED를 판단한�
 
 ## 거래 차단 조건
 
-MarketPriceService.requireTradableSnapshot은 CLOSED와 STALE를 거부한다. DB-only의 기존 계약은 유지한다. 실제 공급자의 **신규 온체인 서명 발급**과 조건부 실행은 별도로 OPEN + LIVE와 관측 후5초/미래2초를 모두 요구한다. DEGRADED/UNKNOWN은 신규 실제 서명에 사용할 수 없다. 이미 발급된 견적의 소비·전송된 거래 복구·receipt 정산을 시장 상태 변화만으로 취소하지 않는다.
+MarketPriceService.requireTradableSnapshot은 CLOSED와 STALE를 거부한다. DB-only의 기존 계약은 유지한다. **신규 온체인 서명 발급**과 조건부 실행은 TradingPriceContext로 같은 가용성을 검증한다. Toss는 OPEN + LIVE가 필요하다. 키움은 아래 현재 연결의 정상 정규 체결 근거가 있을 때 UNKNOWN에서도 모의 견적을 허용할 수 있다. UNKNOWN 자체는 허용 근거도 무조건 거절 근거도 아니며 OPEN 확정을 뜻하지 않는다. 과거5초/미래2초·연결·세대 검증을 우회하지 않는다. 이미 발급된 견적의 소비·전송된 거래 복구·receipt 정산을 시장 상태 변화만으로 취소하지 않는다.
 
 오류는 MARKET_CLOSED, PRICE_STALE 등이다. 모의 견적 계산 경로와 서명 견적 발급 경로는 같지 않으므로, 견적 화면에 수량이 표시됐다고 주문 가능 상태를 확정하지 않는다. 시장 상태 변경은 과거 체결을 취소하는 정책이 아니다.
 
@@ -56,12 +56,16 @@ MarketPriceService.requireTradableSnapshot은 CLOSED와 STALE를 거부한다. D
 
 PRICE_PROVIDER=kiwoom은 KRX 삼성전자005930 현재가·실시간 체결·분봉/일봉을 조회한다. Toss/Synthetic는 유지한다. 키움 가격 부호와 체결량 부호는 크기로 정규화하며 등락금액은 부호를 유지한다. 수량은 주식 체결량이지 서비스 사용자 mSEC 체결량이 아니다.
 
-REST 현재가에는 체결 시각이 없어 초기 상태는 INITIALIZING/UNKNOWN이다. 실시간 체결과 같은 연결 세대의 명시적인0s 시장 상태를 확인해야 OPEN/LIVE로 사용할 수 있다. 재연결 또는 KST 날짜 변경 후 이전 OPEN을 재사용하지 않는다. 실제 키움 계정 연결·시장 상태 초기 수신·native 분봉 시간 labeling은 아직 미검증이며 Mock 성공을 실환경 인수로 설명하지 않는다. 공식 timestamp를 임의 보정하지 않으며 차트 경계 일치는 실제 연결 후 확인해야 한다.
+REST 현재가에는 체결 시각이 없어 초기 상태는 INITIALIZING/UNKNOWN이다. 현재 연결 generation에서 수신한 정상 정규0B(290=2), LIVE, 신선도와 연결 상태를 근거로 모의 견적을 허용하며 0s 수신 자체는 필수가 아니다. 명시적 CLOSED·지원하지 않는 상태·유효하지 않은 시장 상태 veto가 우선한다. 재연결·연결 종료·이전 generation 가격·KST 날짜 변경·오래된 체결은 차단하며 견적 발급 RPC 전후 generation도 검증한다. 0B를 시장 OPEN의 확정 증거로 설명하지 않는다.
+
+읽기 전용 실제 capture의 인증·체결 수신과 분봉 분석은 존재하지만 최신 Spring Boot KRX BUY/SELL 제품 E2E는 미완료다. NXT capture 성공은 NXT 제품 모드 구현이나 거래 인수가 아니다. timestamp를 임의 보정하지 않으며 차트 경계와 asOf의 남은 한계를 유지한다. getMarketStatus/getCurrentReferencePrice의 현재 Tool DTO에는 mockQuoteAllowed와 generation이 없으므로 그 Tool만으로 지금 키움 견적이 허용된다고 단정하지 않는다.
 
 ## 갱신 근거
 
 - [신규 서명 시장 경계](../../claude-docs/signed-market-eligibility-implementation.md)
 - [키움 시세 구현·검증 한계](../../claude-docs/kiwoom-market-provider-implementation.md)
+- [현재 키움 가용성 구현](../../claude-docs/kiwoom-mock-trading-availability-implementation.md)
+- [KiwoomPriceProvider.java](../../backend/src/main/java/com/pricetrack/exchange/market/provider/kiwoom/KiwoomPriceProvider.java)
 
 - [market/MarketPriceService.java](../../backend/src/main/java/com/pricetrack/exchange/market/MarketPriceService.java)
 - [market/provider/toss/TossPriceProvider.java](../../backend/src/main/java/com/pricetrack/exchange/market/provider/toss/TossPriceProvider.java)

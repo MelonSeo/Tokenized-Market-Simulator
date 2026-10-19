@@ -2,10 +2,10 @@
 title: "사용자 데이터와 관리자 권한 경계"
 domain: security
 type: policy
-version: 7
+version: 8
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 사용자 데이터와 관리자 권한 경계
@@ -13,6 +13,10 @@ updated_at: 2026-10-13
 > 2026-10-13 통합 추가 기능 및 키움 기능 소스 기준 갱신. 기존9문서 역할·active 승인 경계를 유지하며 manifest의 버전/내용 해시와 일치할 때만 ingest한다. 기존 AI DB 재색인이나 최신 실환경 인수 완료를 의미하지 않는다.
 
 ## 현재 인증
+
+로컬 ID/비밀번호와 Google GIS 로그인이 공존한다. Google ID Token은 서버에서 서명·issuer·audience·만료·nonce와 일회 challenge/브라우저 바인딩을 검증하고 google_sub로 식별한다. 서비스 JWT subject는 내부 users.id다. Google-only의 loginId=null은 오류가 아니다. 신규 USER는0원이며 재로그인 시 기존 잔고/Faucet 이력을 초기화하지 않는다. 동일 이메일 자동 연결·병합은 금지하고 서비스 email/email_verified로 자동 복사하지 않는다.
+
+기존 계정 연결은 서비스 JWT·로컬 비밀번호 재인증·검증된 Google ID Token·LINK challenge를 요구하며 자산/주문의 userId를 바꾸지 않는다. 서버는 이미 연결된 개인 STOMP의 JWT 만료도 차단한다. Refresh Token/Rotation/서버 로그아웃·폐기/이메일 발송 인증/계정 복구/Google 해제는 아직 구현하지 않았다. 클라이언트 메모리 JWT 삭제와 서버 token 폐기는 다르다.
 
 JWT 검증 후 DB 사용자를 조회하여 userId와 USER/ADMIN 역할을 복원한다. 요청 body나 모델 답변의 userId·role을 인증 근거로 쓰지 않는다.
 
@@ -38,6 +42,8 @@ getReceiptSummary는 인가된 orderId에서 저장된 txHash를 찾는다. 임�
 
 ## 허용하지 않는 데이터와 행동
 
+선물 positionId도 모델 호출 전에 소유권을 확인한다. getFuturesPosition/getFuturesLiquidationEvidence는 USER 본인 또는 ADMIN의 명시적 포지션 조회만 허용한다. 타인/미존재는 같은 RESOURCE_NOT_FOUND이며 userId·임의RPC·raw·signature를 입력으로 받지 않는다. futures-liquidation-diagnosis도 고정 역할/Tool/domain 상한을 따른다. ADMIN 조회 권한은 담보 보정·청산 실행·재서명 권한이 아니다.
+
 Phase 6의 settlement-debugging Skill은 ADMIN-only이며 USER의 기존 본인 주문 설명을 대체하거나 차단하지 않는다. signed-quote-diagnosis는 본인 견적과 서버가 검증한 연결 주문만 조사하고 market-availability-diagnosis는 공개 시장 스냅샷만 조사한다. 정의와 모델은 코드 registry의 역할·Tool·domain 상한을 넓힐 수 없다. 검색은 기존 minimum_role과 Skill domain을 후보 단계에서 함께 적용하며 근거가 없을 때 전체 검색으로 우회하지 않는다. trace에는 ID, 전체 DTO, txHash, 서명, 키와 모델 사고 과정을 담지 않는다.
 
 비밀키·JWT·비밀번호·signature·raw transaction을 모델에 전달하지 않는다. 인가된 요약 DTO만 읽기 Tool 대상으로 삼는다. 로그인·견적 신규 발급·주문·faucet·서명·전송·강제 정산은 읽기 Tool이 아니다.
@@ -61,6 +67,8 @@ DB Faucet은 인증된 본인 계정에만 정액 지급하며 클라이언트 u
 - [ai/tool/ToolDispatcher.java](../../backend/src/main/java/com/pricetrack/exchange/ai/tool/ToolDispatcher.java)
 
 - [auth/JwtAuthenticationFilter.java](../../backend/src/main/java/com/pricetrack/exchange/auth/JwtAuthenticationFilter.java)
+- [auth/google/GoogleAccountService.java](../../backend/src/main/java/com/pricetrack/exchange/auth/google/GoogleAccountService.java)
+- [ai/tool/read/FuturesToolReader.java](../../backend/src/main/java/com/pricetrack/exchange/ai/tool/read/FuturesToolReader.java)
 - [common/config/SecurityConfig.java](../../backend/src/main/java/com/pricetrack/exchange/common/config/SecurityConfig.java)
 - [order/OrderService.java](../../backend/src/main/java/com/pricetrack/exchange/order/OrderService.java)
 - [quote/PriceQuoteService.java](../../backend/src/main/java/com/pricetrack/exchange/quote/PriceQuoteService.java)

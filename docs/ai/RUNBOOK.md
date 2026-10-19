@@ -1,5 +1,11 @@
 # AI 운영·검증 Runbook
 
+## 2026-10-19 Futures 후속
+
+기존8개 Tool/3개 Skill에 선물2개/1개가 추가됐다. 실제 요청 예시는 `{"question":"이 선물 포지션의 청산 근거를 설명해주세요","target":{"positionId":"실제 본인 UUID"},"skillId":"futures-liquidation-diagnosis"}`이며 기존 authenticated Agent endpoint를 사용한다. `AI_TOOLS_ENABLED`, `AI_AGENT_ENABLED`, `AI_SKILLS_ENABLED` 및 현재 corpus와 일치하는 승인 index가 필요하다. 위 문서 UUID 문구는 실제 요청에 그대로 넣지 않는다.
+
+유료 호출 전 Mock 검증은 새 Phase A session의 `--case futures-ai`로 수행한다. 실제 PG/Anvil과 Worker60초, Tool/Skill은 실제이며 LLM/retrieval은 fixture다. 운영자 예산/기존 index나 설정을 무단 변경하지 않는다. 새 corpus 재색인과 실제 LLM 평가는 호출 수·비용 승인 후 별도 실행한다. Tool은 Futures 비활성 환경에서 TOOL_DISABLED이고, AI 오류가 금융 원장 보정이나 자동 복구를 일으키지 않는다. [근거와 한계](../../claude-docs/futures-ai-integration.md).
+
 ## 기동과 명시 초기화
 
 거래 DB/Anvil/백엔드/웹 실행은 [backend README](../../backend/README.md), [웹 README](../../tools/websocket-test-client/README.md)를 따른다. AI DB는 기존 거래 compose와 별도 `docker-compose.ai.yml`, 별도 volume이다. 비밀은 실제 backend/.env에 로컬로 보관하며 Git/화면/로그에 출력하지 않는다. 예제값은 backend/.env.example을 참고한다.

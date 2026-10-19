@@ -2,10 +2,10 @@
 title: "주문 상태와 트랜잭션 상태"
 domain: trading
 type: policy
-version: 2
+version: 3
 status: active
 minimum_role: USER
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 주문 상태와 트랜잭션 상태
@@ -37,6 +37,10 @@ REVIEW_REQUIRED는 BlockchainTransaction의 자동 정산 격리 상태다. 예�
 현재 주문 API는 트랜잭션 격리 상태를 직접 반환하지 않는다. PENDING_ONCHAIN만 보고 REVIEW_REQUIRED라고 단정할 수 없다. 인가된 추가 조회 없이는 원인을 확인할 수 없다.
 
 ## 실패·재시도 해석
+
+현물 Order와 선물 position/operation은 별도 모델이다. 선물은 OPEN/TOP_UP/START_CALL/CLEAR_CALL/CLOSE/LIQUIDATE operation을 사용한다. preview 확인 후 Idempotency-Key로 실행 의도를 접수하며 preview와 실제 가격이 다르면 재확인이 필요하다. 응답 유실 후 새 키로 자동 재주문하지 않는다. 선물 미확정 operation은 확정 포지션/손익으로 설명하지 않으며 자세한 책임은 onchain-settlement-policy를 따른다.
+
+포트폴리오의 tokenAvailableAmount는 전체 mSEC가 아니라 amount-lockedAmount의 정확한 Decimal 문자열이다. 웹 SELL 전량 버튼은 본인 REST를 새로 조회해 반올림/Number 변환 없이 입력만 하며 이전 Quote를 무효화한다. 버튼 자체는 견적이나 주문을 실행하지 않는다. 동시 잠금으로 수량이 달라지면 서버가 검증하며 자동 재주문하지 않는다.
 
 RPC 응답을 못 받았다는 사실만으로 주문이 실패했다고 판단하지 않는다. 이미 전송됐을 수 있기 때문이다. 실패 receipt를 확인한 경우와 아직 receipt가 없는 경우를 구분한다. 실패 확정 전에 같은 의도로 새 주문을 반복하면 별도 거래가 될 수 있다.
 

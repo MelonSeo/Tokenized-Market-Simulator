@@ -2,10 +2,10 @@
 title: "체인 전송 장애의 읽기 전용 진단"
 domain: operations
 type: runbook
-version: 3
+version: 4
 status: active
 minimum_role: ADMIN
-updated_at: 2026-10-13
+updated_at: 2026-10-20
 ---
 
 # 체인 전송 장애의 읽기 전용 진단
@@ -35,6 +35,10 @@ gas 산정·거래 서명 후 raw transaction과 예상 txHash를 SIGNED 상태�
 reconciliation은 SIGNED/SUBMITTED를 대상으로 한다. 서버 재시작 후에도 DB와 체인 상태가 유지되면 저장된 SIGNED를 다시 확인한다. 체인 자체를 초기화한 상황은 단순 서버 재시작과 다르다.
 
 ## RPC 응답 유실과 동일 거래 복구
+
+선물은 현물 BlockchainTransaction과 별도의 저장소/worker를 사용하지만 signed raw 선커밋·같은 raw/hash/nonce 복구·canonical Receipt/Event·DB journal 단일 정산 원칙을 따른다. 서버 Worker가 재시작 후 미확정을 복구하며 위험 감시와 이미 제출된 거래 확인을 구분한다. 가격이 거래 불가여도 기존 제출의 확인을 신규 주문처럼 중단하지 않는다. 온체인 마진콜 확정 후60초 chain 유예를 wall-clock 임의 대기로 대체하지 않는다. 유예 종료 후 새 적격 가격에서도 위험해야 청산하며 시간 경과만으로 잠금을 풀지 않는다.
+
+별도 JVM CONFIRMED/REVERTED 복구의 로컬 증거는 실제 공급자나 모든 장애의 검증이 아니다. 실패 Receipt만으로 TTL 만료·서명 오류를 확정하지 않는다. 선물 감사는 기존 현물 baseline과 독립적으로 position/operation/journal/house·정규 체인 증거와 coverage를 읽는다. 담보 정본은 DB이고 체인에 담보 ERC-20이 예치됐다는 의미가 아니다.
 
 SIGNED 복구는 예상 txHash로 체인을 먼저 조회하고, 없으면 저장된 동일 raw transaction을 재전송한다. 같은 raw는 같은 nonce·내용·txHash를 유지하므로 이미 실행된 거래를 새 거래로 복제하지 않는다.
 

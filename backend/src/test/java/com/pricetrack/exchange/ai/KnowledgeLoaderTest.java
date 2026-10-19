@@ -70,9 +70,9 @@ class KnowledgeLoaderTest {
         assertThat(corpus.documents().stream().filter(d -> d.metadata().get("minimum_role").equals("ADMIN")))
                 .extracting(KnowledgeCorpus.Document::path).containsExactly("transaction-recovery-runbook.md");
         assertThat(corpus.documents().stream().filter(d -> d.path().equals("authorization-policy.md") || d.path().equals("system-overview.md")))
-                .allSatisfy(d -> assertThat(d.metadata().get("version")).isEqualTo(d.path().equals("system-overview.md") ? "8" : "7"));
+                .allSatisfy(d -> assertThat(d.metadata().get("version")).isEqualTo(d.path().equals("system-overview.md") ? "9" : "8"));
         assertThat(corpus.documents().stream().filter(d -> d.path().equals("market-data-policy.md")))
-                .allSatisfy(d -> assertThat(d.metadata().get("version")).isEqualTo("3"));
+                .allSatisfy(d -> assertThat(d.metadata().get("version")).isEqualTo("4"));
         assertThat(corpus.chunks().stream().map(KnowledgeCorpus.Chunk::content).reduce("", String::concat))
                 .contains("Phase 4", "getPortfolio", "제한된 RAG+Tool Agent", "settlement-debugging", "AI_SKILLS_ENABLED", "AI_AUTO_DIAGNOSIS_ENABLED", "장기 기억은 구현하지 않았다")
                 .doesNotContain("개인 데이터 Tool은 아직 구현되지 않았다", "Tool·Agent는 아직 구현하지 않았다");
@@ -89,5 +89,21 @@ class KnowledgeLoaderTest {
             assertThat(c.content()).contains("| 코드 | 뜻 |").doesNotContain("\uFFFD");
             assertThat(c.content().getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(300);
         });
+    }
+    @Test void currentPolicyDistinguishesAvailabilityCustodyAndImplementationFromAcceptance() throws Exception {
+        Path root=Path.of("../docs/ai-knowledge");
+        String market=Files.readString(root.resolve("market-data-policy.md"));
+        assertThat(market).contains("0s 수신 자체는 필수가 아니다", "UNKNOWN", "generation", "과거5초/미래2초",
+                "mockQuoteAllowed와 generation이 없으므로", "KRX BUY/SELL 제품 E2E는 미완료")
+                .doesNotContain("DEGRADED/UNKNOWN은 신규 실제 서명에 사용할 수 없다", "명시적인0s 시장 상태를 확인해야");
+        String quote=Files.readString(root.resolve("signed-quote-policy.md"));
+        assertThat(quote).contains("TradingPriceContext", "UNKNOWN", "연결 generation 동일성", "observedAt + 30초");
+        assertThat(Files.readString(root.resolve("authorization-policy.md")))
+                .contains("loginId=null", "동일 이메일 자동 연결·병합은 금지", "Refresh Token/Rotation", "RESOURCE_NOT_FOUND");
+        assertThat(Files.readString(root.resolve("system-overview.md")))
+                .contains("10개 read-only Tool", "4개 Skill", "온체인 담보 예치가 아니며", "후속 미구현")
+                .doesNotContain("실제 키움 App Key 연결은 아직 NOT_RUN");
+        assertThat(Files.readString(root.resolve("order-lifecycle.md")))
+                .contains("tokenAvailableAmount", "반올림/Number 변환 없이", "버튼 자체는 견적이나 주문을 실행하지 않는다");
     }
 }
