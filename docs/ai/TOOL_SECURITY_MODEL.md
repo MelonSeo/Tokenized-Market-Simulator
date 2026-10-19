@@ -1,5 +1,7 @@
 # Tool·Agent 보안 모델
 
+> 2026-10-19 Futures 후속: 아래 Phase8 당시8개에 `getFuturesPosition`, `getFuturesLiquidationEvidence`2개를 추가했다. 기존8개 계약은 유지한다. [구현·검증 경계](../../claude-docs/futures-ai-integration.md). 신규 UUID target도 서버가 본인/ADMIN을 확인하며 최대2개의 CALL/LIQ만 readonly 검증한다. 전체 감사·서명·전송·정산 실행 Tool이 아니다. 두 Tool의 position version/담보/위험/손익 snapshot이 달라지면 PARTIAL로 차단한다. 모델 입력에서 포지션·operation·journal 식별자를 추가 제거한다. 유료 모델 및 갱신 corpus 재색인은 미실행이다.
+
 ## 서버가 강제하는 경계
 
 JWT 검증 후 DB 사용자/역할이 principal이 된다. 클라이언트/모델의 userId·role·Tool 이름·SQL·URL은 권한 근거가 아니다. orderId/quoteId는 요청 target과 서버 연결 검증을 통해서만 사용한다. USER는 본인 데이터, ADMIN은 제한 운영 조회만 가능하다. 존재하지 않음과 타인 소유를 분리해 정보가 새지 않게 처리한다.

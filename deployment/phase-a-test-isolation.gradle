@@ -1,0 +1,8 @@
+// Optional local Windows regression worker isolation, never applied to product runtime/build settings.
+// Run ALL the same tests and retain all assertions/gates. Bound lifetime of loopback HTTP fixtures.
+allprojects {
+    tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+        maxParallelForks = 1
+        forkEvery = 20
+    }
+}

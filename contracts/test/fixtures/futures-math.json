@@ -1,0 +1,12 @@
+{
+  "vectors": [
+    {"side":0,"quantity":1000000000000000000,"entry":10000000000,"collateral":10000000000000000000,"price":9000000000,"pnl":-10000000000000000000,"equity":0,"maintenance":4500000000000000000,"realized":-10000000000000000000,"badDebt":0},
+    {"side":1,"quantity":1000000000000000000,"entry":10000000000,"collateral":10000000000000000000,"price":11000000000,"pnl":-10000000000000000000,"equity":0,"maintenance":5500000000000000000,"realized":-10000000000000000000,"badDebt":0},
+    {"side":0,"quantity":1000000000000000000,"entry":10000000000,"collateral":10000000000000000000,"price":8000000000,"pnl":-20000000000000000000,"equity":-10000000000000000000,"maintenance":4000000000000000000,"realized":-10000000000000000000,"badDebt":10000000000000000000},
+    {"side":1,"quantity":1000000000000000000,"entry":10000000000,"collateral":10000000000000000000,"price":12000000000,"pnl":-20000000000000000000,"equity":-10000000000000000000,"maintenance":6000000000000000000,"realized":-10000000000000000000,"badDebt":10000000000000000000},
+    {"side":0,"quantity":1,"entry":100000000,"collateral":1,"price":99999999,"pnl":-1,"equity":0,"maintenance":1,"realized":-1,"badDebt":0},
+    {"side":0,"quantity":1,"entry":100000000,"collateral":1,"price":100000001,"pnl":0,"equity":1,"maintenance":1,"realized":0,"badDebt":0},
+    {"side":1,"quantity":1,"entry":100000000,"collateral":2,"price":100000001,"pnl":-1,"equity":1,"maintenance":1,"realized":-1,"badDebt":0},
+    {"side":0,"quantity":1000000000000000000,"entry":10000000000,"collateral":10000000000000000000,"price":11000000000,"pnl":10000000000000000000,"equity":20000000000000000000,"maintenance":5500000000000000000,"realized":10000000000000000000,"badDebt":0}
+  ]
+}

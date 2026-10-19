@@ -21,7 +21,7 @@ public final class SkillRegistry {
             var strict=json.copy().enable(com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION.mappedFeature())
                     .enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
             var manifest=strict.readTree(read(resources,"ai/skills/manifest.json"));
-            if(!manifest.isObject() || manifest.size()!=3)throw new IllegalArgumentException();
+            if(!manifest.isObject() || manifest.size()!=ceilings().size())throw new IllegalArgumentException();
             for(var ceiling:ceilings())try{
                 String content=read(resources,"ai/skills/"+ceiling.id()+".md").replace("\r\n","\n");
                 String hash=KnowledgeLoader.hash(content);
@@ -76,7 +76,10 @@ public final class SkillRegistry {
             List.of("LOAD_QUOTE","LOAD_LINKED_ORDER","LOAD_TRANSACTION","LOAD_RECEIPT","CHECK_EVIDENCE","RETRIEVE_POLICY","SUMMARIZE"),""),
         new Definition("market-availability-diagnosis","","",1,Set.of(UserRole.ADMIN,UserRole.USER),AgentModelProvider.Subject.NONE,
             Set.of("getCurrentReferencePrice"),Set.of("market","trading"),
-            List.of("LOAD_REFERENCE","CHECK_EVIDENCE","RETRIEVE_POLICY","SUMMARIZE"),""));}
+            List.of("LOAD_REFERENCE","CHECK_EVIDENCE","RETRIEVE_POLICY","SUMMARIZE"),""),
+        new Definition("futures-liquidation-diagnosis","","",1,Set.of(UserRole.ADMIN,UserRole.USER),AgentModelProvider.Subject.FUTURES,
+            Set.of("getFuturesPosition","getFuturesLiquidationEvidence"),Set.of("trading","settlement","support"),
+            List.of("LOAD_POSITION","LOAD_FUTURES_EVIDENCE","CHECK_EVIDENCE","RETRIEVE_POLICY","SUMMARIZE"),""));}
     public Definition require(String id,UserRole role,AgentModelProvider.Subject target){
         var ceiling=ceilings().stream().filter(d -> d.id().equals(id)).findFirst().orElseThrow(() -> new AgentFailure("UNKNOWN_SKILL",400));
         if(!ceiling.roles().contains(role))throw new AgentFailure("SKILL_FORBIDDEN",403);

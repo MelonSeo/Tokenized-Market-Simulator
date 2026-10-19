@@ -10,6 +10,40 @@ spec=importlib.util.spec_from_file_location('phase_a',Path(__file__).with_name('
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 
 class PhaseAGuardTest(unittest.TestCase):
+    def test_worker_isolation_keeps_full_selection_and_clean_environment(self):
+        counts={'tests':3,'failures':0,'errors':0,'skipped':1,'passed':2}
+        with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',return_value={'SAFE':'same'}),patch.object(a,'aggregate',return_value=counts):
+            run=Path(folder);(run/'evidence').mkdir()
+            a.java_test(run,'default');a.java_test(run,'isolated',isolate_workers=True)
+            first,second=execute.call_args_list
+            self.assertEqual(first.args[1],[str(a.REPO/'backend/gradlew.bat'),'test','--offline','--no-daemon','--rerun-tasks'])
+            self.assertEqual(second.args[1],first.args[1]+['--init-script',str(a.ROOT/'phase-a-test-isolation.gradle')])
+            self.assertEqual(first.args[4],second.args[4]);self.assertNotIn('--tests',second.args[1]);self.assertNotIn('-x',second.args[1])
+            self.assertEqual(json.loads((run/'evidence/isolated/summary.json').read_text()),counts)
+    def test_optional_regression_retains_web_browser_and_foundry(self):
+        for isolated in (False,True):
+            with patch.object(a,'java_test') as java,patch.object(a,'execute') as execute:
+                session=Path('unused');a.regression(session,isolated)
+                java.assert_called_once_with(session,'backend-full-isolated-workers' if isolated else 'backend-full',isolate_workers=isolated)
+                self.assertEqual([c.args[2] for c in execute.call_args_list],['web-deps','web-unit','web-browser','futures-browser-unit','foundry'])
+    def test_futures_restart_uses_two_explicit_stages_without_observation_suite(self):
+        counts={'tests':1,'failures':0,'errors':0,'skipped':0,'passed':1}
+        with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',side_effect=lambda _:{}),patch.object(a,'aggregate',return_value=counts):
+            run=Path(folder);(run/'evidence').mkdir()
+            a.java_test(run,'prepare','futures-restart',run,False)
+            a.java_test(run,'recover','futures-restart',run,True)
+            self.assertEqual(execute.call_count,2)
+            for call,stage in zip(execute.call_args_list,('prepare','recover')):
+                self.assertEqual(call.args[1][-1],'*FuturesRestartPostgresAnvilE2ETest')
+                env=call.args[4];self.assertEqual(env['FUTURES_RESTART_STAGE'],stage)
+                self.assertEqual(env['FUTURES_RESTART_E2E_TESTS'],'true');self.assertNotIn('OBSERVATION_RESTART_TESTS',env)
+    def test_existing_conditional_restart_still_selects_observation_restart_only(self):
+        counts={'tests':1,'failures':0,'errors':0,'skipped':0,'passed':1}
+        with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',return_value={}),patch.object(a,'aggregate',return_value=counts):
+            run=Path(folder);(run/'evidence').mkdir();a.java_test(run,'restart','conditional',run,True)
+            self.assertEqual(execute.call_args.args[1][-1],'*ObservationRestartPostgresTest')
+            self.assertEqual(execute.call_args.args[4]['OBSERVATION_RESTART_TESTS'],'true')
+            self.assertNotIn('FUTURES_RESTART_STAGE',execute.call_args.args[4])
     def test_network_overlap_uses_distinct_bounded_candidates(self):
         collision=a.CommandFailed('network',1,'Error: invalid pool request: Pool overlaps with other one on this address space')
         with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute',side_effect=[collision,'new-id']) as execute:
@@ -71,6 +105,17 @@ class PhaseAGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             d=Path(folder);(d/'TEST-x.xml').write_text('<testsuite tests="5" failures="1" errors="0" skipped="2"/>')
             self.assertEqual(a.aggregate(d),{'tests':5,'failures':1,'errors':0,'skipped':2,'passed':2})
+    def test_futures_periodic_block_configuration_is_checked(self):
+        meta={'name':'new-only','dbPort':30001,'rpcPort':30002,'miningBlockTimeSeconds':2}
+        def inspect(port,internal,command):
+            return json.dumps([{'Config':{'Labels':{'phase-a.fixture':'new-only'},'Cmd':command},'State':{'Running':True},
+                'HostConfig':{'PortBindings':{internal:[{'HostIp':'127.0.0.1','HostPort':str(port)}]}}}])
+        pg=inspect(30001,'5432/tcp',[])
+        for command in ([],['--block-time','1'],['--block-time','2']):
+            with patch.object(a,'execute',side_effect=[pg,inspect(30002,'8545/tcp',command)]):
+                if command==['--block-time','2']:a.inspect_owned(Path('new'),meta)
+                else:
+                    with self.assertRaisesRegex(RuntimeError,'periodic blocks'):a.inspect_owned(Path('new'),meta)
     def test_clock_alignment_retains_existing_two_second_limit(self):
         a.require_clock_alignment({'hostEpochBefore':10,'hostEpochAfter':10.2,'dbMinusHostSeconds':1.5})
         with self.assertRaisesRegex(RuntimeError,'BLOCKED_CLOCK_SKEW'):

@@ -10,12 +10,15 @@ import java.util.*;
 /** Explicit read-only allowlist and matching JSON schemas; no reflection or arbitrary bean dispatch. */
 public final class ToolRegistry {
     public static final Set<String> NAMES = Set.of("getOrder", "getQuote", "getBlockchainTransaction",
-            "getReceiptSummary", "getMarketStatus", "getCurrentReferencePrice", "getPortfolio", "listAbnormalOrders");
+            "getReceiptSummary", "getMarketStatus", "getCurrentReferencePrice", "getPortfolio", "listAbnormalOrders",
+            "getFuturesPosition", "getFuturesLiquidationEvidence");
     private static final Set<String> ORDER_TOOLS = Set.of("getOrder", "getBlockchainTransaction", "getReceiptSummary");
     private final ObjectMapper json;
     public ToolRegistry(ObjectMapper json) { this.json = json; }
 
-    public record Arguments(Long orderId, String quoteId, int limit, String filter, int waitingSeconds, Cursor cursor) {}
+    public record Arguments(Long orderId, String quoteId, int limit, String filter, int waitingSeconds, Cursor cursor,String positionId) {
+        public Arguments(Long orderId,String quoteId,int limit,String filter,int waitingSeconds,Cursor cursor){this(orderId,quoteId,limit,filter,waitingSeconds,cursor,null);}
+    }
     public record Cursor(Instant createdAt, long id) {
         public String encode() {
             return Base64.getUrlEncoder().withoutPadding().encodeToString(
@@ -36,10 +39,16 @@ public final class ToolRegistry {
     public Arguments validate(String name, JsonNode args) {
         if (!NAMES.contains(name)) throw new ToolFailure("TOOL_NOT_ALLOWED");
         if (args == null || !args.isObject()) throw invalid();
-        Set<String> allowed = ORDER_TOOLS.contains(name) ? Set.of("orderId") : name.equals("getQuote")
+        boolean futures=name.equals("getFuturesPosition")||name.equals("getFuturesLiquidationEvidence");
+        Set<String> allowed = futures?Set.of("positionId"):ORDER_TOOLS.contains(name) ? Set.of("orderId") : name.equals("getQuote")
                 ? Set.of("quoteId") : name.equals("listAbnormalOrders")
                 ? Set.of("limit", "filter", "waitingSeconds", "cursor") : Set.of();
         args.fieldNames().forEachRemaining(key -> { if (!allowed.contains(key)) throw invalid(); });
+        if(futures){
+            String id=args.has("positionId")?text(args.get("positionId")):"";
+            if(!id.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))throw invalid();
+            return new Arguments(null,null,0,null,0,null,id);
+        }
         if (ORDER_TOOLS.contains(name)) return new Arguments(integer(args, "orderId", 1, Long.MAX_VALUE, null), null, 0, null, 0, null);
         if (name.equals("getQuote")) {
             JsonNode value = args.get("quoteId");
@@ -74,7 +83,9 @@ public final class ToolRegistry {
         ObjectNode schema = json.createObjectNode().put("type", "object").put("additionalProperties", false);
         ObjectNode props = schema.putObject("properties");
         var required = schema.putArray("required");
-        if (ORDER_TOOLS.contains(name)) {
+        if(name.equals("getFuturesPosition")||name.equals("getFuturesLiquidationEvidence")){
+            props.putObject("positionId").put("type","string").put("pattern","^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");required.add("positionId");
+        }else if (ORDER_TOOLS.contains(name)) {
             props.putObject("orderId").put("type", "integer").put("minimum", 1).put("maximum", Long.MAX_VALUE);
             required.add("orderId");
         } else if (name.equals("getQuote")) {

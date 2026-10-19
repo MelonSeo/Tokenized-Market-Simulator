@@ -125,6 +125,7 @@ public final class AgentService implements AutoCloseable {
                 }
                 if(request.orderId()!=null)preflight(call("getOrder",Map.of("orderId",request.orderId())));
                 if(request.quoteId()!=null)preflight(call("getQuote",Map.of("quoteId",request.quoteId())));
+                if(request.positionId()!=null)preflight(call("getFuturesPosition",Map.of("positionId",request.positionId())));
                 if(skill!=null && skill.target()==Subject.NONE)preflight(call("getCurrentReferencePrice",Map.of()));
                 Plan plan;
                 try{
@@ -147,7 +148,7 @@ public final class AgentService implements AutoCloseable {
                 if(plan.route()==Route.KNOWLEDGE && (plan.subject()!=Subject.NONE || request.targetKind()!=Subject.NONE))
                     return response("NEEDS_CLARIFICATION","정책 질문과 조회 대상을 구분해 주세요.",List.of(),List.of());
                 if(plan.route()!=Route.KNOWLEDGE && (plan.subject()==Subject.NONE
-                        || (plan.subject()==Subject.ORDER || plan.subject()==Subject.QUOTE) && plan.subject()!=request.targetKind()
+                        || (plan.subject()==Subject.ORDER || plan.subject()==Subject.QUOTE || plan.subject()==Subject.FUTURES) && plan.subject()!=request.targetKind()
                         || request.targetKind()!=Subject.NONE && plan.subject()!=request.targetKind()))
                     return response("NEEDS_CLARIFICATION","주문/견적 target과 질문 대상을 일치시켜 주세요.",List.of(),List.of());
                 if(plan.subject()==Subject.ABNORMAL && user.role()!=UserRole.ADMIN)throw new AgentFailure("TOOL_FORBIDDEN",403);
@@ -180,6 +181,9 @@ public final class AgentService implements AutoCloseable {
                             :response("INSUFFICIENT_EVIDENCE","승인된 문서에서 충분한 근거를 확인하지 못했습니다.",List.of(),List.of());
                 }
                 if(plan.route()==Route.MIXED && !hasFacts())return response("PARTIAL","현재 상태는 확인하지 못했습니다. 조회된 정책 출처만 제공합니다.",List.of(),List.of());
+                if(plan.subject()==Subject.FUTURES&&(uncertainties.contains("FUTURES_CUT_CHANGED")||evidence.values().stream().anyMatch(e->e.tool().equals("getFuturesLiquidationEvidence")
+                        &&(!"SUCCESS".equals(e.status())||!"VERIFIED".equals(e.data().path("verification").asText())))))
+                    return response("PARTIAL","선물 조회 사실과 정책 근거만 제공합니다. 미확정 또는 불충분한 체인·장부 근거로 청산 완료나 원인을 확정할 수 없습니다.",List.of(),List.of());
                 var modelInput=AgentEvidence.modelInput(json,knowledge,List.copyOf(evidence.values()));
                 if(skillRunner!=null)modelInput.set("diagnosticObservations",json.valueToTree(skillRunner.result().diagnosis()));
                 if(json.writeValueAsBytes(modelInput).length>24_576)return degraded("AGENT_CONTEXT_LIMIT");
@@ -203,6 +207,7 @@ public final class AgentService implements AutoCloseable {
                 case MARKET,PRICE -> "시장 CLOSED LIVE STALE 가격 신선도 신규 거래 차단 정책";
                 case PORTFOLIO -> "포트폴리오 잔고 잠금 available 내부 원장 기준";
                 case ABNORMAL -> "REVIEW_REQUIRED SIGNED SUBMITTED 장애 읽기 진단 정책";
+                case FUTURES -> "선물 격리증거금 손익 유지증거금 5퍼센트 마진콜 60초 유예 강제청산 FuturesEngine Receipt journal DB 수탁";
                 default -> request.modelQuestion();
             };
         }
@@ -227,6 +232,7 @@ public final class AgentService implements AutoCloseable {
                 case PRICE -> call("getCurrentReferencePrice",Map.of());
                 case PORTFOLIO -> call("getPortfolio",Map.of());
                 case ABNORMAL -> call("listAbnormalOrders",Map.of("limit",10));
+                case FUTURES -> {call("getFuturesPosition",Map.of("positionId",request.positionId()));if(plan.route()==Route.MIXED)call("getFuturesLiquidationEvidence",Map.of("positionId",request.positionId()));}
                 default -> throw new AgentFailure("INVALID_AGENT_PLAN",503);
             }
         }
@@ -247,13 +253,21 @@ public final class AgentService implements AutoCloseable {
         }}
         boolean hasFacts(){return evidence.values().stream().anyMatch(e -> "SUCCESS".equals(e.status()));}
         void checkConsistency(){
-            JsonNode order=null,quote=null;
+            JsonNode order=null,quote=null,futuresPosition=null,futuresEvidence=null;
             for(var item:evidence.values())if("SUCCESS".equals(item.status())){
                 JsonNode data=item.data();
                 checkFreshness(data);
                 if(data.hasNonNull("reference"))checkFreshness(data.path("reference"));
                 if(item.tool().equals("getOrder"))order=data;
                 if(item.tool().equals("getQuote"))quote=data;
+                if(item.tool().equals("getFuturesLiquidationEvidence")&&!data.path("verification").asText().equals("VERIFIED"))uncertainties.add("FUTURES_EVIDENCE_UNVERIFIED");
+                if(item.tool().equals("getFuturesLiquidationEvidence"))futuresEvidence=data;
+                if(item.tool().equals("getFuturesPosition")){
+                    var p=data.path("position");
+                    futuresPosition=p;
+                    if(p.hasNonNull("pendingOperation")||p.path("status").asText().equals("REVIEW_REQUIRED"))uncertainties.add("FUTURES_STATE_UNCONFIRMED");
+                    if(p.path("status").asText().equals("OPEN")&&!p.path("priceAvailable").asBoolean())uncertainties.add("FUTURES_PRICE_UNAVAILABLE");
+                }
                 if(data.path("orderLink").asText().equals("INCONSISTENT_LINK"))uncertainties.add("INCONSISTENT_LINK");
                 if(item.tool().equals("getReceiptSummary")){
                     if(data.path("receiptStatus").asText().equals("NOT_FOUND"))uncertainties.add("RECEIPT_NOT_FOUND");
@@ -264,6 +278,7 @@ public final class AgentService implements AutoCloseable {
                         uncertainties.add("CHAIN_SUCCESS_DB_NOT_CONFIRMED");
                 }
             }
+            if(futuresPosition!=null&&futuresEvidence!=null&&!FuturesEvidenceConsistency.samePosition(futuresPosition,futuresEvidence))uncertainties.add("FUTURES_CUT_CHANGED");
             if(order!=null && quote!=null)for(String field:List.of("side","inputAmount","inputSymbol","outputSymbol"))
                 if(order.hasNonNull(field) && quote.hasNonNull(field) && !sameFact(field,order.get(field).asText(),quote.get(field).asText()))
                     uncertainties.add("ORDER_QUOTE_MISMATCH:"+field);

@@ -30,6 +30,16 @@ server:
 
 # 애플리케이션 커스텀 설정
 app:
+  futures:
+    enabled: ${FUTURES_ENABLED:false}
+    runtime-enabled: ${FUTURES_RUNTIME_ENABLED:false}
+    rpc-url: ${FUTURES_RPC_URL:}
+    chain-id: ${FUTURES_CHAIN_ID:}
+    engine-address: ${FUTURES_ENGINE_ADDRESS:}
+    code-hash: ${FUTURES_ENGINE_CODE_HASH:}
+    executor-private-key: ${FUTURES_EXECUTOR_PRIVATE_KEY:}
+    signer-private-key: ${FUTURES_PRICE_SIGNER_PRIVATE_KEY:}
+    confirmations: ${FUTURES_REQUIRED_CONFIRMATIONS:1}
   google:
     enabled: ${GOOGLE_AUTH_ENABLED:false}
     client-id: ${GOOGLE_CLIENT_ID:}

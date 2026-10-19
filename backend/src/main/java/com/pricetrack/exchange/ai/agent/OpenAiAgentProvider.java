@@ -32,7 +32,7 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 정책/설계 설명은 KNOWLEDGE/NONE, 실제 현재값 요청은 STATE/해당 subject,
                 특정 대상의 상태와 이유/정책 결합은 MIXED/해당 subject다.
                 주문/견적 현재 상태에 대상이 없으면 CLARIFY/NONE. 모호한 대상도 CLARIFY/NONE.
-                targetKind=ORDER/QUOTE는 서버가 이미 해당 명시적 대상의 소유권을 확인했다는 뜻이다.
+                targetKind=ORDER/QUOTE/FUTURES는 서버가 이미 해당 명시적 대상의 소유권을 확인했다는 뜻이다.
                 개인정보 최소화를 위해 실제 ID는 전달하지 않는다. targetKind가 있으면 ID가 없다는 이유로
                 CLARIFY로 분류하지 말고 그 대상의 현재 상태만 묻는 질문은 STATE, 규칙/이유 결합은 MIXED로 분류한다.
                 현재 시장은 MARKET, 현재가는 PRICE, 본인 자산은 PORTFOLIO,
@@ -42,6 +42,8 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 eligibleSkills가 있으면 반복 진단 요청에만 그 목록의 Skill 하나를 선택하고 MIXED로 분류한다.
                 정산 조사는 settlement-debugging/ORDER, 견적 진단은 signed-quote-diagnosis/QUOTE,
                 시장 가용성 진단은 market-availability-diagnosis/PRICE다. 일반 조회/정책은 skillId=NONE.
+                선물 포지션 조회는 FUTURES이며 명시적 대상이 없으면 CLARIFY/NONE이다.
+                선물 청산 근거 진단은 futures-liquidation-diagnosis/FUTURES다.
                 목록에 없는 Skill과 임의 절차는 선택할 수 없다. 재계획이나 실행 명령은 없다.
                 """,input,400,timeout);
         try {
@@ -82,6 +84,9 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 실제 견적 발급/거래 성공을 보장할 정보가 없더라도 제공된 관측과 정책을 설명할 수 있으면
                 ANSWERED로 답하고 확인 불가능한 발급 성공·과거 원인·실시간 공급자 상태는 uncertainties에 남긴다.
                 SIMULATED는 실제 시장 연동이나 거래 성공을 뜻하지 않는다. 관측과 정책 자체가 부족할 때만 INSUFFICIENT_EVIDENCE다.
+                선물의 verification=INCONCLUSIVE, pending, BLOCKED, REVIEW_REQUIRED는 청산 확정이 아니다.
+                VERIFIED도 선택한 마진콜 및 청산 근거의 범위일 뿐 전체 감사나 지급 능력 보증이 아니다.
+                선물 담보는 DB 수탁 모의자산이며 온체인 예치가 아니다. 실제 청산은 서버 worker가 계약을 호출한다.
                 """,Map.of("question",question,"route",route.name(),"evidence",evidence),1600,timeout);
         try {
             var out=response.output();

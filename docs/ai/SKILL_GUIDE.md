@@ -1,5 +1,7 @@
 # 제한된 Skill 안내
 
+> 2026-10-19 후속: 기존3개를 유지하고 `futures-liquidation-diagnosis`1개를 추가했다. USER/ADMIN의 명시 positionId, Tool은 선물2개, 검색 domain은 trading/settlement/support다. 고정5단계와 공유 예산, 미검증 canonical/journal·교차Tool 시점 변경의 PARTIAL 차단을 사용한다. [현재 구현과 실제/Mock 검증 구분](../../claude-docs/futures-ai-integration.md). 아래3개는 원래 Phase6/8 범위다.
+
 Skill은 모델이 새로 작성하는 실행 코드가 아니라 버전·hash·역할·대상·검색 domain·고정 단계가 승인된 반복 진단 절차다. 정의는 `backend/src/main/resources/ai/skills/` Markdown3개와 manifest이며 registry/handler가 실행한다. 도구 설치나 범용 workflow DSL이 아니다.
 
 | Skill | 권한/대상 | 조회 범위 |
