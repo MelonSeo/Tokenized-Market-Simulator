@@ -22,6 +22,12 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.pricetrack.exchange.futures.ledger.FuturesLedger.Failure.class)
+    public ResponseEntity<ApiErrorResponse> futuresFailure(com.pricetrack.exchange.futures.ledger.FuturesLedger.Failure failure,HttpServletRequest request) {
+        HttpStatus status=failure.code.endsWith("_NOT_FOUND")?HttpStatus.NOT_FOUND:
+            failure.code.contains("UNAVAILABLE")?HttpStatus.SERVICE_UNAVAILABLE:HttpStatus.CONFLICT;
+        return error(status,failure.code,"선물 요청을 완료하지 못했습니다. 현재 상태와 가격을 다시 확인하세요.",request);
+    }
 
     @ExceptionHandler(com.pricetrack.exchange.auth.google.GoogleAuthFailure.class)
     public ResponseEntity<ApiErrorResponse> googleAuthFailure(

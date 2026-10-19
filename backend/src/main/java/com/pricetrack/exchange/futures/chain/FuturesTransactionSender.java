@@ -29,6 +29,11 @@ public final class FuturesTransactionSender {
 
     /** Caller rejects only an UNSIGNED preparation on failure. Once a signed row exists, retain locks and recover it. */
     public synchronized Submission submit(String id,FuturesReport report,String signature) {
+        return submit(id,report,signature,()->{});
+    }
+
+    /** Recheck the fixed price/generation AFTER RPC estimate, before any new raw is signed or committed. */
+    public synchronized Submission submit(String id,FuturesReport report,String signature,Runnable beforeSigning) {
         var previous=store.find(id);
         if(previous.isPresent()) return recover(id);
         if(!FuturesReportCodec.signedBy(report,chain.chainId(),chain.engine(),signature,chain.priceSigner())) throw new Failure("REPORT_NOT_AUTHORIZED");
@@ -39,6 +44,7 @@ public final class FuturesTransactionSender {
             String data=FuturesReportCodec.encode(report,signature);
             BigInteger gas=rpc.estimate(chain.executor(),nonce,gasPrice,chain.engine(),data).multiply(BigInteger.valueOf(120)).divide(BigInteger.valueOf(100));
             if(gas.signum()<=0 || gasPrice.signum()<0 || nonce.signum()<0) throw new Failure("INVALID_RPC_TRANSACTION_INPUT");
+            beforeSigning.run();
             byte[] signed=TransactionEncoder.signMessage(RawTransaction.createTransaction(nonce,gasPrice,gas,chain.engine(),BigInteger.ZERO,data),chain.chainId().longValueExact(),executor);
             String raw=Numeric.toHexString(signed),hash=Numeric.toHexString(Hash.sha3(signed));
             // REQUIRES_NEW returns only after durable COMMIT. No network send before this point.

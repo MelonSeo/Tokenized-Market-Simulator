@@ -40,6 +40,20 @@ CREATE TABLE IF NOT EXISTS futures_operations (
  CONSTRAINT uk_futures_user_key UNIQUE (user_id,key_hash)
 );
 CREATE INDEX IF NOT EXISTS ix_futures_operations_position ON futures_operations(position_id);
+CREATE TABLE IF NOT EXISTS futures_previews (
+ id VARCHAR(36) PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id), action VARCHAR(12) NOT NULL,
+ position_id VARCHAR(36), expected_version BIGINT NOT NULL, side VARCHAR(5) NOT NULL, leverage INT NOT NULL,
+ margin NUMERIC(78,0) NOT NULL, price NUMERIC(78,0) NOT NULL, observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+ provider VARCHAR(32) NOT NULL, generation BIGINT, expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+ operation_id VARCHAR(36) UNIQUE REFERENCES futures_operations(id), key_hash VARCHAR(64),
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+-- Internal fixed-price evidence. No raw reports, signatures, credentials or client-supplied market state.
+CREATE TABLE IF NOT EXISTS futures_market_evidence (
+ operation_id VARCHAR(36) PRIMARY KEY REFERENCES futures_operations(id),
+ price NUMERIC(78,0) NOT NULL, observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+ provider VARCHAR(32) NOT NULL, generation BIGINT
+);
 CREATE TABLE IF NOT EXISTS futures_transactions (
  id VARCHAR(36) PRIMARY KEY, operation_id VARCHAR(36) NOT NULL UNIQUE REFERENCES futures_operations(id),
  sender VARCHAR(42) NOT NULL, nonce BIGINT NOT NULL, chain_id NUMERIC(78,0) NOT NULL,

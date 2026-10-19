@@ -93,3 +93,18 @@
 - 최종 새 전체 회귀 완료: backend580 중539 PASS/41 SKIP/0 FAIL/0 ERROR, 웹107 PASS, Chrome desktop/mobile offline fixture PASS, Foundry52 PASS/0 FAIL/0 SKIP. Python guard/clock도 새16 PASS. 기존 Scenario 전체 build FAIL 이력은 별도 유지한다.
 - 최종 제품 sourceHash `fa949057e0f12034f99afc80a2bdac344a4dde1d888d92713f9c0647f7fb3ee8`의 독립 새 actual PG fixture `futures-ledger-299995bd` 및 `futures-db-only-4d54fc1c` 각각1 PASS/0 FAIL/0 SKIP. 위 futures-chain과 합쳐 새3개 독립 E2E 통과이며, 이전 실패 증거는 보존한다.
 - 이로써 RPC/canonical 정산 core 단위의 실패는 해결됐지만 전체 선물 완료는 아니다. 자동 위험 worker·preview/REST·개인WS/UI·별도JVM restart·선물 감사/대사·AI 연결·실Chrome chain 데모는 후속 필수이다. 검증된 이번18개 경로만 로컬 커밋하며 기존 사용자 변경/원본 ref/모든 보존 환경과 manifest는 그대로 유지한다.
+
+## Gate6 — 자동 위험 감시·preview/API·개인 알림 연결 (진행 중)
+
+- 재개 시 실제 HEAD는 `0d7c6272e2ac94ea670c021f6481e6aaf263272b`로 Gate4b/5의18개 경로가 이미 커밋돼 있었다. 중복 커밋하지 않았다. 원본 melon-init은9a9197b, 사용자 README1줄/log7줄·NXT/두 계획 문서는 보존 상태다. 사용자가 지칭한 `docs/futures-implementation-log.md`/`docs/futures-phase-a-failure-investigation.md`의 실제 기존 위치는 `claude-docs/`이며 복제 문서를 만들지 않는다.
+- 새 opt-in runtime은 별도 flag·RPC client/키/identity 검증을 사용한다. core-only fixture나 기본 서버에서는 자동 worker/RPC를 시작하지 않는다. 초기 house 자본 자동 삽입·기존 장부 migration·기존 환경 설정 변경은 없다.
+- `FuturesMarketGate`, `FuturesRiskEvaluator`, `FuturesWorker`: commit된 공개 가격 이벤트는 bounded 전용 worker를 깨우기만 하고,1초 보조 tick도 같은 evaluator를 사용한다. pending raw 복구/정산은 시장 장애에도 지속, 새 risk 서명은 allowed/fresh/generation·CLOSED/STale 경계와 zero-drift를 지킨다. chain-confirmed deadline60초/새 표본/실제 chain시각을 확인하며 Solidity도 재검증한다. 단일 프로세스 executor 모델이며 분산 nonce 구현은 아니다.
+- `FuturesIntentStore`는 본인 previewId·action/version/가격/provider/generation·원래 관측시각과30초 만료를 저장한다. 일회 소비+기존 ledger prepare+내부 시장 근거는 동일 짧은 DB transaction이다. 새 서명 직전에는 RPC gas 추정 뒤 generation/고정가격/신선도를 재검증한다. 사용자는 보고서/서명이 아니라 ID만 제출한다.
+- 신규 USER REST preview/positions/open/topup/close/operation 조회, ADMIN positions/operations/house/risk 읽기만 추가. 새 개인 `/user/queue/futures`는 after-commit ID invalidation이며 raw/키/서명/다른 user 자산을 전달하지 않는다. 기존 현물 API/Google/JWT 의미는 그대로다. 선물 UI/실네트워크 WS/실제 REST 권한 인수는 아직 후속이다.
+- 첫 단위 실행57 PASS/3 SKIP, 보강 후 새 선택63 PASS/3 SKIP/실패0(실제PG gates OFF). H2 preview atomic consume/replay/owner/rollback, 순수 위험/market, worker mock, post-RPC pre-sign guard/개인 알림을 포함한다. 후속 변경이 있으므로 최종 전체 회귀로 승격하지 않는다.
+- 신규 `phase-a-20261018173232-26b2a727`의 `futures-auto` 실행을 시작했다. 이 테스트는 테스트 전용 PG 합성 tick commit 후 실제 runtime worker가 CALL/LIQUIDATE를 자동 제출하게 한다. 기존 core처럼 테스트가 위험 action을 직접 호출하지 않는다. 실제 canonical60초와 real monotonic60초 경과를 모두 확인하며, 이전 fixture/state/manifest는 수정하지 않는다. 아직 결과 미확정이다.
+- 별도 JVM restart·실제Chrome·선물 감사/대사·AI는 여전히 미완료이며 이번 단위 통과와 구분한다. 기존 Scenario 전체 build FAIL 별도 유지. 실시세/유료AI/배포/push 없음.
+- Gate6 새 actual `futures-auto-3c9a8e81`:1 PASS/0 FAIL/0 SKIP. 실제 server worker가 Long/Short call과 liquidation을 전송했다. Long call block1792344979→deadline1792345039→청산 block1792345041, 위험 tick 이후63,851ms/GRACE 관측 이후61,958ms. Short call1792345045→deadline1792345105→청산1792345107,63,712ms/61,906ms. 양쪽 모두 새 observedAt>=deadline, canonical Receipt/Event 및 journal/잠금 검증을 통과했다. CLOSED/STale pause, 재개, recovery clear, topup도 같은 테스트에서 확인했다.
+- 같은 고정 backend 소스의 새 전체 회귀는 backend600 중558 PASS/42 SKIP/0 FAIL/0 ERROR. 웹110 PASS, 기존 Chrome desktop/mobile offline smoke PASS, Foundry52 PASS. 새 선물 UI 전용 브라우저/실체인 검증은 포함하지 않았다. 42 SKIP은 opt-in gates이며 위 actual 결과와 중복 합산하지 않는다.
+- 독립 `review_futures_runtime`: runtime/API/DTO/preview/worker/서명 재검증/알림/보안/schema/tests/fixture/로그를 직접 읽고 발견된 필수 수정 없음. 직접 테스트/DB/private는 실행하지 않았고 검토 환경 Git diff 조회는 실패하여 현재 파일을 직접 읽었다. 실제 broker commit/rollback·REST 권한·별도 JVM·제품 Synthetic engine 통합은 후속 필수로 유지한다.
+- Gate6 backend 단위를 검증된 명시 경로만 로컬 커밋한다. 새 웹 패널은 별도 미커밋 후속 작업이며 이 backend 검토·actual 통과로 UI 완료를 주장하지 않는다.

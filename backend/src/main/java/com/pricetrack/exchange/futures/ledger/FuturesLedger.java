@@ -27,7 +27,12 @@ public class FuturesLedger {
     public static final BigInteger INITIAL_CAPITAL=BigInteger.TEN.pow(25);
     private static final BigInteger ZERO=BigInteger.ZERO;
     private final JdbcTemplate jdbc;
+    private org.springframework.context.ApplicationEventPublisher events;
     public FuturesLedger(DataSource source) { jdbc=new JdbcTemplate(source); jdbc.setQueryTimeout(3); }
+    @org.springframework.beans.factory.annotation.Autowired
+    public void eventPublisher(org.springframework.context.ApplicationEventPublisher events) { this.events=events; }
+    public record Changed(long userId,String positionId,String operationId) {}
+    private void changed(long uid,String pid,String op) { if(events!=null)events.publishEvent(new Changed(uid,pid,op)); }
     public static class Failure extends RuntimeException {
         public final String code;
         public Failure(String code) { super(code); this.code=code; }
@@ -61,6 +66,7 @@ public class FuturesLedger {
         jdbc.update("UPDATE futures_user_guards SET active_position=? WHERE user_id=?",pid,uid);
         insertOperation(op,pid,uid,Action.OPEN,0,0,key,request,price,observedAt,ZERO,margin,margin,ZERO,ZERO,ZERO);
         journal(op,pid,uid,"RESERVE",ZERO,margin,ZERO,ZERO);
+        changed(uid,pid,op);
         return operation(op);
     }
 
@@ -94,6 +100,7 @@ public class FuturesLedger {
         String state=action==Action.CLOSE?"CLOSING":action==Action.LIQUIDATE?"LIQUIDATING":"OPEN";
         jdbc.update("UPDATE futures_positions SET pending_operation=?,status=?,block_reason=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",id,state,pid);
         if(reservedMargin.signum()>0) journal(id,pid,uid,"RESERVE",ZERO,reservedMargin,ZERO,ZERO);
+        changed(uid,pid,id);
         return operation(id);
     }
 
@@ -136,6 +143,7 @@ public class FuturesLedger {
         jdbc.update("UPDATE futures_operations SET state='CONFIRMED',active_position_id=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",op.id());
         jdbc.update("UPDATE futures_transactions SET status='CONFIRMED',block_number=?,block_hash=?,confirmed_at=CURRENT_TIMESTAMP WHERE operation_id=?",e.blockNumber(),e.blockHash(),op.id());
         journal(op.id(),p.id(),op.userId(),"CONFIRM",op.expectedRealized(),unlock.negate(),op.expectedRealized().negate(),op.expectedBadDebt());
+        changed(op.userId(),p.id(),op.id());
     }
 
     @Transactional(timeout=5)
@@ -153,6 +161,7 @@ public class FuturesLedger {
         jdbc.update("UPDATE futures_positions SET status=?,pending_operation=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",op.action()==Action.OPEN?"OPEN_FAILED":"OPEN",p.id());
         if(op.action()==Action.OPEN) jdbc.update("UPDATE futures_user_guards SET active_position=NULL WHERE user_id=?",op.userId());
         journal(id,p.id(),op.userId(),"RELEASE",ZERO,op.reservedMargin().negate(),ZERO,ZERO);
+        changed(op.userId(),p.id(),id);
     }
 
     /** Only a verified canonical status=0 receipt may release a durably signed operation's new reservations. */
@@ -177,6 +186,7 @@ public class FuturesLedger {
         jdbc.update("UPDATE futures_positions SET status=?,pending_operation=NULL,block_reason='RECEIPT_REVERTED',updated_at=CURRENT_TIMESTAMP WHERE id=?",op.action()==Action.OPEN?"OPEN_FAILED":"OPEN",p.id());
         if(op.action()==Action.OPEN) jdbc.update("UPDATE futures_user_guards SET active_position=NULL WHERE user_id=?",op.userId());
         journal(id,p.id(),op.userId(),"REVERT_RELEASE",ZERO,op.reservedMargin().negate(),ZERO,ZERO);
+        changed(op.userId(),p.id(),id);
     }
 
     /** Ambiguous evidence is quarantined without altering balances, house reservations, raw, nonce or signatures. */
@@ -188,6 +198,7 @@ public class FuturesLedger {
         jdbc.update("UPDATE futures_operations SET state='REVIEW_REQUIRED',reason='EVIDENCE_NOT_VERIFIABLE',updated_at=CURRENT_TIMESTAMP WHERE id=?",id);
         jdbc.update("UPDATE futures_transactions SET status='REVIEW_REQUIRED' WHERE operation_id=? AND status IN ('SIGNED','SUBMITTED')",id);
         jdbc.update("UPDATE futures_positions SET status='REVIEW_REQUIRED',block_reason='EVIDENCE_NOT_VERIFIABLE',updated_at=CURRENT_TIMESTAMP WHERE id=?",p.id());
+        changed(op.userId(),p.id(),id);
     }
 
     /** Invoked by the facade only AFTER the failed prepare transaction has rolled back. No asset changes. */
@@ -204,6 +215,14 @@ public class FuturesLedger {
             .stream().findFirst().orElseThrow(()->new Failure("POSITION_NOT_FOUND"));
     }
     public List<Position> positions(long uid) { return jdbc.query("SELECT * FROM futures_positions WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 50",(r,n)->readPosition(r),uid); }
+    /** Used only inside a short command transaction, before reading an idempotent user intent. */
+    @Transactional(timeout=5)
+    public void lockUserIntent(long uid) { guard(uid); }
+    /** Keyset scan: pending/review/terminal positions are not candidates for a new risk action. */
+    public List<Position> riskCandidates(String after,int limit) {
+        if(limit<1 || limit>50) throw new Failure("INVALID_LIMIT");
+        return jdbc.query("SELECT * FROM futures_positions WHERE status='OPEN' AND pending_operation IS NULL AND id>? ORDER BY id LIMIT ?",(r,n)->readPosition(r),after,limit);
+    }
     public Operation operation(String id) { return jdbc.query("SELECT * FROM futures_operations WHERE id=?",(r,n)->readOperation(r),id).stream().findFirst().orElseThrow(()->new Failure("OPERATION_NOT_FOUND")); }
     private Operation operationForUpdate(String id) { return jdbc.queryForObject("SELECT * FROM futures_operations WHERE id=? FOR UPDATE",(r,n)->readOperation(r),id); }
     private Position positionForUpdate(String id,long uid) { return jdbc.query("SELECT * FROM futures_positions WHERE id=? AND user_id=? FOR UPDATE",(r,n)->readPosition(r),id,uid).stream().findFirst().orElseThrow(()->new Failure("POSITION_NOT_FOUND")); }

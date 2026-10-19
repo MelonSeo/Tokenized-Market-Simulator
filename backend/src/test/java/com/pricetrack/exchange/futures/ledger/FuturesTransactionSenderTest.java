@@ -67,6 +67,12 @@ class FuturesTransactionSenderTest {
         assertThat(ledger.operation(op.id()).state()).isEqualTo("SUBMITTED");
         assertThatThrownBy(()->ledger.rejectUnsigned(op.id(),"ERROR")).hasMessage("SIGNED_OR_NONPENDING_OPERATION");
     }
+    @Test void marketGuardAfterEstimateRejectsBeforeSigningAndBroadcast() {
+        var op=open();var r=report(op);String sig=signature(r);var checks=new java.util.concurrent.atomic.AtomicInteger();
+        assertThatThrownBy(()->sender.submit(op.id(),r,sig,()->{checks.incrementAndGet();throw new FuturesLedger.Failure("MARKET_CONNECTION_CHANGED");})).hasMessage("MARKET_CONNECTION_CHANGED");
+        assertThat(checks.get()).isEqualTo(1);assertThat(rpc.nonceReads).isEqualTo(1);assertThat(rpc.sends).isZero();
+        assertThat(store.find(op.id())).isEmpty();assertThat(ledger.operation(op.id()).state()).isEqualTo("PREPARED");
+    }
     @Test void responseLossRetainsSignedAndRecoveryUsesSameRawNonceHash() {
         var op=open(); rpc.loseResponse=true; var first=submit(op);
         assertThat(first.status()).isEqualTo("SIGNED");
