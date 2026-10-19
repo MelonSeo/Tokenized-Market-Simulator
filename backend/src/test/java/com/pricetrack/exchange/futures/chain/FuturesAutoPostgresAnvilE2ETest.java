@@ -49,8 +49,8 @@ class FuturesAutoPostgresAnvilE2ETest {
         volatile MarketPriceSnapshot snapshot;volatile String condition="OPEN";
         Scenario(DataSource ds,PlatformTransactionManager manager,MarketWebSocketPublisher events) {
             jdbc=new JdbcTemplate(ds);tx=new TransactionTemplate(manager);this.events=events;
-            jdbc.execute("CREATE TABLE futures_auto_prices(id INT PRIMARY KEY,price NUMERIC(20,8),sequence BIGINT NOT NULL)");
-            jdbc.update("INSERT INTO futures_auto_prices VALUES(1,75000,0)");tick();
+            jdbc.execute("CREATE TABLE IF NOT EXISTS futures_auto_prices(id INT PRIMARY KEY,price NUMERIC(20,8),sequence BIGINT NOT NULL)");
+            jdbc.update("INSERT INTO futures_auto_prices SELECT 1,75000,0 WHERE NOT EXISTS(SELECT 1 FROM futures_auto_prices WHERE id=1)");tick();
             scheduler.scheduleWithFixedDelay(this::tick,1,1,TimeUnit.SECONDS);
         }
         synchronized void price(String price){jdbc.update("UPDATE futures_auto_prices SET price=? WHERE id=1",new BigDecimal(price));tick();}

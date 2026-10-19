@@ -54,6 +54,11 @@ CREATE TABLE IF NOT EXISTS futures_market_evidence (
  price NUMERIC(78,0) NOT NULL, observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
  provider VARCHAR(32) NOT NULL, generation BIGINT
 );
+-- Negative outcome is serialized with prepare; a delayed same-key request cannot execute after definitive rejection.
+CREATE TABLE IF NOT EXISTS futures_request_rejections (
+ user_id BIGINT NOT NULL REFERENCES users(id), key_hash VARCHAR(64) NOT NULL, request_hash VARCHAR(66) NOT NULL,
+ created_at TIMESTAMP WITH TIME ZONE NOT NULL, PRIMARY KEY(user_id,key_hash)
+);
 CREATE TABLE IF NOT EXISTS futures_transactions (
  id VARCHAR(36) PRIMARY KEY, operation_id VARCHAR(36) NOT NULL UNIQUE REFERENCES futures_operations(id),
  sender VARCHAR(42) NOT NULL, nonce BIGINT NOT NULL, chain_id NUMERIC(78,0) NOT NULL,

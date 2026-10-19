@@ -17,14 +17,25 @@ public final class FuturesService {
         market.validate(mark);return preview;
     }
     public Operation consume(long uid,String preview,String key,Action action,String pid,long version) {
-        var v=intents.find(uid,preview,false);
-        if(v.operationId()==null)market.validate(v.mark());
-        var op=intents.consume(uid,preview,key,action,pid,version,market.now());worker.signal();return op;
+        try {
+            var v=intents.find(uid,preview,false);
+            if(v.operationId()==null)market.validate(v.mark());
+            var op=intents.consume(uid,preview,key,action,pid,version,market.now());worker.signal();return op;
+        }catch(Failure denied){
+            if(!definitiveCandidate(denied.code))throw denied;
+            var prior=intents.rejectPreview(uid,preview,key,action,pid,version);
+            if(prior.isPresent()){worker.signal();return prior.get();}
+            throw new Failure("FUTURES_REQUEST_REJECTED");
+        }
     }
     public Operation margin(long uid,String pid,String key,long version,BigInteger added) {
         var replay=intents.marginReplay(uid,pid,key,version,added);if(replay.isPresent())return replay.get();
-        var mark=market.capture();market.validate(mark);
-        try {var op=intents.prepare(uid,pid,key,Action.TOP_UP,version,added,mark);worker.signal();return op;}
-        catch(Failure blocked){if(blocked.code.equals("POOL_INSUFFICIENT"))ledger.recordBlocked(uid,pid,version,blocked.code);throw blocked;}
+        try {var mark=market.capture();market.validate(mark);var op=intents.prepare(uid,pid,key,Action.TOP_UP,version,added,mark);worker.signal();return op;}
+        catch(Failure blocked){
+            if(blocked.code.equals("POOL_INSUFFICIENT"))ledger.recordBlocked(uid,pid,version,blocked.code);
+            if(!definitiveCandidate(blocked.code))throw blocked;
+            var prior=intents.rejectMargin(uid,pid,key,version,added);if(prior.isPresent())return prior.get();throw new Failure("FUTURES_REQUEST_REJECTED");
+        }
     }
+    private boolean definitiveCandidate(String code){return java.util.Set.of("PRICE_CHANGED","MARKET_UNAVAILABLE","MARKET_CONNECTION_CHANGED","PREVIEW_EXPIRED","ACTIVE_POSITION_EXISTS","INSUFFICIENT_AVAILABLE_MARGIN","STALE_POSITION_VERSION","POSITION_BUSY_OR_CLOSED","POOL_INSUFFICIENT","OLD_MARK","INVALID_MARGIN").contains(code);}
 }

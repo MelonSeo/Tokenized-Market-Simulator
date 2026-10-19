@@ -32,6 +32,12 @@ export class ApiClient {
   me() {
     return this.#request('/api/me');
   }
+  futuresPositions() { return this.#request('/api/futures/positions'); }
+  futuresPreview(body) { return this.#request('/api/futures/previews', { method: 'POST', body: JSON.stringify(body) }); }
+  futuresWrite(path, body, key) {
+    if (!/^\/positions(?:\/[A-Za-z0-9-]+\/(?:margin|close))?$/.test(path)) throw new Error('Invalid futures action');
+    return this.#request('/api/futures' + path, { method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify(body) });
+  }
 
   googleConfig() { return this.#request('/api/auth/google/config'); }
   authMethods() { return this.#request('/api/me/auth-methods'); }

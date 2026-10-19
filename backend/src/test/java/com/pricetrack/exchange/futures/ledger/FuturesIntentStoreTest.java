@@ -45,4 +45,18 @@ class FuturesIntentStoreTest {
         assertThat(intents.find(1,p.id(),false).operationId()).isNull();assertThat(jdbc.queryForObject("SELECT count(*) FROM futures_operations",Long.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM futures_user_guards",Long.class)).isZero();
     }
+    @Test void definitivePreviewRejectionSealsTheSameKeyAgainstDelayedExecution() {
+        var p=preview();String key=UUID.randomUUID().toString();
+        assertThat(intents.rejectPreview(1,p.id(),key,Action.OPEN,null,0)).isEmpty();
+        assertThatThrownBy(()->intents.consume(1,p.id(),key,Action.OPEN,null,0,now)).hasMessage("FUTURES_REQUEST_REJECTED");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM futures_operations",Long.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT locked_amount FROM user_balances WHERE user_id=1",BigDecimal.class)).isZero();
+        var fresh=preview();assertThat(intents.consume(1,fresh.id(),UUID.randomUUID().toString(),Action.OPEN,null,0,now).state()).isEqualTo("PREPARED");
+    }
+    @Test void definitiveRejectionCannotHideAnAlreadyAcceptedRequestOrReuseKeyWithDifferentContent() {
+        var p=preview();String key=UUID.randomUUID().toString();var op=intents.consume(1,p.id(),key,Action.OPEN,null,0,now);
+        assertThat(intents.rejectPreview(1,p.id(),key,Action.OPEN,null,0)).contains(op);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM futures_request_rejections",Long.class)).isZero();
+        var p2=preview();assertThatThrownBy(()->intents.rejectPreview(1,p2.id(),key,Action.OPEN,null,0)).hasMessage("IDEMPOTENCY_CONFLICT");
+    }
 }

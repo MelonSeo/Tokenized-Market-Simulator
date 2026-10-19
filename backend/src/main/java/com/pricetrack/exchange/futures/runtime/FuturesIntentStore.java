@@ -49,6 +49,7 @@ public class FuturesIntentStore {
             if(!fingerprint.equals(v.keyHash()))throw new Failure("PREVIEW_ALREADY_CONSUMED");
             return ledger.operation(v.operationId());
         }
+        ledger.lockUserIntent(uid);checkRejection(uid,key,previewRequest(id,action,pid,version));
         if(!now.isBefore(v.expiresAt()))throw new Failure("PREVIEW_EXPIRED");
         Operation op=action==Action.OPEN?ledger.prepareOpen(uid,key,v.side(),v.margin(),v.leverage(),v.mark().price(),v.mark().observedAt().getEpochSecond()):
             ledger.prepare(uid,pid,key,action,version,v.mark().price(),v.mark().observedAt().getEpochSecond(),BigInteger.ZERO);
@@ -59,6 +60,7 @@ public class FuturesIntentStore {
     @Transactional(timeout=5)
     public Operation prepare(long uid,String pid,String key,Action action,long version,BigInteger added,FuturesMarketGate.Mark mark) {
         ledger.lockUserIntent(uid);
+        if(action==Action.TOP_UP)checkRejection(uid,key,marginRequest(pid,version,added));
         if(action==Action.TOP_UP) {var old=marginReplay(uid,pid,key,version,added);if(old.isPresent())return old.get();}
         Operation op=ledger.prepare(uid,pid,key,action,version,mark.price(),mark.observedAt().getEpochSecond(),added);
         bind(op,mark);return op;
@@ -79,5 +81,31 @@ public class FuturesIntentStore {
         var op=ledger.operation(ids.get(0));
         if(!op.positionId().equals(pid) || op.action()!=Action.TOP_UP || op.expectedVersion()!=version || !op.reservedMargin().equals(added))throw new Failure("IDEMPOTENCY_CONFLICT");
         return Optional.of(op);
+    }
+    private String previewRequest(String id,Action action,String pid,long version){return org.web3j.crypto.Hash.sha3String("PREVIEW|"+id+"|"+action+"|"+pid+"|"+version);}
+    private String marginRequest(String pid,long version,BigInteger added){return org.web3j.crypto.Hash.sha3String("MARGIN|"+pid+"|"+version+"|"+added);}
+    private void checkRejection(long uid,String key,String request){
+        var rows=jdbc.queryForList("SELECT request_hash FROM futures_request_rejections WHERE user_id=? AND key_hash=?",String.class,uid,FuturesLedger.fingerprint(key));
+        if(!rows.isEmpty())throw new Failure(rows.get(0).equals(request)?"FUTURES_REQUEST_REJECTED":"IDEMPOTENCY_CONFLICT");
+    }
+    private void reject(long uid,String key,String request){
+        var rows=jdbc.queryForList("SELECT request_hash FROM futures_request_rejections WHERE user_id=? AND key_hash=?",String.class,uid,FuturesLedger.fingerprint(key));
+        if(!rows.isEmpty()){if(!rows.get(0).equals(request))throw new Failure("IDEMPOTENCY_CONFLICT");return;}
+        jdbc.update("INSERT INTO futures_request_rejections VALUES(?,?,?,CURRENT_TIMESTAMP)",uid,FuturesLedger.fingerprint(key),request);
+    }
+    /** Same preview->user lock order as consume: return the earlier accepted request OR seal no-execution. */
+    @Transactional(timeout=5)
+    public Optional<Operation> rejectPreview(long uid,String id,String key,Action action,String pid,long version){
+        var v=find(uid,id,true);String fingerprint=FuturesLedger.fingerprint(key);
+        if(v.action()!=action || !Objects.equals(v.positionId(),pid) || v.version()!=version)throw new Failure("PREVIEW_ACTION_CONFLICT");
+        ledger.lockUserIntent(uid);
+        if(v.operationId()!=null){if(!fingerprint.equals(v.keyHash()))throw new Failure("PREVIEW_ALREADY_CONSUMED");return Optional.of(ledger.operation(v.operationId()));}
+        if(jdbc.queryForObject("SELECT count(*) FROM futures_operations WHERE user_id=? AND key_hash=?",Long.class,uid,fingerprint)!=0)throw new Failure("IDEMPOTENCY_CONFLICT");
+        reject(uid,key,previewRequest(id,action,pid,version));return Optional.empty();
+    }
+    @Transactional(timeout=5)
+    public Optional<Operation> rejectMargin(long uid,String pid,String key,long version,BigInteger added){
+        ledger.lockUserIntent(uid);var previous=marginReplay(uid,pid,key,version,added);if(previous.isPresent())return previous;
+        reject(uid,key,marginRequest(pid,version,added));return Optional.empty();
     }
 }

@@ -16,7 +16,7 @@ public final class PhaseAFixture {
         if(!session.getParent().equals(runtime)||!session.getFileName().toString().matches("phase-a-\\d{14}-[0-9a-f]{8}"))
             throw new IllegalStateException("Phase A session required");
         Path run=Path.of(Objects.requireNonNull(gateRun)).toRealPath();
-        if(!run.getParent().equals(session.resolve("fixtures"))||!run.getFileName().toString().matches("(reserve|audit|faucet|conditional|google|google-migration|sellall|futures-ledger|futures-db-only|futures-chain|futures-auto)-[0-9a-f]{8}"))
+        if(!run.getParent().equals(session.resolve("fixtures"))||!run.getFileName().toString().matches("(reserve|audit|faucet|conditional|google|google-migration|sellall|futures-ledger|futures-db-only|futures-chain|futures-auto|futures-restart|futures-api|futures-requests)-[0-9a-f]{8}"))
             throw new IllegalStateException("New Phase A child fixture required");
         var meta=new ObjectMapper().readTree(run.resolve("run.json").toFile());
         String id=run.getFileName().toString();
@@ -28,7 +28,7 @@ public final class PhaseAFixture {
         String database=meta.path("database").asText();
         if(!Set.of("exchange_reserve_e2e","exchange_trade_audit_e2e","exchange_futures_e2e").contains(database))throw new IllegalStateException("Unsafe DB name");
         if(id.startsWith("futures-") != database.equals("exchange_futures_e2e"))throw new IllegalStateException("Futures fixture DB mismatch");
-        if((id.startsWith("futures-chain-") || id.startsWith("futures-auto-")) && (meta.path("miningBlockTimeSeconds").asInt()!=2 || !p.getProperty("app.futures.fixture-block-time-seconds","").equals("2")))
+        if((id.startsWith("futures-chain-") || id.startsWith("futures-auto-") || id.startsWith("futures-restart-") || id.startsWith("futures-api-")) && (meta.path("miningBlockTimeSeconds").asInt()!=2 || !p.getProperty("app.futures.fixture-block-time-seconds","").equals("2")))
             throw new IllegalStateException("Futures periodic-block fixture required");
         if(!p.getProperty("spring.datasource.url","").equals("jdbc:postgresql://127.0.0.1:"+db+"/"+database+"?connectTimeout=2&socketTimeout=5")
             ||!p.getProperty("app.blockchain.rpc-url","").equals("http://127.0.0.1:"+rpc)

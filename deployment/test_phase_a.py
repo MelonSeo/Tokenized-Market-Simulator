@@ -10,6 +10,24 @@ spec=importlib.util.spec_from_file_location('phase_a',Path(__file__).with_name('
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 
 class PhaseAGuardTest(unittest.TestCase):
+    def test_futures_restart_uses_two_explicit_stages_without_observation_suite(self):
+        counts={'tests':1,'failures':0,'errors':0,'skipped':0,'passed':1}
+        with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',side_effect=lambda _:{}),patch.object(a,'aggregate',return_value=counts):
+            run=Path(folder);(run/'evidence').mkdir()
+            a.java_test(run,'prepare','futures-restart',run,False)
+            a.java_test(run,'recover','futures-restart',run,True)
+            self.assertEqual(execute.call_count,2)
+            for call,stage in zip(execute.call_args_list,('prepare','recover')):
+                self.assertEqual(call.args[1][-1],'*FuturesRestartPostgresAnvilE2ETest')
+                env=call.args[4];self.assertEqual(env['FUTURES_RESTART_STAGE'],stage)
+                self.assertEqual(env['FUTURES_RESTART_E2E_TESTS'],'true');self.assertNotIn('OBSERVATION_RESTART_TESTS',env)
+    def test_existing_conditional_restart_still_selects_observation_restart_only(self):
+        counts={'tests':1,'failures':0,'errors':0,'skipped':0,'passed':1}
+        with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',return_value={}),patch.object(a,'aggregate',return_value=counts):
+            run=Path(folder);(run/'evidence').mkdir();a.java_test(run,'restart','conditional',run,True)
+            self.assertEqual(execute.call_args.args[1][-1],'*ObservationRestartPostgresTest')
+            self.assertEqual(execute.call_args.args[4]['OBSERVATION_RESTART_TESTS'],'true')
+            self.assertNotIn('FUTURES_RESTART_STAGE',execute.call_args.args[4])
     def test_network_overlap_uses_distinct_bounded_candidates(self):
         collision=a.CommandFailed('network',1,'Error: invalid pool request: Pool overlaps with other one on this address space')
         with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute',side_effect=[collision,'new-id']) as execute:

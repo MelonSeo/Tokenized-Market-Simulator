@@ -108,3 +108,73 @@
 - 같은 고정 backend 소스의 새 전체 회귀는 backend600 중558 PASS/42 SKIP/0 FAIL/0 ERROR. 웹110 PASS, 기존 Chrome desktop/mobile offline smoke PASS, Foundry52 PASS. 새 선물 UI 전용 브라우저/실체인 검증은 포함하지 않았다. 42 SKIP은 opt-in gates이며 위 actual 결과와 중복 합산하지 않는다.
 - 독립 `review_futures_runtime`: runtime/API/DTO/preview/worker/서명 재검증/알림/보안/schema/tests/fixture/로그를 직접 읽고 발견된 필수 수정 없음. 직접 테스트/DB/private는 실행하지 않았고 검토 환경 Git diff 조회는 실패하여 현재 파일을 직접 읽었다. 실제 broker commit/rollback·REST 권한·별도 JVM·제품 Synthetic engine 통합은 후속 필수로 유지한다.
 - Gate6 backend 단위를 검증된 명시 경로만 로컬 커밋한다. 새 웹 패널은 별도 미커밋 후속 작업이며 이 backend 검토·actual 통과로 UI 완료를 주장하지 않는다.
+
+## Gate7 후속 — UI·실제 네트워크/별도 JVM 검증 준비 (진행 중)
+
+- Gate6 검증 단위는 `452c5db8e0ef9e92a81d79323af2e8b938b7c1dc`로31개 명시 경로만 로컬 커밋했다. UI/사용자 문서는 제외, melon-init/기존 환경 변경 없음.
+- 웹 `futures-panel.js`와 새 선물 메뉴: Long/Short·2/5/10·정밀 문자열 증거금, preview→별도확정, 포지션/손익/마진콜 deadline/자동청산 결과, topup·종료 preview, 본인 WS invalidation 및3초 REST 재동기화. 손익 풀 지급불가/DB담보/서명가격 한계를 표시한다. 요청 전 user별 pending intent를 Web Lock+localStorage에 보존하고 불확실 응답은 같은키만 명시 재시도, 계정/route 전환 늦은응답 무시. raw/키/서명 없음.
+- 새 웹 단위115 PASS/0 FAIL/0 SKIP: exact decimal·다중탭 동일키·늦은 read/preview/write·preview는 주문하지 않음·중복 확정/응답 유실·bounded API 경로를 포함한다. Chrome desktop/mobile smoke에 선물 preview/call/liquidation **HTTP/STOMP fixture** 화면을 추가해 실행 중이다. 실제 서버/체인 Chrome 완료가 아니다.
+- `FuturesApiPostgresAnvilE2ETest`는 실제 HTTP USER/익명/다른user/ADMIN 경계, null loginId 내부JWT fixture, 개인 STOMP, 실제 개설/종료, rollback 알림 미전달을 준비했다. `FuturesRestartPostgresAnvilE2ETest`는 동일 owned fixture에서 두 별도 JVM의 raw 선저장→복구 및 위험 감시 재개를 준비했다. `phase-a.py`에 전용 case/두 JVM stage를 추가하고 Java ownership/mining guard도 확대했다. `compileTestJava --offline` PASS이며 **실제 테스트는 아직 NOT_RUN**.
+- 2026-10-19 새session `phase-a-20261019001704-a759f4eb` 준비가 `docker version --format {{.Server.Version}}`의15초 timeout에서 **BLOCKED**. 이어 읽기 전용 `/version`·`/info`는 LinuxEngine API HTTP500을 반환했다. fixture 생성·DB/Anvil/자산 초기화·실제 API/restart E2E는 시작하지 않았다. 빈 timeout 원문 파일/metadata도 보존하며 원인을 제품 코드 실패로 단정하지 않는다. daemon/WSL 재시작·기존 환경 reset 없음.
+- Docker 차단 중에는 새 실제 E2E를 반복하지 않고 오프라인 UI/감사 작업을 진행한다. 별도 JVM/실REST·WS·실Chrome·선물 감사·대사 결과를 기존 auto PASS로 대체하지 않는다.
+- Chrome 확장 smoke 최초 실행 PASS: desktop/mobile 선물 preview→명시확정→GRACE/LIQUIDATED fixture·기존 현물/Google fixture. 실제 chain이 아니다.
+- 독립 `review_futures_ui_restart` 최초 검토에서 UI 필수3건 발견: (1) 확정 미실행 거절도 pending을 영구 유지, (2) 입력 변경 뒤 늦은 preview가 복원, (3)3초/WS 갱신이 topup 입력을 지움. 서버/금융정책 변경이 아니라 요청·표시 정합성 결함으로 보완한다.
+- 확정 미실행 처리는 모든4xx를 지우지 않는다. 새 `futures_request_rejections`에 user/key fingerprint/request hash만 저장하며, prepare와 같은 잠금 순서로 먼저 접수된 op를 반환하거나 거절 marker를 커밋한다. 늦게 도착한 같은키 실행은 marker로 차단한다. 서버가 이 근거를 커밋한 전용 `FUTURES_REQUEST_REJECTED`만 클라이언트 pending 해제를 허용하고, 네트워크/미확인409/5xx는 원래키를 보존한다. key원문·보고서·키재료는 저장하지 않는다. 기존 성공 op/원장/정산은 수정하지 않는다.
+- preview 별도 generation과 방향/배수 확인 표시, position별 exact topup draft 보존을 추가했다. 새 웹119 PASS/0 FAIL/0 SKIP, H2 marker 선/후 순서 및 기존Futures 회귀·Chrome 재실행은 진행 중이다. 새 backend sourceHash가 달라졌으므로 Gate6 actual PASS를 이 변경의 실제PG PASS로 재사용하지 않는다. Docker 차단으로 최신 실제PG 경쟁/API/restart는 NOT_RUN이다.
+- 수정 후 선택 Java71 중65 PASS/6 SKIP/0 FAIL/0 ERROR. 최신 productHash `060d393d36a1e4a55ae834d9ba0ea50eac14be8cc349cdaf1b85099b7fb4282e`. 실제PG opt-in6개는 SKIP이며 H2와 혼동하지 않는다. 새 전체 backend604 중560 PASS/44 SKIP/0 FAIL/0 ERROR(`futures-ui-rejection-backend-full`), 웹119 PASS, 확장Chrome desktop/mobile **offline fixture PASS**, Foundry52 PASS/0 FAIL/0 SKIP. 최초Gate6의558/42와 구분한다.
+- Python harness 새18 PASS. 처음 추가한 두 stage 테스트는 shared mock dict 때문에17 PASS/1 FAIL이었고 실제 clean_env처럼 호출별 dict를 반환하도록 테스트만 수정한 뒤18 PASS다. 로그에 출력된 prepare/recover1PASS는 Mock 집계이며 실제 JVM 증거가 아니다.
+- `review_futures_ui_restart` 첫/최종 두 번째 재검토 모두 추가 필수 수정 없음. 첫 재검토는 UI3건/새 DB 거절 marker·잠금/선후 방어를 확인, 두 번째는 신규harness2테스트/기존conditionalrestart 보존을 읽었다. 직접 테스트/DB/private 실행은 없다. 실제PG 경합·API·별도JVM·실Chromechain 미실행 한계를 유지한다.
+
+### 현재 통합 판정과 재개 기준
+
+| 항목 | 실제 상태 |
+|---|---|
+| Gate4b/5 core |0d7c627 로컬 커밋, 당시 새PG/Anvil3fixture/전체회귀 통과 |
+| Gate6 자동 worker/API backend |452c5db 로컬 커밋, 당시 sourceHead0d7c627/productHash99bb1a89bc688c9cf8e95d43325235cdb72f8847e92645b1bceed8aa4d96ed68의 실제 자동 양방향 청산1PASS·전체회귀 통과 |
+| 최신 UI/확정거절 보완 |오프라인/독립 검토 통과, **미커밋**. PostgreSQL 동시 경합 필수 검증 대기 |
+| 실제 REST·개인 broker/별도 JVM |테스트 컴파일/guard mock 준비, Docker Server HTTP500으로 BLOCKED/NOT_RUN |
+| 제품 Synthetic 경로/실Chrome→서버→체인 |후속 미구현·미실행. offline UI 및 테스트용 Scenario 증거로 대체하지 않음 |
+| 선물 감사·자산 대사 확장/AI Tool·Skill·RAG |미구현/NOT_RUN, 기존 현물 감사/AI 통과와 구분 |
+| 원본 통합/외부 인수 |아직 안 함. melon-init9a9197b·원래 사용자dirty5개·KRX/Google/playground/키/state/manifest 보존 |
+
+- 현재 Docker 차단은 애플리케이션/경제 정책 오류로 해결할 수 없으며 전역 daemon/WSL 재시작은 실행하지 않았다. Engine의 `docker version`/`docker info` Server 정상 응답을 확보한 뒤 최신 productHash의 **새 session**을 만든다. 실패 session/이전 child는 초기화하거나 manifest를 바꿔 재사용하지 않는다.
+- 다음 실행 순서: 최신 거절 marker의 실제PG 양방향 경합→`futures-api` 실제REST/STOMP→`futures-restart` 두 별도JVM→최신 source actual auto 재확인. 필수 검증 통과 뒤 UI/marker/harness 논리 커밋, 이후 선물 감사/자산 대사→fixture전용 제품Synthetic 경로/실Chrome→read-onlyAI를 이어간다.
+- 발표 가능한 현재 증거는 core Receipt/DB 정산 및 이전source의 worker 양방향 자동청산 tx/실제60초 유예다. 최신전체 실제브라우저 데모/별도JVM/선물감사/AI 설명이 완성됐다고 발표하지 않는다. 최종통합 PASS 아님.
+
+### Gate7 실제 PostgreSQL/REST/STOMP 재개 — 2026-10-19
+
+- 읽기 전용 Docker Server version/info가 모두28.4.0으로 정상 응답했다. 에이전트가 Docker Desktop/WSL/공유 서비스를 재시작하지 않았다. 앞선 HTTP500/timeout 세션은 그대로 보존했다.
+- 새 session `phase-a-20261019004856-29dfdfbb`, sourceHead `452c5db8e0ef9e92a81d79323af2e8b938b7c1dc`, productHash `060d393d36a1e4a55ae834d9ba0ea50eac14be8cc349cdaf1b85099b7fb4282e`. 새 child별 전용 PG/Anvil/키/포트/네트워크와 기존 ownership·clock·productHash guard를 유지했다. 기존 KRX/Google/playground 및 melon-init은 변경하지 않았다.
+- `futures-requests-9d0f010c`: 실제 PostgreSQL **1 PASS/0 FAIL/0 SKIP**. 거절 선행/접수 선행과 barrier 기반6회 동시 요청에서 단일 operation 또는 동일 확정 거절, 정확한 잠금, 같은 키 replay를 확인했다. 이 case는 Anvil fixture를 준비하지만 체인 RPC 거래 검증은 하지 않는 DB 동시성 테스트다. 정리는 미서명 PREPARED만 기존 rejectUnsigned로 처리하며 서명 거래 강제 실패와 다르다.
+- `futures-api-9f0b4a55`: **1 FAIL**, 테스트가 loginId만NULL로 바꾸어 실제 chk_users_login_method 제약을 위반했다. 제품 인증은 변경하지 않고 fixture만 loginId/passwordHash=NULL 및 offline google_sub로 수정했다. 실제 Google 인증 결과가 아니다.
+- `futures-api-36c56ae1`: **1 FAIL**, 거래 전 개인 STOMP 준비 probe 미수신. 테스트 StringMessageConverter 대신 서버 JSON envelope에 맞는 MappingJackson2MessageConverter/JsonNode handler를 사용하도록 보완했다. 실패 child와 XML/로그는 보존했다.
+- `futures-api-463ae9e2`: 실제 PostgreSQL/Anvil/HTTP/개인 STOMP **1 PASS/0 FAIL/0 SKIP**. 신규 개설·추가담보·전체 종료와 canonical 정산, 익명401/USER의ADMIN403/타사용자404, null-loginId 내부JWT fixture, owner 개인 알림 및 타사용자 미수신, rollback 미발행을 확인했다. 두 병렬 TOP_UP 요청은 같은 operation 및 한 번의 담보 증가를 반환했다. 모든 실행에서 물리적 lock 대기를 계측한 것은 아니다. stale 요청은 HTTP409와 FUTURES_REQUEST_REJECTED를 두 번 확인했다.
+- Python 새 회귀는 harness15 PASS, clock3 PASS. 최초 저장소 루트에서 clock unittest를 실행한 명령은 import 경로 오류1 ERROR였고, 기존 권장 deployment 작업 디렉터리에서 재실행하여3 PASS했다. Mock stage 집계는 실제 JVM 재시작 결과로 합산하지 않는다.
+- 독립 `review_futures_pg_validation` 최초/1차 재검토: 발견된 필수 수정 없음. 실제 소스 및 신규 PG 경합/HTTP/JSON converter/409 assertion/fixture guard를 읽었으며 직접 테스트나 private evidence 접근은 하지 않았다.
+- 별도 두 JVM `futures-restart`는 신규 child에서 실행 중이다. 최신 actual worker 재검증·최종 전체 회귀·안전 커밋은 후속이며, 선물 감사/자산 대사/실Chrome/AI가 완료됐다는 뜻이 아니다. 위 과거 BLOCKED 표는 당시 기록으로 보존하며 이 새 실행과 구분한다.
+- 후속 `futures-restart-0b5f8978`는 **BLOCKED**, JVM 테스트0건 실행. 신규 PostgreSQL initdb의 post-bootstrap 초기화에서 `FATAL: could not write to file …: No space left on device`가 발생해90초 SQL readiness가 실패했다. 계약 배포/장부 초기화/prepare/recover JVM 이전 단계이며 제품 거래·시각 정책 결함으로 분류하지 않는다. 이 child의 PG/Anvil은 harness의 기존 소유권 검사 후 종료되었고 디렉터리/네트워크/컨테이너/로그는 삭제하지 않았다.
+- 장애 후 Docker Server version은28.4.0 정상 응답했다. 저장공간 부족의 정확한 호스트/Docker backing-store 경계는 추가 확인 대상이며, Docker HTTP500과 동일 원인이라고 단정하지 않는다. 무단 prune/volume/image/network 삭제·Docker/WSL 재시작·기존 환경 정리는 하지 않았다. 디스크 공간을 쓰는 새 E2E/빌드와 추가 제품 개발은 중단하며, 보존 데이터에 영향 없는 공간 확보 방법을 확인하거나 사용자 승인을 받은 뒤 새 child에서 재개해야 한다. UI/marker 전체 단위의 안전 커밋은 필수 restart/최신 worker 검증이 남아 있어 아직 수행하지 않는다.
+- 읽기 전용 저장공간 집계: Windows C 여유14,863,183,872bytes, Docker images87개/42.1GB(표시상reclaimable38.92GB), containers214개/3.293MB, local volumes15개/640.5MB, build cache223개/3.943GB. reclaimable 표시는 삭제 허가가 아니며 보존 이미지/중단 컨테이너를 제거하지 않았다. 호스트에 여유가 있다는 사실만으로 Docker 내부 파일시스템 여유를 보장하지 않는다. build cache 정리 또는 Desktop disk limit 조정은 사용자 승인/영향 확인 대상이다.
+
+### 저장공간 장애 읽기 전용 정밀 조사 — 2026-10-19
+
+- [원인 조사·대안·승인 경계 보고서](futures-storage-incident-investigation.md)를 추가했다. 코드/테스트/컨테이너/volume/image/환경 설정은 수정하지 않았고 신규 E2E·빌드·prune·Docker/WSL 재시작도 하지 않았다.
+- 실패 파일은 PGDATA의 `base/4/2675`이며 PGDATA는 Windows runtime의 postgres 폴더 bind다. WSL에서 해당 경로는 C: NTFS 공유9p, 현재 약13.8GiB 가용이다. Docker data ext4는 현재 약1006.9GiB 중44.5GiB 사용/911.1GiB 가용, inode 약1% 사용이다. **Docker 가상 디스크 한도 초과 또는 캐시 정리가 확정 해결책이라는 판단은 근거가 없다.** 이전 캐시 제안은 후보이며 해결 보장이 아님을 명확히 한다.
+- PG exit1/OOMKilled=false, initdb 자체 실패 정리 메시지와 현재 파일0개를 확인했다. 에이전트의 디렉터리 삭제가 아니다. 실패 당시 host 사용량 이력은 없어 순간 공간 소진·NTFS/할당량·공유 계층 원인은 아직 구분하지 못했다. fsutil 읽기 명령3개는 접근 거부, 접근 가능한 storage 이벤트/선택한 Docker backend log/WSL kernel 패턴에서 추가 원인 증거는 발견하지 못했다.
+- 214개 컨테이너의 실제 참조 이미지13개와 보존 그룹을 대조했다. PostgreSQL/Foundry 각96개 컨테이너 공유, 컨테이너 writable layer 합계3.293MB다. 컨테이너 참조0인74개 이미지 중 최소13개 Phase A 도구는 session manifest가 필요하며 KRX/Google/playground 도구도 별도 보존이다. reclaimable38.92GB를 삭제 가능 용량으로 보고하지 않는다.
+- 선택적 A안 후보는 비공유 immutable cache `lafz6m9snsfubgau95ekq0z81`/`58xgmj46y4254ts0nevv5rv9w` 명목512.9MB이나 미실행이다. host 공간 즉시 반환/현재 PG bind ENOSPC 해결은 보장하지 않는다. 우선 추천은 관리자 읽기 전용 NTFS 확인 및 별도 승인된 최대32MiB 신규 경계 probe이며, 필요할 때 새 fixture PG만 Linux volume으로 분리하는 대안이다. 기존 환경 이동·가상 디스크 증설·다른 프로젝트 이미지 삭제는 추천 실행하지 않는다.
+- 현재는 조사/문서화 완료, 개발 재개는 **BLOCKED/승인 대기**다. 사용자 승인 없는 저장공간 변경은 하지 않는다. 이후 정상화되면 새fixture restart→최신auto→전체회귀/검토→로컬커밋→선물감사/대사→실Chrome→AI 순서를 유지한다.
+
+### 승인된 선택 이미지 정리와 신규 restart 재개 — 2026-10-19
+
+- [개별 삭제·용량·재개 결과](futures-image-cleanup-2026-10-19.md)에 전체 판단을 기록했다. 사용자 승인 조건에 맞는 초기 웹 build-only `tokenized-market-web:local`의 전체 ID `sha256:e281ca41aacac1260417597bd34b019b688857f3527c4f5d7cb8fa3a2516d010` **1개만** 비강제 개별 삭제했다. 컨테이너 참조0·runtime identity 참조0·프로젝트 소유/재생성 경로를 확인했다. KRX/Google/playground/Futures·과거 fixture 의존 도구·현재 release 기반·소유 불명/타 프로젝트 이미지는 모두 보존했다.
+- images87→86, df42.1GB→42.1GB(표시 정밀도), Windows C15,708,020,736→15,707,893,760bytes. UniqueSize26.4MB 표시는 실제 host 회수량이 아니다. 컨테이너214/volume15/cache223은 정리 직후 그대로이며 cache/prune/서비스 재시작은 하지 않았다. 현재 공간 측정이나 이미지 삭제만으로 ENOSPC 해결을 선언하지 않는다.
+- 같은 최신 productHash060d393d…의 **신규** `futures-restart-4f7696a5`: PG 초기화/readiness/clock/ownership 통과 후 prepare JVM1 PASS + recover 별도 JVM1 PASS, 각각FAIL/SKIP0. 최초 실패0b5f8978은 초기화/재사용하지 않았다.
+- 동일 raw/hash/nonce 복구는 REVERTED canonical Receipt와 DB 상태 일치를 확인한 결과다. 채굴 시각과 report.validUntil을 직접 비교하지 않은 이 테스트에서는 정확한 revert 원인(TTL 포함)은 미확정이다. TOP_UP 성공 인수와 구분한다. nonce3/txHash9f058e0d… 유지, 이후 원래 마진콜60초 유예 조건으로 worker 자동청산 재개·LIQUIDATED·단일 journal·잠금0 검증 통과다. 현재 actual auto 재검증/새 전체 회귀는 진행 중이며 최종통합 PASS·실Chrome·선물 감사/대사·AI 완료는 아니다.
+- 최신 actual `futures-auto-f71b7b7b`1 PASS/0 FAIL/0 SKIP. Long은call→deadline60초/청산63초, Short은call→deadline60초/청산74초로 새가격/정규Receipt/Event를 확인했다. 위험 tick 이후64,642ms/75,739ms, GRACE 관측 이후62,843ms/73,671ms. 세부 정제 시각은 위 정리 보고서와 private evidence에 보존했다.
+- 새 웹119/Chrome desktop-mobile offline fixture/Foundry52/Python18 PASS. 전체 forge build는 Scenario.s.sol61 stack-too-deep FAIL을 새로 확인했고 별도 추적한다. 백엔드 전체 회귀는 새로 실행 중이다. 실제Chrome-to-chain/선물 감사·대사/AI 완료를 의미하지 않는다.
+- `review_futures_pg_validation` 최종2차 검토에서 코드 추가 필수 결함은 없었고, restart의 status0을 TTL 원인으로 확정한 보고문구1건을 지적했다. 해당2개 문서 문구를 'canonical REVERTED 복구·정확한revert 원인 미확정'으로 바로 좁혔다. 제품/테스트 정책 변경은 없으며 검토자는 private/DB/테스트를 직접 실행하지 않았다. 문서의 원인 단정이 실제 assertion보다 강했던 점을 기록한다.
+- 첫 새 전체 backend605중548 PASS/45 SKIP/12 FAIL. 세 loopback HTTP fixture 클래스의 native Bad address bind/listen 실패이며 금융/외부 provider 실행 전이다. 제품/테스트 소스 무수정의 새 JVM 분리 실행17 PASS, 최초 실패 증거를 보존하고 전체 recheck를 새 이름으로 실행 중이다. 원인을 영구 해결했다고 주장하지 않는다.
+- staged22개는 이 기능의 명시 경로만이다. 최초 보안 검사에서 Java runtime 패키지를 데이터폴더로 오인한 후 검사 범위만 바로잡아 신규fixture secret33개 대조0/금지경로0/cached diff PASS를 확인했다. 기존 NXT/계획/사용자 변경 제외, 전체 검증 전 커밋 보류다.
+- 최종 새 JVM 전체 recheck `futures-gate7-backend-full-recheck`: **605중560 PASS/45 SKIP/0 FAIL/0 ERROR**. 첫548/45/12 FAIL과 선택17 PASS는 각각 별도 실행으로 보존한다. 제품/테스트 소스 변경·실패 제외·환경 정책 완화 없이 새 JVM에서 전체 재실행한 결과이며 native socket 실패 원인을 영구 해결했다고 단정하지 않는다.
+- Gate7의 UI/확정거절 marker/PG 경합/실HTTP·개인STOMP/실제두JVM/최신 auto 및 영향 회귀를 마쳐 위22개 명시 경로만 로컬 커밋한다. 코드에 대한 이전 UI/marker 독립검토와 새 실제 검증 단위 독립검토를 구분하며, 보고서 원인 과장은 지적대로 수정했다. melon-init9a9197b·기존사용자dirty5개/보존환경/모든이전증거 유지. 다음 필수는 선물 감사·자산 대사→제품Synthetic/실Chrome→read-only AI다. 전체 Futures/Phase D 완료 또는 원본 통합은 선언하지 않는다.

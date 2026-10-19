@@ -12,9 +12,11 @@ import { createConditionalPanel } from './conditional-panel.js';
 import { createTransactionObservationPanel } from './transaction-observation-panel.js';
 import { createGooglePanel } from './google-auth.js';
 import { createSellAllAction } from './sell-all.js';
+import { createFuturesPanel } from './futures-panel.js';
 
 const $ = (id) => document.getElementById(id);
 const api = new ApiClient(); const requests = new RequestState();
+const futuresPanel = createFuturesPanel(api, expireSession);
 const reservePanel = createReservePanel(api);
 const tradeAuditPanel = createTradeAuditPanel(api);
 const faucetPanel = createFaucetPanel(api, () => void loadPortfolio(), expireSession);
@@ -74,7 +76,7 @@ function requireUser(destination = routeName()) { if (state.user) return true; s
 function routeName() { return location.hash.slice(1); }
 function navigate(name) { if (routeName() === name) route(); else location.hash = name; }
 function route() {
-  let name = routeName(); if (!['market', 'history', 'portfolio', 'ai', 'admin'].includes(name)) name = 'market';
+  let name = routeName(); if (!['market', 'futures', 'history', 'portfolio', 'ai', 'admin'].includes(name)) name = 'market';
   if (name !== 'market' && !state.user) { showAuth(name); name = 'market'; }
   if (name === 'admin' && state.user?.role !== 'ADMIN') { name = 'market'; toast('ADMIN 운영 화면은 관리자 전용입니다.'); }
   document.querySelectorAll('.view').forEach((view) => { view.hidden = view.id !== `view-${name}`; });
@@ -87,6 +89,7 @@ function route() {
   faucetPanel.setContext(state.user, name);
   conditionalPanel.setContext(state.user, name);
   transactionObservationPanel.setContext(state.user,name);
+  futuresPanel.setContext(state.user,name);
 }
 function connect() { socket.connect({ transport: $('transport').value, token: api.token, debug: false }); }
 function renderIdentity() {
@@ -95,6 +98,7 @@ function renderIdentity() {
   $('admin-nav').hidden = state.user?.role !== 'ADMIN'; updateTradeControls();
 }
 function resetPrivate() {
+  futuresPanel.setContext(null, 'market');
   sellAll.cancel();
   googlePanel.cancel();
   reservePanel.setContext(null, 'market');
@@ -276,7 +280,7 @@ async function executeQuote() {
 }
 function socketStatus(status) {
   $('connection').textContent = ({ CONNECTED: '실시간 연결됨', CONNECTING: '연결 중', RECONNECTING: '연결 복구 중', DISCONNECTED: '연결 안 됨', ERROR: '연결 확인 필요', AUTH_EXPIRED: '인증 만료' })[status] || '연결 확인 중';
-  if (status === 'CONNECTED') { void loadMarket(); void chart.load(); if (state.user) { void loadActivity(); void loadPortfolio(); void conditionalPanel.refresh(); } }
+  if (status === 'CONNECTED') { void loadMarket(); void chart.load(); if (state.user) { void loadActivity(); void loadPortfolio(); void conditionalPanel.refresh(); void futuresPanel.refresh(); } }
   if (status === 'RECONNECTING' || status === 'DISCONNECTED') message('market-message', '실시간 연결이 끊겼습니다. 자동 복구 중이며 표시 정보가 최신이 아닐 수 있습니다.', 'warning');
   if (status === 'AUTH_EXPIRED') expireSession();
 }
@@ -285,6 +289,7 @@ function socketEvent(channel, event) {
   if (event.type === 'INVALID_JSON' || !event.data) return;
   if (event.eventId && seenEvents.has(event.eventId)) return;
   if (event.eventId) { seenEvents.add(event.eventId); if (seenEvents.size > 300) seenEvents.delete(seenEvents.values().next().value); }
+  if (channel === 'futures' && state.user) { void futuresPanel.refresh(); void loadPortfolio(); return; }
   if(channel==='conditional'&&state.user){void conditionalPanel.refresh();void loadActivity();void loadPortfolio();return;}
   if (channel === 'price') {
     if (state.market?.observedAt && Date.parse(event.data.observedAt) < Date.parse(state.market.observedAt)) return;
