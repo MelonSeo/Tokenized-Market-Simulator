@@ -60,6 +60,9 @@ class FuturesBrowserPostgresAnvilE2ETest {
         ledger.initializeEmptyFixture();freshBaseline(()->reserves.createBaseline(1),"BASELINE_CUT_NOT_STABLE");var baseline=freshBaseline(()->audits.baseline(1),"FUTURES_BASELINE_CUT_CHANGED");
         String password=UUID.randomUUID().toString();auth.signup(new SignupRequest("chrome_future_owner",password,"선물 브라우저 사용자"));
         Files.writeString(run.resolve("secrets/browser-account.json"),json.writeValueAsString(Map.of("loginId","chrome_future_owner","password",password)),StandardOpenOption.CREATE_NEW);
+        auth.signup(new SignupRequest("chrome_future_admin",password,"선물 감사 관리자"));
+        jdbc.update("UPDATE users SET role='ADMIN' WHERE login_id='chrome_future_admin'");
+        Files.writeString(run.resolve("secrets/browser-admin-account.json"),json.writeValueAsString(Map.of("loginId","chrome_future_admin","password",password)),StandardOpenOption.CREATE_NEW);
         var process=new ProcessBuilder("node",repo.resolve("deployment/futures-browser.mjs").toString(),run.toString(),Integer.toString(port)).directory(repo.toFile()).redirectErrorStream(true).redirectOutput(run.resolve("browser-driver.private.log").toFile()).start();
         var commands=new ArrayList<Map<String,Object>>();var owned=new HashMap<Long,Owned>();int sequence=1;long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(480);
         Throwable primary=null;
@@ -84,6 +87,10 @@ class FuturesBrowserPostgresAnvilE2ETest {
         }catch(Exception|AssertionError failure){primary=failure;throw failure;}
         finally{try{cleanup(process,owned,run);}catch(Exception|AssertionError failure){if(primary!=null)primary.addSuppressed(failure);else throw failure;}}
         var browser=json.readTree(run.resolve("browser/result.json").toFile());assertThat(browser.path("status").asText()).isEqualTo("PASS");assertThat(browser.path("events").size()).isPositive();
+        var ui=browser.path("adminAuditUi");var uiAudit=audits.detail(ui.path("id").asText());
+        assertThat(ui.path("status").asText()).isEqualTo(uiAudit.status());
+        assertThat(ui.path("complete").asBoolean()).isEqualTo(uiAudit.coverage().complete());
+        assertThat(jdbc.queryForObject("SELECT role FROM users WHERE id=?",String.class,ui.path("userId").asLong())).isEqualTo("ADMIN");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM futures_positions WHERE status='LIQUIDATED'",Long.class)).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT SUM(locked_amount) FROM user_balances",BigDecimal.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT SUM(wallet_delta+house_delta) FROM futures_journal",BigDecimal.class)).isZero();

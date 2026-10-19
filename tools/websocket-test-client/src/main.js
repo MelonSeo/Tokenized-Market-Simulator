@@ -13,12 +13,14 @@ import { createTransactionObservationPanel } from './transaction-observation-pan
 import { createGooglePanel } from './google-auth.js';
 import { createSellAllAction } from './sell-all.js';
 import { createFuturesPanel } from './futures-panel.js';
+import { createFuturesAuditPanel } from './futures-audit-panel.js';
 
 const $ = (id) => document.getElementById(id);
 const api = new ApiClient(); const requests = new RequestState();
 const futuresPanel = createFuturesPanel(api, expireSession, id => selectAi('futures', id, '이 선물 포지션의 마진콜과 청산 근거를 설명해 주세요.'));
 const reservePanel = createReservePanel(api);
 const tradeAuditPanel = createTradeAuditPanel(api);
+const futuresAuditPanel = createFuturesAuditPanel(api, expireSession);
 const faucetPanel = createFaucetPanel(api, () => void loadPortfolio(), expireSession);
 const conditionalPanel = createConditionalPanel(api, id => void showOrder(id),expireSession);
 const transactionObservationPanel = createTransactionObservationPanel(api,expireSession);
@@ -86,6 +88,7 @@ function route() {
   if (name === 'admin') { void loadDiagnosisHistory(); void loadObservation(); }
   reservePanel.setContext(state.user, name);
   tradeAuditPanel.setContext(state.user, name);
+  futuresAuditPanel.setContext(state.user, name);
   faucetPanel.setContext(state.user, name);
   conditionalPanel.setContext(state.user, name);
   transactionObservationPanel.setContext(state.user,name);
@@ -103,6 +106,7 @@ function resetPrivate() {
   googlePanel.cancel();
   reservePanel.setContext(null, 'market');
   tradeAuditPanel.setContext(null, 'market');
+  futuresAuditPanel.setContext(null, 'market');
   faucetPanel.setContext(null, 'market');
   conditionalPanel.setContext(null, 'market');
   transactionObservationPanel.setContext(null,'market');

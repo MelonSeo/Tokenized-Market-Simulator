@@ -33,6 +33,10 @@ export class ApiClient {
     return this.#request('/api/me');
   }
   futuresPositions() { return this.#request('/api/futures/positions'); }
+  futuresAuditBaseline() { return this.#request('/api/admin/futures/audits/baseline'); }
+  futuresAuditRun() { return this.#request('/api/admin/futures/audits', { method: 'POST' }); }
+  futuresAuditHistory() { return this.#request('/api/admin/futures/audits'); }
+  futuresAuditDetail(id) { return this.#request('/api/admin/futures/audits/' + encodeURIComponent(id)); }
   futuresPreview(body) { return this.#request('/api/futures/previews', { method: 'POST', body: JSON.stringify(body) }); }
   futuresWrite(path, body, key) {
     if (!/^\/positions(?:\/[A-Za-z0-9-]+\/(?:margin|close))?$/.test(path)) throw new Error('Invalid futures action');
