@@ -26,6 +26,7 @@ def source_hash():
     paths += list((REPO / "backend/src/test/java/com/pricetrack/exchange/ai/evaluation").rglob("*.java"))
     paths += list((REPO / "docs/ai-knowledge").glob("*.md"))
     paths += [REPO / "backend/build.gradle", REPO / "docs/ai/ingest-manifest.json", Path(__file__), Path(__file__).with_name("ai_evaluation_guard.py")]
+    paths += [Path(__file__).with_name(name) for name in ("ai_live_run_prepare.py","ai_db_relay.py")]
     digest = hashlib.sha256()
     for p in sorted(paths):
         digest.update(p.relative_to(REPO).as_posix().encode() + b"\0")

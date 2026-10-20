@@ -253,3 +253,10 @@
 - Python41PASS 이후meta변경차단1개추가. Java27PASS(새Runner9/Index mock7/기존Provider7·AgentProvider4), 앞선27중7FAIL/1FAIL은Mockito설정문제로수정·각실패XML보존. 최종sourceHash범위보강후새검증/독립검토결과는후속누적한다. 기존전체E2E·Docker·DB/Anvil은재실행/변경하지않음.
 - 실제LLM/embedding/재색인과최신KRX/NXT·PhaseD는여전히NOT_RUN.16질문/32LLM/80embedding/US$2는승인요청상한이지실행승인이아니다. 최종검토후관련명시경로만로컬커밋한다.
 - 최종v3에서평가Responses만service_tier=default강제/실제bytes예약·다른응답tier차단. 새Python44PASS/Java관련27PASS/0FAIL/0SKIP(--offline --rerun-tasks), 기존제품경로는Provider7/AgentProvider4로컬fixture포함. `review_ai_guard_transport` 최종발견된필수수정없음(직접테스트·외부·기존DB/private접근없음). 정책/수치오기수정후관련12경로만안전점검·로컬커밋하고보호5개는유지한다. 실제유료평가와실제PG색인은여전히NOT_RUN이다.
+
+### 실제 AI 평가 차단 및 무과금 DB 네트워크 복구 — 2026-10-20
+
+- [원래 실제 평가 시도](ai-real-model-evaluation-2026-10-20.md): 모델 metadata GET2 HTTP200이나 internal-only DB의 Windows port 미게시로 색인 전 BLOCKED. LLM/embedding POST0·예약0·질문16개NOT_RUN. 원래 STOP/ledger/실패 증거를 유지하며 성공으로 덮어쓰지 않는다.
+- [네트워크 복구·재승인 경계](ai-evaluation-db-network-recovery-2026-10-20.md): Moby28.4.0 internal endpoint의 외부연결 설정 생략 경로 확인. 신규 network-none PostgreSQL + loopback 고정 docker-exec relay로 기존 네트워크나 egress를 넓히지 않고 연결했다. 별도 offline probe에는 API키/승인/ledger 없음.
+- 신규01 실제 JDBC/pgvector/lease 이후 localhost trust 인증 FAIL, 신규02 relay 만료 CONNECT08001 FAIL을 각각 보존했다. 신규03 SCRAM 초기화에서 actualJava/PG1PASS·로컬합성벡터9문서88청크1536차원·PREPARED/INDEXING/READY/불일치거부·올바른비밀번호/잘못된비밀번호28P01 확인. 실제 embedding/검색품질이나 새LLM평가가 아니다.
+- 최종Python59PASS/Java관련31PASS/0FAIL/0SKIP, 별도검토 최초+재검토2회 필수수정없음. 원문/URL/키 없이 SQLSTATE만 기록하는 test-only 보완, live준비none/SCRAM와 relay소스해시 포함. 기존전체선물/Chrome E2E 재실행 및 유료/키움 호출 없음. 안전한 관련경로만로컬커밋하고 보호사용자5개를 제외한다. 신규live run/US$2 동일총상한의 재개는 사용자재승인까지 대기한다.
