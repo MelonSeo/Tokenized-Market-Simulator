@@ -151,3 +151,9 @@ F01=X09 포지션·DB 담보, F02=X10 산식/유한 house pool, F03=X11 Worker·
 - Windows native socket 오류는 단일worker뿐 아니라 병합후Java21/격리worker에서도 재발했다. 실패클래스 단독7PASS와로컬listener20PASS만으로 영구해결을주장하지않는다. 전체제어재실행과실제E2E환경정상화를구분한다.
 
 소요 추정(실행 결과 아님): 무과금 통합 검증 수십 분~수 시간, 실제 모델 배치30~90분+승인, KRX 새 환경/장중 창 수 시간+시장·승인 대기, 최종 증거 정리 반일. U05~U12·운영·공개망·논문을 이 추정에 포함했다고 주장하지 않는다.
+
+## 5. 원본 병합 후 실제 재검증 후속
+
+원본 `melon-init@25f4342`에서 Docker Server 정상 응답을 직접 확인하고 새 격리 session을 생성했다. 실제 제품 Synthetic/Chrome/PG/Anvil1PASS, CONFIRMED 두 JVM1+1PASS, 현물 전량매도1PASS, Futures 감사1PASS는 이번 새 원본 실행이다. 앞선 Chrome2FAIL과 원인 미확정·원본 전체 native6FAIL 이력도 보존한다. [실행별 최신 보고서](../claude-docs/futures-postmerge-e2e-2026-10-20.md).
+
+따라서 F01~F07의 원본 실제 무과금 검증 근거를 추가하지만 F08/AI11 실제 모델, M02 KRX 제품 거래 및 M06 NXT 제품 지원, O10 최종 Phase D를 완료로 바꾸지 않는다. 새 유료 인덱스/모델과 실제 시세 실행은 각각 별도 승인 대상이다. 전체 완료율을 단일 숫자로 계산하지 않는다.

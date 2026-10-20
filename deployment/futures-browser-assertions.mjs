@@ -10,8 +10,21 @@ export function futuresCardMatches(p,card,status,risk){
   return true;
 }
 export function unsignedPriceReconfirmation(op){return op.state==='REJECTED'&&op.reason==='PRICE_CHANGED'&&op.txHash===null&&op.nonce===null;}
+const faucetPaths=new Set(['/api/wallet/faucet','/api/wallet/faucet/status','/api/wallet/faucet/grants']);
+const faucetCodes=new Set(['AUTHENTICATION_REQUIRED','ACCESS_DENIED','FAUCET_DB_UNAVAILABLE','FAUCET_POLICY_UNAVAILABLE','FAUCET_ACCOUNTING_INCONSISTENT','FAUCET_DAILY_LIMIT','FAUCET_LIFETIME_LIMIT','FAUCET_BUDGET_EXHAUSTED','FAUCET_INVALID_KEY','FAUCET_KEY_CONFLICT']);
+/** Diagnostics only. Never preserve an original body, URL query, key, header or arbitrary error string. */
+export function faucetObservation(path,status,body){
+  if(!faucetPaths.has(path)||!Number.isInteger(status)||status<0||status>599)return null;
+  const code=value=>faucetCodes.has(value)?value:value==null?null:'UNRECOGNIZED';
+  return {path,status,code:code(body?.code),reason:code(body?.reason),eligible:typeof body?.eligible==='boolean'?body.eligible:null};
+}
+export function previewObservation(status,body){
+  if(!Number.isInteger(status)||status<100||status>599)return null;
+  const codes=new Set(['PRICE_CHANGED','MARKET_UNAVAILABLE','MARKET_CONNECTION_CHANGED','PREVIEW_EXPIRED','INSUFFICIENT_AVAILABLE_MARGIN','ACTIVE_POSITION_EXISTS','POSITION_BUSY_OR_CLOSED','STALE_POSITION_VERSION','INVALID_MARGIN','AUTHENTICATION_REQUIRED','ACCESS_DENIED']);
+  return {status,code:codes.has(body?.code)?body.code:body?.code==null?null:'UNRECOGNIZED'};
+}
 export function safeBrowserFailure(error){
-  const allowed=/^(WAIT_TIMEOUT|BROWSER_DEADLINE|CDP_[A-Z_]+|BROWSER_SCRIPT_FAILED|POSITION_[A-Z_]+|OPERATION_[A-Z_]+|READ_API_[0-9]{3}|(?:OPEN|CLOSE|MARGIN)_HTTP_[0-9]{3}|[A-Z_]+_RECONFIRM_EXHAUSTED|PREVIEW_RECONFIRM_EXHAUSTED|EXPIRED_PREVIEW_SUBMITTED|EARLY_LIQUIDATION|MOBILE_OVERFLOW|FINAL_STATE_OR_PRIVATE_WS)$/;
+  const allowed=/^(WAIT_TIMEOUT|BROWSER_DEADLINE|CDP_[A-Z_]+|BROWSER_SCRIPT_FAILED|POSITION_[A-Z_]+|OPERATION_[A-Z_]+|READ_API_[0-9]{3}|(?:OPEN|CLOSE|MARGIN|PREVIEW)_HTTP_[0-9]{3}|[A-Z_]+_RECONFIRM_EXHAUSTED|PREVIEW_RECONFIRM_EXHAUSTED|EXPIRED_PREVIEW_SUBMITTED|EARLY_LIQUIDATION|MOBILE_OVERFLOW|FINAL_STATE_OR_PRIVATE_WS)$/;
   const types=new Set(['Error','TypeError','TimeoutError','AbortError','SyntaxError']);
   const causes=new Set(['ECONNREFUSED','ECONNRESET','ETIMEDOUT','EADDRNOTAVAIL','EADDRINUSE','ENOSPC','EACCES','EPERM','ENOENT','UND_ERR_CONNECT_TIMEOUT','UND_ERR_HEADERS_TIMEOUT','UND_ERR_SOCKET']);
   const code=error?.cause?.code??error?.code;

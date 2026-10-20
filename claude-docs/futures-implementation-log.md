@@ -225,3 +225,15 @@
 - 통합 로컬커밋 `5a727ee`/`7c896cc`/`40eaa50`을 원본melon-init에 정상merge `0d36ebab`. 사용자dirty5경로 SHA-256불변·충돌0, 기존환경/manifest변경없음. 원본새session37e73d39/productHashe186511d…에서 전체회귀를 시작했으나648중593PASS/6FAIL/49SKIP이다.6건모두OpenAiProviderTest의 로컬HttpServer준비 Windows native Badaddresslisten이며 이전599PASS를 전기하지않는다. 이후Docker image500/Server15초timeout으로 원본실제Chrome/2JVM은NOT_RUN. 상세는10-20통합보고. 자동daemon재시작·prune·제품정책변경·외부호출없음.
 
 - 이후단독로컬HTTP7PASS와독립listener20PASS, 같은제품/테스트코드의새원본전체제어실행648중599PASS/49SKIP/0FAIL을확인했다. root웹127/Node8/Foundry52/Chrome desktop-mobile offline/전체forge buildPASS(lint warning16잔존), Python20PASS. 앞의6FAIL을삭제하거나영구원인해결로주장하지않는다. Docker가필요없는범위만진행했으며 실제원본Chrome/2JVM은여전히BLOCKED/NOT_RUN. 비용미승인실제LLM/index·최신KRX/NXT·PhaseD는미완료다. 보존사용자5경로는해시동일, 안전한4개결과문서만추가로컬커밋한다.
+
+### Docker 정상 응답 후 원본 실제 E2E 재개 — 2026-10-20
+
+- 원본 `melon-init@25f434224b82286748eb03d14fbb82661856f599`, productHash `e186511df351864ee2709fe7d858ebeb75412d7f08dda8a389fb81888e3255af`. Server28.4.0 version/info 정상 응답을 직접 확인하고 새 session `phase-a-20261019233131-dfbb357a`를 만들었다. 이전 분리 worktree 결과를 원본 재실행으로 쓰지 않는다.
+- [새 실행·실패 조사·AI 승인 경계](futures-postmerge-e2e-2026-10-20.md)에 기록한다. 처음 두 Chrome child는 각각 Faucet 준비/만료 preview 준비에서 FAIL했으며 정확한 HTTP 원인은 미확정이다. 실패 DB/state/로그를 보존하고 진단-only 허용 목록·UI 준비 완료 대기·기존 tick 준비 일관성만 보완했다. 제품/시각/30초·60초 정책 변경 없음.
+- 새 `futures-browser-f8780a85` 실제 제품 Synthetic/Chrome/PG/Anvil **1 PASS/0 SKIP**, 개인WS38건, Long/Short 청산65/79초, 정상 종료·가격/담보 회복·실제31초 만료·desktop/mobile·ADMIN 감사 UI를 검증했다. 최종 Futures 감사 MATCH complete=true(19tx/38events), 자산 대사 MATCH. 앞선 UI 감사 INCONCLUSIVE/complete=false와 최종 MATCH를 구분한다.
+- 별도 `futures-confirmed-acdaf32c` prepare/recover 두 JVM **1+1 PASS/0 SKIP**, 동일 raw/hash/nonce·canonical CONFIRMED·단일 journal. 새 현물 `sellall-f3c9ddac` **1 PASS/0 SKIP**, BUY/부분SELL/전량SELL·잔여0·두대사 MATCH. 새 감사 `futures-audit-d54cefe5` **1 PASS/0 SKIP**, 정상MATCH/미확정INCONCLUSIVE/의도적1wei MISMATCH를 보존한 채 검사했다.
+- 최종 진단 harness Node12 PASS/0 SKIP, 문법/diff check PASS. `review_postmerge_faucet_diagnostics` 최초+재검토2회 모두 발견된 필수 수정 없음. 직접 테스트/private/DB 접근 없는 소스 독립 검토이며 실제 인수 통과와 구분한다. 웹 새127 PASS/0 SKIP. 이전599/49SKIP 전체 backend는 이전 실행으로 유지한다.
+- 실제 LLM/embedding/재색인은 여전히 NOT_RUN이며 비용 승인 전 실행하지 않는다. Mock/실체인 근거 후속 결과와 안전한 로컬 커밋·최종 보존 점검은 아래에 누적한다. 기존 Google/KRX/playground/실패 증거·사용자5경로를 변경하거나 Docker/WSL 전역 재시작·prune하지 않았다.
+
+- 후속 `futures-ai-fce63982` 실제PG/Anvil/청산worker+Mock모델/fixture검색 **1PASS/0SKIP**. Tool2·Skill·VERIFIED 근거·USER/ADMIN 허용/타인404·조회원장불변을 확인했다. 실제LLM 또는 새검색품질 평가가 아니다. 이번 최종성공5case/6JVM과 최초Chrome2FAIL/2JVM을 분리한다. 새웹127/Foundry52/Node12 PASS이며 이전backend599/49SKIP을 새결과로 쓰지 않는다.
+- 종료 확인: 새fixture7개 전용컨테이너14개 모두 소유권 일치/exited, preflight7개 모두 기존2초 한도 이내, 제품hash불변·사용자보호5경로해시동일. 명시7개 테스트/문서만 신규비밀36개 대조0·JWT/PEM패턴0으로 점검했다. runtime/실패증거/기존환경을 보존하며 이 범위만 안전한 로컬 커밋으로 기록한다. 실제AI는 최대32LLM/80embedding·예상US$0.3~0.9/승인요청상한US$2와 실행 전 hard-cap guard 검증을 별도로 준비한다. 비용 승인은 아직 받지 않았다.

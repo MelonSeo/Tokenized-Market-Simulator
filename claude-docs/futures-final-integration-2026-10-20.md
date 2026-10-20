@@ -157,3 +157,7 @@ Docker Server를 제한시간15초로 읽기 전용 확인한 명령도 timeout�
 | 최신 KRX/NXT 제품 거래·최종PhaseD | NOT_RUN — Synthetic 또는Mock결과로 대체하지 않음 |
 
 재개 조건: 사용자가 Docker Desktop/WSL/공유서비스 영향과 중단을 검토해 정상화 조치를 수행하거나 별도 승인한다. 기존Google서비스가 중단될 수 있으나 DB/chain은 삭제·초기화하지 않는다. Server 정상응답/현재소유권/image/productHash/clock를 다시 확인한 뒤 **새child**로 원본 futures-browser 및 futures-confirmed를 수행한다. 기존실패·정상fixture와baseline은 그대로 둔다. 실제 AI는 별도의 비용승인과 사전 예산guard오프라인검증 후 신규AI환경에서만 수행한다.
+
+### 후속: Docker 정상화 확인 후 원본 실제 재실행
+
+위 BLOCKED 표는 당시 이력이다. `melon-init@25f4342`의 새 session `phase-a-20261019233131-dfbb357a`에서 실제 Chrome/Synthetic/PG/Anvil 전체1PASS, CONFIRMED 두 JVM1+1PASS, 현물 전량매도1PASS, Futures 감사1PASS를 새로 실행했다. 처음 두 Chrome FAIL은 별도로 보존하며 원인 미확정을 숨기지 않는다. [실행별 증거·진단-only 변경·독립 검토·비용 승인 경계](futures-postmerge-e2e-2026-10-20.md)를 최신 후속 기록으로 따른다. 실제 모델/유료 색인·최신 KRX/NXT·최종 Phase D는 여전히 미완료다.
