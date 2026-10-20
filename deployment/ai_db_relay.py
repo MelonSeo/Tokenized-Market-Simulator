@@ -13,7 +13,8 @@ from pathlib import Path
 
 # Fixed destination. PostgreSQL protocol bytes remain opaque; never logged.
 PERL = r'''use strict; use warnings; use IO::Socket::INET; use IO::Select;
-$SIG{ALRM}=sub {exit 4}; alarm 600;
+my $limit=shift @ARGV; exit 5 unless defined($limit) && $limit =~ /^\d+$/ && $limit>=1 && $limit<=14400;
+$SIG{ALRM}=sub {exit 4}; alarm $limit;
 binmode STDIN; binmode STDOUT;
 my $s=IO::Socket::INET->new(PeerAddr=>'127.0.0.1',PeerPort=>5432,Proto=>'tcp',Timeout=>3) or exit 2;
 my $r=IO::Select->new(\*STDIN,$s);
@@ -126,7 +127,7 @@ class Relay:
         try:
             with self.lock:
                 if self.done.is_set(): return
-                proc = subprocess.Popen(['docker', 'exec', '-i', self.target, 'perl', '-e', PERL],
+                proc = subprocess.Popen(['docker', 'exec', '-i', self.target, 'perl', '-e', PERL, str(self.seconds)],
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, bufsize=0)
                 self.children.append(proc)

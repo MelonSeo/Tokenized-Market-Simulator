@@ -60,6 +60,12 @@ class RelayTest(unittest.TestCase):
         with self.assertRaises(ValueError):r.Relay(self.meta,0)
         with self.assertRaises(ValueError):r.Relay(self.meta,max_connections=1000)
 
+    def test_connection_alarm_matches_configured_relay_budget(self):
+        self.assertNotIn('alarm 600',r.PERL)
+        self.assertIn('alarm $limit',r.PERL)
+        self.assertIn('$limit<=14400',r.PERL)
+        self.assertEqual(r.Relay(self.meta,seconds=3600).seconds,3600)
+
     def test_loopback_bind_and_automatic_deadline(self):
         listener=MagicMock();listener.accept.side_effect=socket.timeout()
         with patch.object(r,'verify_target',return_value='c'*64),patch.object(r.subprocess,'run'),patch.object(r.socket,'socket',return_value=listener):

@@ -79,3 +79,7 @@
 ### 후속 무과금 네트워크 복구
 
 사용자 별도 승인으로 [DB 네트워크 복구 보고서](ai-evaluation-db-network-recovery-2026-10-20.md)를 추가했다. 신규 network-none fixture/loopback exec relay에서 실제 Java·pgvector·IndexLease 검증을 수행했으며 SCRAM localhost 인증 보완과08001/28P01 안전 진단을 확인했다. **이 원래 평가 run의 STOP/ledger/실패 결과는 변경하지 않고 실제16문항·유료색인은 여전히NOT_RUN**이다. 신규 live run의 재개 승인은 별도로 받는다.
+
+### 재승인된 별도 run의 후속 결과
+
+사용자가 신규 run을 명시 재승인한 후 [실제 재실행 결과](ai-real-model-evaluation-rerun-2026-10-20.md)를 추가했다. 새run의 실제9문서색인·검색12/12와LLM5/embedding35를 확인했으나 Tool 직렬화 harness 결함으로Q1만답변/나머지15문항흐름실패다. 원래 이 run의BLOCKED·지출0 기록은 그대로며 전체AI인수완료가 아니다.

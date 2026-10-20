@@ -260,3 +260,16 @@
 - [네트워크 복구·재승인 경계](ai-evaluation-db-network-recovery-2026-10-20.md): Moby28.4.0 internal endpoint의 외부연결 설정 생략 경로 확인. 신규 network-none PostgreSQL + loopback 고정 docker-exec relay로 기존 네트워크나 egress를 넓히지 않고 연결했다. 별도 offline probe에는 API키/승인/ledger 없음.
 - 신규01 실제 JDBC/pgvector/lease 이후 localhost trust 인증 FAIL, 신규02 relay 만료 CONNECT08001 FAIL을 각각 보존했다. 신규03 SCRAM 초기화에서 actualJava/PG1PASS·로컬합성벡터9문서88청크1536차원·PREPARED/INDEXING/READY/불일치거부·올바른비밀번호/잘못된비밀번호28P01 확인. 실제 embedding/검색품질이나 새LLM평가가 아니다.
 - 최종Python59PASS/Java관련31PASS/0FAIL/0SKIP, 별도검토 최초+재검토2회 필수수정없음. 원문/URL/키 없이 SQLSTATE만 기록하는 test-only 보완, live준비none/SCRAM와 relay소스해시 포함. 기존전체선물/Chrome E2E 재실행 및 유료/키움 호출 없음. 안전한 관련경로만로컬커밋하고 보호사용자5개를 제외한다. 신규live run/US$2 동일총상한의 재개는 사용자재승인까지 대기한다.
+
+### 재승인된 실제 AI 색인·16문항 실행 — 2026-10-20, 전체 인수 미완료
+
+- [질문별 결과·비용·실패분석](ai-real-model-evaluation-rerun-2026-10-20.md). 사용자가 이전0포함총US$2/LLM32/embedding80/retry0/신규run을 재승인했다. HEADe63dd61+준비변경, 실행source59073241…의단일새run eval_7a8f25154337449e9f49d676b4d5fbb7에서 수행했다. 원runSTOPledger/manifest와보호5개는해시불변.
+- Relay전체/연결alarm3600초일치, 무과금Java사전검사(JDBC·SCRAM28P01·vector·PREPARED재개) PASS, 준비Python60/Java31PASS. 실제embedding6요청으로9문서88청크신규indexREADY. 고정golden12/12·MRR.881944, direct고정문자열11/12(ADMIN최신표현수동의미검토12/12), negative후보5/8, identifier6/8이다. 과거결과를재사용하지않는다.
+- 실제16요청 실행JUnit1PASS는 품질판정이아니다. Q1 KNOWLEDGE답변·인용PASS, Q2~16은plainObjectMapper의Instant지원누락으로Tool흐름FAIL이며 대부분실제LLM NOT_RUN. 오프라인재현3PASS로원인과registeredmapper수정후보를확인했으나 유료harness수정/재평가를실행하지않았다. Tool10/Skill4·선물수치/불확실상태인수미완료다.
+- Guard40예약모두OBSERVED, LLM5/embedding35/재시도0. 실제tokens4449in/330out/embedding24671, 표준단가추정US$0.01335142(청구서미확인), 무환급선예약US$0.13845652. 새DB/relay종료·증거보존, 독립검토필수수정없음. 기존KRX/Google/NXT/DB/Anvil변경·전체선물재실행·push/배포없음. 추가유료평가는승인하지않았으므로 결과보고후대기한다.
+
+### AI harness 직렬화 및 positive gate 무과금 보완 — 2026-10-20
+
+- [수정·실행 수치·누적 예산과 Q2~16 계획](ai-evaluation-harness-followup-2026-10-20.md): Boot 동등 mapper, 실제 Tool10/Skill4 handler 정상 경로, 고정16요청 Mock flow, 실행/모델/정답성 판정 분리. 새 Java 관련112PASS/0SKIP·Python65PASS. 첫 Python5건의 Windows SQLite cleanup ERROR는 연결 close 수정 후 동일 범위 재실행으로 해소했다.
+- 추가 LLM/embedding/색인/DB/Docker 기동0. 기존 부모 ledger를 읽기 전용 분석하여 LLM27/embedding45/US$1.86154348 잔여를 확인했다. full 재색인 bound71678은 남은 embedding26799를 초과한다. 신규 AI schema vector-copy와 새 immutable owner, 단일 child 누적Guard, 입력 bound dry-run은 아직 설계/후속이며 paid 실행 허가가 아니다. 기존 Q1/검색 결과는 과거 증거만 재사용한다.
+- 독립 코드 검토 필수수정없음. 기존 사용자5경로·STOP/ledger/index/private/환경 보존, 관련 명시 경로만 안전 커밋한다. 실제 모델 Q2~16 및 최종 PhaseD 완료로 표현하지 않는다.
