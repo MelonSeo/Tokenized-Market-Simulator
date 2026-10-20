@@ -17,12 +17,27 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
     private final AiProperties properties;
     private final ObjectMapper json;
     private final HttpClient http;
+    private final EvaluationTransport evaluationTransport;
+    /** Evaluation-only transport: production constructors never enable it. */
+    @FunctionalInterface public interface EvaluationTransport {
+        JsonNode post(String path, byte[] body, Duration timeout);
+    }
     private final AtomicInteger requests = new AtomicInteger();
     private com.pricetrack.exchange.ai.observability.AiObservability observation;
     public OpenAiProvider observe(com.pricetrack.exchange.ai.observability.AiObservability value){observation=value;return this;}
     public OpenAiProvider(AiProperties properties, ObjectMapper json) {
         this.properties = properties; this.json = json;
+        evaluationTransport = null;
         http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+    }
+    private OpenAiProvider(AiProperties properties, ObjectMapper json, EvaluationTransport transport) {
+        if (!properties.apiKey().isEmpty() || !properties.apiBase().equals("guarded:stdio/"))
+            throw new AiFailure("AI_EVALUATION_CONFIG_INVALID");
+        this.properties=properties;this.json=json;
+        this.evaluationTransport=Objects.requireNonNull(transport);this.http=null;
+    }
+    public static OpenAiProvider forGuardedEvaluation(AiProperties properties, ObjectMapper json, EvaluationTransport transport) {
+        return new OpenAiProvider(properties,json,transport);
     }
     @Override public List<float[]> embed(List<String> texts) {
         return embed(texts,Duration.ofSeconds(properties.timeoutSeconds()));
@@ -100,6 +115,15 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
         }catch(RuntimeException ignored){/* Preserve the original provider result/failure. */}}
     }
     private JsonNode postInternal(String path, Object body, Duration timeout) {
+        if(evaluationTransport!=null) {
+            if(timeout.isNegative()||timeout.isZero()||Thread.currentThread().isInterrupted())throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
+            try{
+                var frozen=json.<com.fasterxml.jackson.databind.node.ObjectNode>valueToTree(body);
+                if("responses".equals(path))frozen.put("service_tier","default");
+                return evaluationTransport.post(path,json.writeValueAsBytes(frozen),timeout);
+            }
+            catch(AiFailure e){throw e;}catch(Exception e){throw new AiFailure("AI_EVALUATION_TRANSPORT_FAILED");}
+        }
         if (properties.apiKey().isBlank()) throw new AiFailure("AI_API_KEY_MISSING");
         // 개발용 프로세스 수명당 상한. 지속 예산 관리로 오인하지 않는다.
         if (requests.incrementAndGet() > 500) throw new AiFailure("AI_PROVIDER_CALL_LIMIT");

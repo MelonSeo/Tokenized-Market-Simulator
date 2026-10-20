@@ -237,3 +237,19 @@
 
 - 후속 `futures-ai-fce63982` 실제PG/Anvil/청산worker+Mock모델/fixture검색 **1PASS/0SKIP**. Tool2·Skill·VERIFIED 근거·USER/ADMIN 허용/타인404·조회원장불변을 확인했다. 실제LLM 또는 새검색품질 평가가 아니다. 이번 최종성공5case/6JVM과 최초Chrome2FAIL/2JVM을 분리한다. 새웹127/Foundry52/Node12 PASS이며 이전backend599/49SKIP을 새결과로 쓰지 않는다.
 - 종료 확인: 새fixture7개 전용컨테이너14개 모두 소유권 일치/exited, preflight7개 모두 기존2초 한도 이내, 제품hash불변·사용자보호5경로해시동일. 명시7개 테스트/문서만 신규비밀36개 대조0·JWT/PEM패턴0으로 점검했다. runtime/실패증거/기존환경을 보존하며 이 범위만 안전한 로컬 커밋으로 기록한다. 실제AI는 최대32LLM/80embedding·예상US$0.3~0.9/승인요청상한US$2와 실행 전 hard-cap guard 검증을 별도로 준비한다. 비용 승인은 아직 받지 않았다.
+
+### 실제 AI 평가 비용 guard 오프라인 준비 — 2026-10-20
+
+- 압축 후 `melon-init@7e166a2`/보존 사용자dirty5개를 재확인했다. [guard 구현·실행·승인 경계](ai-real-evaluation-cost-guard-2026-10-20.md)를 새 문서로 기록한다. 제품 Java/Solidity/웹·환경/manifest 변경 및 기존 E2E 재실행 없음.
+- `deployment/ai_evaluation_guard.py`/`test_ai_evaluation_guard.py`: 평가 전용 SQLite 선예약·고정모델/요청형식·LLM32/embedding80·token256K/32K/100K·US$2·재시도0/무환급. 기본 실행OFF, 별도 프로세스의 영속 예약과 경합, 비밀 비저장 검증. 입력cache-write 보수 여유 포함 token 한도 계산상US$1.026이며 실제 지출이 아니다.
+- 첫23개 중22PASS/1Windows 테스트 임시DB정리ERROR를 테스트 연결close로 수정, 새23PASS→보강27PASS. 독립 최초검토1건(usage 결과저장실패 뒤 다른guard가 이어서 호출 가능)을 RESERVED 영속 차단으로 보완하고 새29PASS/0FAIL/0SKIP. 최종 재검토 결과는 후속 누적한다.
+- **실제 평가 runner/Java provider 연결·직접 외부호출 우회 차단은 아직 미구현/NOT_RUN**. 이 모듈을 제품 전체 비용상한이나 유료 실행 준비 전체 완료로 표현하지 않는다. 단일 전송 경계의 오프라인 연결 검증 후16질문/최대32LLM·80embedding/US$2 비용 승인을 받아야 한다. 실제 LLM/embedding/재색인·최신KRX/NXT·PhaseD는 계속 미완료다.
+- 독립1차 재검토 `review_ai_cost_guard`: 발견된 필수 수정 없음(소스/테스트/문서만, 직접 실행/기존DB/private접근없음). 최종guard29PASS/0FAIL/0SKIP, diffcheckPASS·새3파일JWT/PEM/키패턴0. 보호5개SHA-256불변·HEAD7e166a2/staged없음, 이번4경로만미커밋추가로유지한다. 비용승인과전송연결검증은별도다.
+
+### AI Guard 실제 Provider/Runner 연결 — 2026-10-20
+
+- [전송 경계·Index 준비 보고서](ai-evaluation-transport-preparation-2026-10-20.md). `OpenAiProvider` 평가factory만 주입 전송 사용/HttpClient 미생성/API key 빈값을 강제하고 기존 제품 생성자는 유지한다. test-only Runner의 RAG/검색/Agent가 같은 broker와 SQLite 선예약을 사용한다. broker 기본오프라인, 별도 live 승인파일 없이는 실제키/API 접근없음.
+- 신규run/source/corpus/대상DB·mode context를 동결하고 STOP·불확실 예약·중복·프로세스재개를 보존한다. 새 전용 Index PREPARED/INDEXING/READY 계약을 JDBC mock으로 검사했으며 실제 PG/pgvector 생성·재색인 성공으로 기록하지 않는다. 현재실제loader9문서88청크/색인6요청계획/입력byte보수상한71678이다.
+- Python41PASS 이후meta변경차단1개추가. Java27PASS(새Runner9/Index mock7/기존Provider7·AgentProvider4), 앞선27중7FAIL/1FAIL은Mockito설정문제로수정·각실패XML보존. 최종sourceHash범위보강후새검증/독립검토결과는후속누적한다. 기존전체E2E·Docker·DB/Anvil은재실행/변경하지않음.
+- 실제LLM/embedding/재색인과최신KRX/NXT·PhaseD는여전히NOT_RUN.16질문/32LLM/80embedding/US$2는승인요청상한이지실행승인이아니다. 최종검토후관련명시경로만로컬커밋한다.
+- 최종v3에서평가Responses만service_tier=default강제/실제bytes예약·다른응답tier차단. 새Python44PASS/Java관련27PASS/0FAIL/0SKIP(--offline --rerun-tasks), 기존제품경로는Provider7/AgentProvider4로컬fixture포함. `review_ai_guard_transport` 최종발견된필수수정없음(직접테스트·외부·기존DB/private접근없음). 정책/수치오기수정후관련12경로만안전점검·로컬커밋하고보호5개는유지한다. 실제유료평가와실제PG색인은여전히NOT_RUN이다.
