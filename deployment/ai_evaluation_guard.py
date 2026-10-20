@@ -18,7 +18,7 @@ class GuardError(RuntimeError):
     """Only fixed public codes, never request/response bodies or exceptions."""
 
 
-POLICY = {
+LEGACY_POLICY_V3 = MappingProxyType({
     "version": "futures-ai-eval-v3",
     "llm_model": "gpt-5.6-terra", "embedding_model": "text-embedding-3-small",
     "llm_calls": 32, "embedding_calls": 80,
@@ -27,7 +27,11 @@ POLICY = {
     # is conservatively included in the input rate (2.50 rather than 2 USD/M).
     "input_nusd": 2500, "output_nusd": 12000, "embedding_nusd": 20,
     "cap_nusd": 2000000000, "framing_tokens": 4096,
-}
+})
+
+# User approved only the cumulative input technical limit increase on 2026-10-20.
+# Never rewrite old identities/ledgers to v4. Their exact v3 policy is read-only.
+POLICY = {**LEGACY_POLICY_V3, "version": "futures-ai-eval-v4", "input_tokens": 400000}
 
 
 def _canonical(value):

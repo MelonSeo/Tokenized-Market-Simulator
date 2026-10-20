@@ -280,3 +280,11 @@
 - 최종Java관련53PASS/0SKIP, Python76PASS+추가fixture3PASS(최종subset18PASS에는기존15중복), 독립검토진행·결과는상세문서에누적한다. 원fixture01표비교FAIL/02PASS/03GradleDaemon시작전NOT_RUN/04최신PASS를구분하고보존했다. sourcehash/relayguard·자식JVM IPv4·stale buildXML새실행오인방어를최소보완했다.
 - 부모5LLM/35embedding/US$0.13845652를선차감하고영속단일childclaim·재시작·불확실전송·승인만료경계를오프라인검증했다. 최종실제직렬화input stress242954~308941은잔여216563초과로15문항완주미승인. 호출/출력/embedding/US$1.86154348는fit이지만input정책을자동확대하지않는다. 부모실제승인도조회시점active/STOP없음/control0으로추가child차단, 기존승인자연만료/별도종료확인이선행되어야한다.
 - 추가유료호출/재색인/실제childclaim0, sourceHash/기존증거/보호사용자5경로불변. 새fixture소유12컨테이너만정지·DB/volumes/private보존, 기존전체선물E2E/키움/AI실모델반복·push/배포없음. 입력예산결정과추후유료실행재승인전대기한다.
+
+### KRX 우선 점검·AI 입력400K 승인 반영 — 2026-10-20
+
+- [우선순위 실행·v4 새 검증](krx-priority-ai-input-v4-2026-10-20.md). 최초19:33:28KST/UTC10:33:29확인으로KRX정규세션근거없음, 실제키움OAuth/REST/WS0/NOT_RUN. 기존005930·290=2·generation/LIVE/fresh·CLOSED우선정책과마스터계획을읽었다. 시간표로제품OPEN/CLOSED를만들거나NXT/애프터/Synthetic을정규장성공으로대체하지않는다. 최신KRX제품거래인수는미완료유지.
+- 사용자입력기술한도400K승인으로불변v3정책+v4누적input만400000. 실제v3부모identity/옛한도준수·5/35/US$0.13845652를RO검증·선차감,잔여27/45/input360563/out28800/embed26799/US$1.86154348유지. 부모종료/단일child/불확실전송차단·US$2/모델/단가/출력/embedding한도불변. 원ledger를v4로덮어쓰거나사용량환급하지않는다.
+- source_hash의root/backend상대import경로미정규화결함을resolve후정렬로최소수정. 실제최종source89cb60c0…와새capture05해시일치, Python70PASS/Java강제새실행32PASS/0SKIP. 기존UP-TO-DATE명령/capture04의identity불일치를새성공으로쓰지않는다. 최대profile input308944+부모39437=348381/400000,예약US$1.22764828/2로모든잔여한도fit. 실제모델정답성보장은아니며유료평가NOT_RUN이다.
+- 추가유료0/childclaim0/DBAnvilDocker조작0, 사용자5경로·원평가/ledger/STOP보존. 독립검토및최종보안점검후관련명시경로만로컬기록하며push/배포는없다. 실제유료실행별도승인과부모종료확인후에만이어간다.
+- `review_ai_budget_v4` 최초+최종문서재검토 모두발견된필수수정없음(직접private/API/DB/Docker/테스트실행없음). 제품변경없이관련Python/테스트/문서만커밋하고기존사용자5경로는제외한다.

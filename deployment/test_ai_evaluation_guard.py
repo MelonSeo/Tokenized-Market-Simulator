@@ -98,7 +98,8 @@ class GuardTest(unittest.TestCase):
 
     def test_aggregate_input_limit(self):
         raw = llm(input="a" * 27000)
-        while self.guard.summary()["input_tokens"] + len(raw) + 4096 <= 256000:
+        self.assertEqual(self.guard.policy['input_tokens'],400000)
+        while self.guard.summary()["input_tokens"] + len(raw) + 4096 <= 400000:
             self.send(raw=raw)
         self.assert_blocked("RUN_LIMIT", raw=raw)
 

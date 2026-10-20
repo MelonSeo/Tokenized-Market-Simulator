@@ -28,7 +28,9 @@ def source_hash():
     paths += [REPO / "backend/build.gradle", REPO / "docs/ai/ingest-manifest.json", Path(__file__), Path(__file__).with_name("ai_evaluation_guard.py")]
     paths += [Path(__file__).with_name(name) for name in ("ai_live_run_prepare.py","ai_db_relay.py","ai_evaluation_lineage.py","ai_reevaluation_plan.py","ai_index_copy_fixture.py","ai_evaluation_dry_run.py")]
     digest = hashlib.sha256()
-    for p in sorted(paths):
+    # Importing from backend via ../deployment must yield the SAME identity as
+    # the root CLI. Normalize __file__-derived paths before sorting and naming.
+    for p in sorted({p.resolve() for p in paths}):
         digest.update(p.relative_to(REPO).as_posix().encode() + b"\0")
         digest.update(p.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n") + b"\0")
     return digest.hexdigest()

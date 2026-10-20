@@ -24,7 +24,7 @@ class ReassessmentPlanTest(unittest.TestCase):
                 c.execute('insert into reservations values(?,?,?,?,?,?,?,?)',(str(uuid.uuid4()),'embedding',0,0,emb,emb*20,'OBSERVED','b'*64))
     def test_no_reset_exact_remaining_bounds(self):
         p=derive(self.folder)
-        self.assertEqual(p['remaining'],{'llm_calls':27,'embedding_calls':45,'input_tokens':216563,'output_tokens':28800,'embedding_tokens':26799,'cap_nusd':1861543480})
+        self.assertEqual(p['remaining'],{'llm_calls':27,'embedding_calls':45,'input_tokens':360563,'output_tokens':28800,'embedding_tokens':26799,'cap_nusd':1861543480})
         self.assertFalse(p['executable']);self.assertFalse(p['paidApproved']);self.assertFalse(p['guardLineageEnforcementImplemented'])
     def test_q1_and_search_not_automatically_repeated(self):
         p=derive(self.folder)

@@ -96,3 +96,5 @@ probe03의 예전 harness는 Gradle이 시작하지 못했는데 이전 build XM
 독립 `review_ai_q2_preparation`의 최초 소스·문서 검토와 부모 종료 경계 재검토, 마지막 IPv4·stale XML 방어와 실행 집계에 대한 최종 재검토 모두 **발견된 필수 수정 없음**이었다. 부모가 추가 전송할 수 없는 전제를 명확히 하라는 검토 의견을 반영해 active parent 차단과 expiry/permit 변경 테스트를 추가했다. 검토자는 실제 API/DB/Docker/private나 테스트를 직접 실행하지 않았다.
 
 보호 사용자5개와 부모 STOP/ledger 해시는 기존 기록과 같다. 관련 명시 경로만 로컬 커밋하고 사용자5경로/private/runtime/DB/vector 원본 artifact는 제외한다. **준비 전체 PASS가 아니라, 복사·Guard·positive gate PASS / 전체15문항 유료 실행 BLOCKED**로 마감한다.
+
+후속 사용자 입력 기술 한도400K 승인은 [KRX 우선 점검·v4 결과](krx-priority-ai-input-v4-2026-10-20.md)에 별도로 반영했다. 위256K 당시 차단·실행 증거는 이력으로 보존한다. v4 오프라인 예산 fit은 실제 유료 모델 평가 PASS나 KRX 인수 PASS가 아니다.

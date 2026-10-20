@@ -7,6 +7,8 @@ import tempfile
 import time
 import unittest
 import uuid
+import subprocess
+import sys
 from unittest.mock import patch, MagicMock
 
 import ai_evaluation_broker as b
@@ -15,6 +17,10 @@ from test_ai_evaluation_guard import llm, embedding
 
 
 class BrokerTest(unittest.TestCase):
+    def test_source_hash_is_identical_from_backend_relative_import(self):
+        code="import sys; sys.path.insert(0,'../deployment'); from ai_evaluation_broker import source_hash; print(source_hash())"
+        result=subprocess.run([sys.executable,'-B','-S','-c',code],cwd=b.REPO/'backend',capture_output=True,timeout=10)
+        self.assertEqual(result.returncode,0);self.assertEqual(result.stdout.decode().strip(),b.source_hash())
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
