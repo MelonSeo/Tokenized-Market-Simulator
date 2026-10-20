@@ -130,3 +130,5 @@ Full reembedding은6요청/보수 bound71,678로 **잔여 embedding token26,799�
 커밋 직전 원래 실패 run01의 STOP/ledger/run/EVALUATION_STARTED/stopped 해시는 기존 기록과 동일했고, run02 부모 ledger도 위 SHA256과 동일했다. 이전 실제 준비·실행 기록 및 이번 보완을 합쳐 명시17경로만 로컬 커밋 대상으로 선택한다. 보호 사용자5개와 모든 runtime/private/생성물은 제외한다.
 
 다음 실행에는 **원래 US$2에서 잔여 US$1.86154348/LLM27/embedding45만 사용하는 Q2~16 평가의 명시적 재승인**이 필요하다. 승인 전 추가 호출은 금지한다. 그 전에 누적 Guard+단일 child, Q2~16 선택, 입력 dry-run, 검증된 vector 복사의 오프라인 보완이 남는다. 새 index의 schema/owner는 새로 필요하지만 유료 embedding 재생성은 우선하지 않는다. 사용자 결정 없이 전체 예산/토큰 한도를 늘리거나 새 full-budget ledger를 실행하지 않는다.
+
+후속 [최종 무과금 준비·입력 예산 차단](ai-q2-16-offline-readiness-2026-10-20.md)에서 신규 PostgreSQL vector-copy/누적Guard/positive gate를 검증했다. 실제 직렬화의 보수 input이 잔여 한도를 초과했고 부모 승인 종료 경계도 확인했으므로 유료 실행은 BLOCKED다. 위 계획을 최신 실행 준비 전체 PASS로 바꾸지 않는다.

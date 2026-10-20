@@ -33,4 +33,10 @@ final class EvaluationDatabasePreflight {
         }
         return Map.of("jdbc","PASS","scram","28P01","pgvector","PASS","lease","PREPARED_RESUME_VERIFIED","paidCalls",0);
     }
+    static Map<String,Object> ready(JsonNode meta,String password)throws Exception {
+        try(var c=connect(meta,password)){
+            if(!EvaluationIndexLease.claim(c,meta,false).equals("READY"))throw new SQLException("LEASE_INVALID","55000");
+        }
+        return Map.of("jdbc","PASS","lease","READY_VERIFIED","paidCalls",0);
+    }
 }

@@ -26,7 +26,7 @@ def source_hash():
     paths += list((REPO / "backend/src/test/java/com/pricetrack/exchange/ai/evaluation").rglob("*.java"))
     paths += list((REPO / "docs/ai-knowledge").glob("*.md"))
     paths += [REPO / "backend/build.gradle", REPO / "docs/ai/ingest-manifest.json", Path(__file__), Path(__file__).with_name("ai_evaluation_guard.py")]
-    paths += [Path(__file__).with_name(name) for name in ("ai_live_run_prepare.py","ai_db_relay.py")]
+    paths += [Path(__file__).with_name(name) for name in ("ai_live_run_prepare.py","ai_db_relay.py","ai_evaluation_lineage.py","ai_reevaluation_plan.py","ai_index_copy_fixture.py","ai_evaluation_dry_run.py")]
     digest = hashlib.sha256()
     for p in sorted(paths):
         digest.update(p.relative_to(REPO).as_posix().encode() + b"\0")
@@ -92,6 +92,21 @@ def live_sender(folder, meta, approval_path):
             raise ValueError()
         expected = {"runId": meta["runId"], "sourceHash": meta["sourceHash"], "corpusHash": meta["corpusHash"],
                     "capUsd": "2.00", "llmCalls": 32, "embeddingCalls": 80, "paidApproved": True}
+        if 'lineage' in meta:
+            from ai_evaluation_lineage import verify
+            from ai_evaluation_dry_run import assess
+            verify(folder,meta)
+            expected['parentLedgerSha256']=meta['lineage']['parentLedgerSha256']
+            expected['questions']=list(range(2,17))
+            capture=_decode((folder/'dry-run.private.json').read_bytes(),max_bytes=2000000)
+            if (capture.get('sourceHash')!=meta['sourceHash'] or capture.get('processedQuestions')!=list(range(2,17))
+                    or capture.get('preservedFuturesEvidence') is not True
+                    or {p.get('profile') for p in capture.get('profiles',[])}!={'EXPECTED_STATE','MAXIMUM_MIXED'}
+                    or not assess(meta['lineage']['parentDir'],folder/'dry-run.private.json')['allProfilesFit']):
+                raise ValueError()
+            proof=_decode((folder/'index-copy-verification.json').read_bytes())
+            if proof.get('status')!='PASS' or proof.get('newOwner')!=meta['runId'] or proof.get('providerCalls')!=0:
+                raise ValueError()
         if (permit.get("paidApproved") is not True or any(permit.get(k) != v for k, v in expected.items())
                 or type(permit.get("expiresAt")) is not int or not time.time() < permit["expiresAt"] <= time.time() + 14400):
             raise ValueError()
@@ -173,9 +188,13 @@ def broker(folder, *, live=False, approval=None, inp=None, out=None):
         raise GuardError("MODE_CONFLICT")
     if ("live" if live else "offline") != meta.get("mode"):
         raise GuardError("MODE_CONFLICT")
+    carry,validator=None,None
+    if 'lineage' in meta:
+        from ai_evaluation_lineage import verify
+        carry=verify(folder,meta);validator=lambda:verify(folder,meta)
     guard = EvaluationGuard(folder / "budget.sqlite", run_id=meta["runId"], source_hash=meta["sourceHash"],
                             corpus_hash=meta["corpusHash"], execution_approved=True,
-                            context_hash=hashlib.sha256(_canonical(meta)).hexdigest())
+                            context_hash=hashlib.sha256(_canonical(meta)).hexdigest(),carry=carry,validate_lineage=validator)
     sender = live_sender(folder, meta, approval) if live else offline_sender(meta["fixture"])
     def emit(value):
         out.write(_canonical(value) + b"\n")

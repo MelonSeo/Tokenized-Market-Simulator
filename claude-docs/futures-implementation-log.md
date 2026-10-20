@@ -273,3 +273,10 @@
 - [수정·실행 수치·누적 예산과 Q2~16 계획](ai-evaluation-harness-followup-2026-10-20.md): Boot 동등 mapper, 실제 Tool10/Skill4 handler 정상 경로, 고정16요청 Mock flow, 실행/모델/정답성 판정 분리. 새 Java 관련112PASS/0SKIP·Python65PASS. 첫 Python5건의 Windows SQLite cleanup ERROR는 연결 close 수정 후 동일 범위 재실행으로 해소했다.
 - 추가 LLM/embedding/색인/DB/Docker 기동0. 기존 부모 ledger를 읽기 전용 분석하여 LLM27/embedding45/US$1.86154348 잔여를 확인했다. full 재색인 bound71678은 남은 embedding26799를 초과한다. 신규 AI schema vector-copy와 새 immutable owner, 단일 child 누적Guard, 입력 bound dry-run은 아직 설계/후속이며 paid 실행 허가가 아니다. 기존 Q1/검색 결과는 과거 증거만 재사용한다.
 - 독립 코드 검토 필수수정없음. 기존 사용자5경로·STOP/ledger/index/private/환경 보존, 관련 명시 경로만 안전 커밋한다. 실제 모델 Q2~16 및 최종 PhaseD 완료로 표현하지 않는다.
+
+### Q2~16 마지막 무과금 준비 — 입력 예산 및 부모 승인 경계로 BLOCKED
+
+- [새 복사 DB·누적Guard·실제 직렬화 dry-run](ai-q2-16-offline-readiness-2026-10-20.md). 최종source6287d2a8…에서 새network-none PostgreSQL/pgvector1PASS: 부모는정지/volumeROcoldcopy, 새owner·9문서88벡터1536차원·metadata일치/SCRAM28P01/역할필터검사. 기존READY owner/ledger/STOP은변경하지않는다.
+- 최종Java관련53PASS/0SKIP, Python76PASS+추가fixture3PASS(최종subset18PASS에는기존15중복), 독립검토진행·결과는상세문서에누적한다. 원fixture01표비교FAIL/02PASS/03GradleDaemon시작전NOT_RUN/04최신PASS를구분하고보존했다. sourcehash/relayguard·자식JVM IPv4·stale buildXML새실행오인방어를최소보완했다.
+- 부모5LLM/35embedding/US$0.13845652를선차감하고영속단일childclaim·재시작·불확실전송·승인만료경계를오프라인검증했다. 최종실제직렬화input stress242954~308941은잔여216563초과로15문항완주미승인. 호출/출력/embedding/US$1.86154348는fit이지만input정책을자동확대하지않는다. 부모실제승인도조회시점active/STOP없음/control0으로추가child차단, 기존승인자연만료/별도종료확인이선행되어야한다.
+- 추가유료호출/재색인/실제childclaim0, sourceHash/기존증거/보호사용자5경로불변. 새fixture소유12컨테이너만정지·DB/volumes/private보존, 기존전체선물E2E/키움/AI실모델반복·push/배포없음. 입력예산결정과추후유료실행재승인전대기한다.

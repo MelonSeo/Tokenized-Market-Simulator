@@ -47,11 +47,13 @@ class ApprovedAiModelEvaluationTest {
         // Evaluation itself is not replayed after a crash just to obtain a PASS.
         Files.writeString(run.resolve("EVALUATION_STARTED"),Instant.now().toString(),StandardOpenOption.CREATE_NEW);
         Path repo=Path.of("..").toAbsolutePath().normalize();
+        var meta=json.readTree(run.resolve("run.json").toFile());boolean child=meta.has("lineage");
+        if(child)assertThat(meta.path("questions")).isEqualTo(json.valueToTree(java.util.stream.IntStream.rangeClosed(2,16).boxed().toList()));
         var captured=json.readTree(Path.of(Objects.requireNonNull(System.getenv("AI_APPROVED_EVIDENCE_SNAPSHOT"))).toFile());
         var fixture=EvaluationToolFixture.preserved(json,captured);String pid=fixture.pid;
         var props=new Properties();try(var in=Files.newInputStream(run.resolve("db.env"))){props.load(in);}
         try {
-            write("database-preflight.json",EvaluationDatabasePreflight.prepare(json.readTree(run.resolve("run.json").toFile()),props.getProperty("POSTGRES_PASSWORD")));
+            write("database-preflight.json",child?EvaluationDatabasePreflight.ready(meta,props.getProperty("POSTGRES_PASSWORD")):EvaluationDatabasePreflight.prepare(meta,props.getProperty("POSTGRES_PASSWORD")));
         }catch(Exception failure) {
             write("stopped.json",Map.of("status","BLOCKED","reason","FREE_DATABASE_PREFLIGHT_FAILED","completedQuestions",0,"diagnostic",EvaluationFailureDiagnostic.safe(failure)));
             Files.writeString(run.resolve("STOP"),"STOPPED",StandardOpenOption.CREATE_NEW);
@@ -74,7 +76,7 @@ class ApprovedAiModelEvaluationTest {
                 var retrieval=runner.retrieval();var searchRows=new ArrayList<Map<String,Object>>();
                 var golden=json.readTree(Path.of("src/test/resources/ai/retrieval-golden.json").toFile());
                 var supplement=json.readTree(Path.of("src/test/resources/ai/retrieval-supplement.json").toFile());
-                for(String group:List.of("golden","negative","identifiers")){
+                for(String group:child?List.<String>of():List.of("golden","negative","identifiers")){
                     JsonNode questions=group.equals("golden")?golden:supplement.path(group);
                     for(var q:questions){
                         String question=q.isTextual()?q.asText():q.path("question").asText();
@@ -95,7 +97,7 @@ class ApprovedAiModelEvaluationTest {
                     assertThat(foreignResult.httpStatus()).isEqualTo(404);assertThat(foreignResult.metrics().modelCalls()).isZero();
                     assertThat(tools.invoke(user,"listAbnormalOrders",json.writeValueAsBytes(Map.of("arguments",Map.of()))).error()).isEqualTo("TOOL_FORBIDDEN");
                     write("authorization.json",Map.of("foreignUser404",true,"userAdminToolForbidden",true,"dataSource","CONTROLLED_FIXTURE_OWNERSHIP_CHECK_NOT_NEW_JPA_E2E"));
-                    for(int i=0;i<questions.length;i++){
+                    for(int i=child?1:0;i<questions.length;i++){
                         if(uncertain.get())throw new IllegalStateException("UNCERTAIN_STOP");
                         var body=new LinkedHashMap<String,Object>();body.put("question",questions[i]);
                         if(Set.of(3,5,6,8).contains(i))body.put("target",Map.of("orderId",1));

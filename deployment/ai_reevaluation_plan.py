@@ -22,6 +22,9 @@ def derive(parent):
         if c.execute("select count(*) from reservations where outcome!='OBSERVED'").fetchone()[0]:raise ValueError('UNCERTAIN_PARENT_BLOCKED')
         values=c.execute("select count(case when kind='llm' then 1 end),count(case when kind='embedding' then 1 end),coalesce(sum(input),0),coalesce(sum(output),0),coalesce(sum(embedding),0),coalesce(sum(cost),0) from reservations").fetchone()
         if c.execute("select count(*) from reservations where kind not in ('llm','embedding')").fetchone()[0]:raise ValueError('PARENT_KIND_INVALID')
+        invalid=c.execute('select count(*) from reservations where input<0 or output<0 or embedding<0 or cost!=input*?+output*?+embedding*?',
+                          (POLICY['input_nusd'],POLICY['output_nusd'],POLICY['embedding_nusd'])).fetchone()[0]
+        if invalid:raise ValueError('PARENT_ACCOUNTING_INVALID')
     if hashlib.sha256(ledger.read_bytes()).hexdigest()!=before:raise ValueError('PARENT_CHANGED')
     keys=['llm_calls','embedding_calls','input_tokens','output_tokens','embedding_tokens','cap_nusd']
     spent=dict(zip(keys,values));remaining={k:POLICY[k]-spent[k] for k in keys}
