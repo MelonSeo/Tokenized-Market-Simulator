@@ -74,6 +74,23 @@ class EvaluationPositiveSmokeTest {
             assertThat(r.skill().trace()).anyMatch(t->t.stepId().equals("SUMMARIZE")&&t.resultCode().equals("VALIDATED"));
         }
     }
+    @Test void syntheticMarketFixtureMatchesProductStatusAndSkillUsesObservedProvider()throws Exception {
+        var f=EvaluationToolFixture.offline(json);var model=model();var retrieval=retrieval();
+        try(var tools=f.dispatcher();var agent=new AgentService(new AgentProperties(true),()->model,()->retrieval,tools,json,Duration.ofSeconds(40),new SkillProperties(true),new SkillRegistry(json))) {
+            var r=agent.answer(f.user,request("market-availability-diagnosis",f));
+            assertThat(r.httpStatus()).isEqualTo(200);
+            assertThat(r.toolEvidence()).singleElement().satisfies(e->{
+                assertThat(e.tool()).isEqualTo("getCurrentReferencePrice");
+                assertThat(e.status()).isEqualTo("SUCCESS");
+                assertThat(e.data().path("provider").asText()).isEqualTo("SIMULATED");
+                assertThat(e.data().path("priceStatus").asText()).isEqualTo("SIMULATED");
+                assertThat(e.data().path("marketStatus").asText()).isEqualTo("OPEN");
+            });
+            assertThat(r.skill().diagnosis().observedFindings()).extracting(SkillResult.Finding::code)
+                .contains("SIMULATED_REFERENCE_OBSERVED").doesNotContain("PRICE_UNAVAILABLE_OBSERVED","MARKET_CLOSED_OBSERVED");
+            verify(model,never()).planWithSkills(any(),any(),any(),any());
+        }
+    }
     @Test void uncertainFuturesIsPartialWithoutModelSynthesis()throws Exception {
         var f=EvaluationToolFixture.offline(json);f.unverified.set(true);var model=model();var retrieval=retrieval();
         try(var tools=f.dispatcher();var agent=new AgentService(new AgentProperties(true),()->model,()->retrieval,tools,json,Duration.ofSeconds(40),new SkillProperties(true),new SkillRegistry(json))) {

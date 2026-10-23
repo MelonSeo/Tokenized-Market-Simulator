@@ -2797,6 +2797,13 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 독립검토의mergegate/ROOT검증지적2건보완후첫재검토필수수정없음. 실제회귀는구현자실행. 상세커밋·검증·경로의존성과제거선행조건: [원본 루트 통합 보고서](root-integration-2026-10-16.md).
 - 최종2차독립재검토필수수정없음. reviewer가실제6커밋/48파일/merge부모및tree동일/원본XML498·skip35·실패0/문서구분을직접확인했다. 회귀재실행·private백업/hash·WT·Docker/DB/credentials는검토범위밖이다.
 
+# NXT 애프터마켓 실제 관측 — 수신 PASS / 제품 E2E 미실행 (2026-10-16)
+
+- 사용자 재개 승인으로 보존된 미사용 `kiwoom-diagnostic-20261016033307-3aee8495`에서1회만실행. prepared/sourceHashes/secret명시참조/ACL/한도/미사용확인PASS. KST19:34:53~19:37:54, OAuth1/시세·차트REST0/WS1/LOGIN·REG각1/재시도·재연결·재발급0.
+- generation1의005930_NX 체결733건/290문자열2, 신선도733/733PASS(age1.552591~3.094123초). 9081은전부존재/STRING/허용형식false로정제null이며미허용원문저장·출력없음. 0s0건,215/거래소코드·세션의미미확정.290=2로KRX/NXT·NXT세션을단독식별하지않는다.
+- 총737정제행/657수신프레임/19송신프레임,절단없음. COMPLETE/workerStoppedtrue/exit0. 파일시각기준180.902311초,전체제한210초. 이run은소모되어재사용금지. 기존capture/KRX환경/DB/Anvil/baseline/credentials/제품이미지보존,주문·유료AI·배포·Git변경명령없음.
+- 원본루트에[애프터 관측 보고서](kiwoom-nxt-aftermarket-observation-2026-10-16.md)를작성했다. 제품NXT고정모드는구현전이며REST/차트와제품E2E는NOT_RUN. 보존된68개오프라인결과를이번실행으로표현하지않는다.
+
 # Google 사용자 인증 확장 — 실제 코드 조사·설계 제안 / 구현 승인 대기 (2026-10-16)
 
 - 원본melon-init/a98ea4b에서기존SpringSecurity·BCrypt·JWT·nullable google_sub/email필드·REST/개인WS·웹메모리인증을조사했다. 기존NXT문서변경은보존했다.

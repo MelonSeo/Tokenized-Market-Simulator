@@ -13,6 +13,7 @@
 
 ## 문서 목록
 
+- [최종 개발·인수 마스터 계획](../docs/PROJECT_COMPLETION_MASTER_PLAN_2026-10-18.md) — 전체 범위·기능별 현재 상태·남은 결정·Phase A~D의 공통 상태 기준. 원계획과 실행 증거는 보존하며, 아래 날짜별 진행 기록은 당시 이력으로 읽는다. 현재 사용자 검토 대기이며 새 구현·외부 실행 승인은 아니다.
 - [`google-sell-all-integration-2026-10-18.md`](google-sell-all-integration-2026-10-18.md) — Google/전량매도 분리 커밋·원본 통합과 새 회귀, 기존환경 보존 및 최신 Phase B 준비 경계
 - [`google-auth-implementation.md`](google-auth-implementation.md) — GIS 로그인·명시 연결·서버 WS 만료 구현, 오프라인/신규 격리 검증과 실제 Google 계정 인수 경계
 - [`google-auth-live-acceptance-2026-10-17.md`](google-auth-live-acceptance-2026-10-17.md) — 실제 Google 가입·연결·재로그인, 자산 보존, 실제/fixture 증거와 남은 수동 인수 경계
