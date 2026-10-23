@@ -7,9 +7,17 @@ import { resolve, join, extname } from 'node:path';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
+import { appendFileSync } from 'node:fs';
+import { BoundaryError, BoundedCdp, bounded, cleanupOwned, fetchJsonBounded, finalGate, pollBounded } from './cdp-boundary.mjs';
 
-const root = resolve('dist'); const artifacts = join(root, '.smoke'); await mkdir(artifacts, { recursive: true });
-const profile = await mkdtemp(join(artifacts, 'profile-'));
+const root = resolve('dist'); const evidenceRoot = join(root, '.smoke'); await mkdir(evidenceRoot, { recursive: true });
+const artifacts = await mkdtemp(join(evidenceRoot, 'bounded-'));
+const profile = join(artifacts, 'profile'); await mkdir(profile);
+const tracePath = join(artifacts, 'boundaries.jsonl'); await writeFile(tracePath, '', { flag: 'wx' });
+let traceFailed = false;
+const trace = metadata => { try { appendFileSync(tracePath, JSON.stringify(metadata) + '\n'); } catch { traceFailed = true; } };
+const deadline = Date.now() + 180000;
+const budget = maximum => Math.min(maximum, deadline - Date.now());
 let role = 'USER', orders = [], failWrite = false, failAi = false, delayedAi = false;
 let googleUser = false, googleLinked = false;
 const faucetClaims=new Map();let loseFaucetResponse=false;
@@ -101,24 +109,38 @@ const server = createServer(async (req, res) => {
   else if (url.pathname === '/api/ai/observability') body = { startedAt: now, diagnosis: { status: 'AVAILABLE' }, series: { 'LLM:call': { calls: 2, failures: 0, averageLatencyMs: 123, reportedInputTokens: 20, reportedOutputTokens: 5, usageUnknownCalls: 0 } } };
   res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body));
 });
-await new Promise((done) => server.listen(0, '127.0.0.1', done)); const port = server.address().port;
 const chrome = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const child = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
-let ws, serial = 0; const pending = new Map(); const errors = [];
-async function poll(operation, timeout = 15000) { const start = Date.now(); for (;;) { try { const value = await operation(); if (value) return value; } catch {} if (Date.now() - start > timeout) throw new Error('Browser smoke wait timed out'); await new Promise((done) => setTimeout(done, 50)); } }
-function command(method, params = {}) { return new Promise((resolve, reject) => { const id = ++serial; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); }); }
-async function evaluate(expression) { const result = await command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (result.exceptionDetails) throw new Error(result.exceptionDetails.text); return result.result.value; }
+const connections = new Set();
+server.on('connection', socket => { connections.add(socket); socket.once('close', () => connections.delete(socket)); });
+let cdp, child, port, childExited = false, spawnFailed = false;
+let uiAssertionsPassed = false, failure = 'NOT_STARTED'; const errors = [];
+async function poll(operation, timeout = 15000) { return pollBounded(operation, { timeoutMs: budget(timeout), trace }); }
+function command(method, params = {}) { return cdp.command(method, params, budget(8000)); }
+async function evaluate(expression) { const result = await command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (result.exceptionDetails) throw new BoundaryError('PAGE_EVALUATION_ERROR'); return result.result.value; }
 const click = (id) => evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
 const fill = (id, value) => evaluate(`{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('input',{bubbles:true}));}`);
 const submit = (id) => evaluate(`document.getElementById(${JSON.stringify(id)}).requestSubmit()`);
 const waitText = (id, text) => poll(() => evaluate(`document.getElementById(${JSON.stringify(id)}).textContent.includes(${JSON.stringify(text)})`));
 async function screenshot(name) { const data = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }); await writeFile(join(artifacts, name + '.png'), Buffer.from(data.data, 'base64')); }
 try {
-  const debugPort = await poll(async () => (await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]);
-  const targets = await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json();
-  ws = new WebSocket(targets.find((target) => target.type === 'page').webSocketDebuggerUrl); await new Promise((done) => ws.addEventListener('open', done));
-  ws.addEventListener('message', (event) => { const result = JSON.parse(event.data); if (result.id) { const task = pending.get(result.id); pending.delete(result.id); if (result.error) task.reject(new Error(result.error.message)); else task.resolve(result.result); } else if (result.method === 'Runtime.exceptionThrown') errors.push(result.params.exceptionDetails.text); });
+  await bounded('FIXTURE_LISTEN', () => new Promise((done, reject) => {
+    server.once('error', reject); server.listen(0, '127.0.0.1', () => { server.removeListener('error', reject); done(); });
+  }), { timeoutMs: budget(5000), trace }); port = server.address().port;
+  child = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { windowsHide: true, stdio: 'ignore' });
+  child.once('exit', () => { childExited = true; }); child.once('error', () => { spawnFailed = true; });
+  const debugPort = await poll(async () => {
+    if (spawnFailed || childExited) throw new BoundaryError('OWNED_BROWSER_START_FAILED');
+    return (await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0];
+  });
+  if (!/^\d{1,5}$/.test(debugPort)) throw new BoundaryError('TARGET_PORT_INVALID');
+  const targets = await fetchJsonBounded(`http://127.0.0.1:${debugPort}/json/list`, { timeoutMs: budget(5000), trace });
+  const target = targets.find(target => target.type === 'page' && target.url === 'about:blank');
+  if (!target) throw new BoundaryError('OWNED_PAGE_MISSING');
+  const address = new URL(target.webSocketDebuggerUrl);
+  if (address.protocol !== 'ws:' || !['127.0.0.1', 'localhost'].includes(address.hostname) || address.port !== debugPort) throw new BoundaryError('TARGET_SCOPE_INVALID');
+  cdp = await BoundedCdp.connect(address.href, { timeoutMs: budget(5000), trace, onEvent: method => { if (method === 'Runtime.exceptionThrown') errors.push('RUNTIME_EXCEPTION'); } });
   await command('Runtime.enable'); await command('Page.enable');
+  await command('Page.addScriptToEvaluateOnNewDocument', { source: `document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement('div');b.id='offline-smoke-scope';b.textContent='OFFLINE FIXTURE · Mock HTTP/STOMP/AI · no real RPC, MetaMask signing or asset transactions';b.style.cssText='background:#fff2bb;padding:8px;position:relative;z-index:9999;font:14px sans-serif';document.body.prepend(b);});` });
   // Use compiled STOMP client with a deterministic transport; not a real backend STOMP claim.
   await command('Page.addScriptToEvaluateOnNewDocument', { source: `window.__sockets=[];window.WebSocket=class{static OPEN=1;constructor(){this.readyState=0;this.subs={};window.__sockets.push(this);setTimeout(()=>{this.readyState=1;this.onopen?.({});},20);}send(frame){if(typeof frame!=='string')frame=new TextDecoder().decode(frame);if(frame.startsWith('CONNECT'))setTimeout(()=>this.onmessage?.({data:'CONNECTED\\nversion:1.2\\nheart-beat:0,0\\n\\n\\0'}),5);if(frame.startsWith('SUBSCRIBE')){const id=frame.match(/id:([^\\n]+)/)?.[1],dest=frame.match(/destination:([^\\n]+)/)?.[1];this.subs[dest]=id;}if(frame.startsWith('DISCONNECT')){const r=frame.match(/receipt:([^\\n]+)/)?.[1];if(r)this.onmessage?.({data:'RECEIPT\\nreceipt-id:'+r+'\\n\\n\\0'});}}close(){this.readyState=3;this.onclose?.({});}emit(dest,event){const sub=this.subs[dest];if(sub)this.onmessage?.({data:'MESSAGE\\nsubscription:'+sub+'\\nmessage-id:fixture\\ndestination:'+dest+'\\n\\n'+JSON.stringify(event)+'\\0'});}};` });
   await command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
@@ -164,7 +186,7 @@ try {
   const futuresBefore=requests.filter(r=>r.path==='/api/futures/positions'&&r.method==='POST').length;
   await click('futures-preview-open');await waitText('futures-preview','75000');
   assert.equal(requests.filter(r=>r.path==='/api/futures/positions'&&r.method==='POST').length,futuresBefore);
-  await click('futures-confirm');await waitText('futures-positions','포지션 유지');
+  await click('futures-confirm');await waitText('futures-positions','진행 중');
   assert.equal(futuresPositions[0].collateral,'100000.000000000000000001');
   futuresPositions[0].riskStatus='GRACE';futuresPositions[0].deadline=Math.floor(Date.now()/1000)+60;
   await evaluate(`window.__sockets.at(-1).emit('/user/queue/futures',{eventId:'future-call',type:'FUTURES_UPDATED',data:{positionId:'fixture-future',operationId:'fixture-call'}})`);
@@ -235,8 +257,27 @@ try {
   assert.equal(await evaluate(`document.getElementById('auth-form').contains(document.getElementById('google-start')) && document.getElementById('google-start').getClientRects().length>0`),true);
   await click('google-start'); await poll(()=>evaluate(`Boolean(document.getElementById('fixture-google-button'))`)); await click('fixture-google-button');
   await waitText('identity','Google 사용자');
-  assert.deepEqual(errors, []); console.log('PASS browser smoke: desktop/mobile + offline futures preview/call/liquidation UI + GIS LOGIN/LINK, no external SDK or real chain.');
+  for (const [width, height, label] of [[1366, 768, 'presentation'], [390, 844, 'mobile390']]) {
+    await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width === 390 });
+    await evaluate(`location.hash='custody'`);
+    await waitText('c-message', '미지원');
+    await screenshot(label + '-c-offline-unavailable');
+  }
+  assert.deepEqual(errors, []); assert.equal(traceFailed, false, 'boundary trace write failed');
+  uiAssertionsPassed = true; failure = null;
+  console.log('UI_ASSERTIONS_PASS: final Gate still requires confirmed owned-resource cleanup and safe trace.');
+} catch (error) {
+  failure = error instanceof BoundaryError ? error.code : 'SMOKE_ASSERTION_OR_IO_ERROR';
+  // Do not print error text: CDP/page assertions can contain private page content.
+  console.error('FAIL browser smoke:', failure); process.exitCode = 1;
 } finally {
-  if (ws?.readyState === WebSocket.OPEN) { try { await command('Browser.close'); } catch {} ws.close(); }
-  else child.kill(); server.close();
+  const closeOutcome = cdp ? await cdp.close(1000) : 'NOT_CONNECTED';
+  const cleanup = await cleanupOwned({ child, hasExited: () => childExited, spawnFailed, server, connections, trace });
+  const result = { ...finalGate({ uiAssertionsPassed, ...cleanup, traceFailed, failure }), uiAssertionsPassed,
+    scope: 'OFFLINE_HTTP_STOMP_AI_FIXTURE_C_UNAVAILABLE', closeOutcome, ...cleanup, spawnFailed, traceFailed };
+  try { await writeFile(join(artifacts, 'result.json'), JSON.stringify(result, null, 2), { flag: 'wx' }); }
+  catch { result.verdict = 'BLOCKED'; result.failure = 'RESULT_WRITE_FAILED'; }
+  process.exitCode = result.verdict === 'PASS' ? 0 : 1;
+  console.log(result.verdict + ' browser smoke:', result.failure ?? 'OFFLINE_FIXTURE_ONLY');
+  console.log('Evidence:', artifacts);
 }

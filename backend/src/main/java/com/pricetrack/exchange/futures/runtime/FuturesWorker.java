@@ -36,9 +36,10 @@ public final class FuturesWorker implements AutoCloseable {
         long stop=System.nanoTime()+TimeUnit.SECONDS.toNanos(2);
         try {
             // Resolve earlier signed intent even while the market is closed or unavailable.
-            for(String id:transactions.pending(50)) { guarded(()->reconciler.reconcile(id));if(System.nanoTime()>stop)return; }
+            var pending=rpc.authorized()?transactions.pending(50,rpc.destination()):transactions.pending(50);
+            for(String id:pending) { guarded(()->reconciler.reconcile(id));if(System.nanoTime()>stop)return; }
             for(String id:intents.prepared()) { guarded(()->execution.submitPrepared(id));if(System.nanoTime()>stop)return; }
-            var positions=ledger.riskCandidates(cursor,50);
+            var positions=rpc.v2()?ledger.riskCandidatesV2(cursor,50,rpc.destination()):rpc.authorized()?ledger.riskCandidates(cursor,50,true):ledger.riskCandidates(cursor,50);
             if(positions.isEmpty()){cursor="";return;}
             for(var p:positions) {
                 cursor=p.id();guarded(()->evaluate(p));if(System.nanoTime()>stop)return;

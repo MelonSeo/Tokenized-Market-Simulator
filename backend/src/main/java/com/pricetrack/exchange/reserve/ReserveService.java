@@ -83,7 +83,8 @@ public class ReserveService {
                     }
                 }
             }
-        } catch(ReserveStore.CutLimitException e) { reason="BOUNDED_READ_LIMIT"; }
+        } catch(com.pricetrack.exchange.futures.audit.FuturesAuditSnapshot.AuthorizedCoverageUnavailable e) {status="INCONCLUSIVE";reason="AUTHORIZED_CONTRACT_COVERAGE_REQUIRED";}
+        catch(ReserveStore.CutLimitException e) { reason="BOUNDED_READ_LIMIT"; }
         catch(Exception e) { status="UNAVAILABLE"; reason="DEPENDENCY_READ_FAILED"; }
         finally { job.release(); }
         // Do not combine allocation and chain resources when the cut was not established.

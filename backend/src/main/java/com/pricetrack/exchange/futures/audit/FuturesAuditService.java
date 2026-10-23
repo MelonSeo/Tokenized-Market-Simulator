@@ -114,7 +114,8 @@ public final class FuturesAuditService implements AutoCloseable {
                 else if(!complete)reason="PARTIAL_EVIDENCE";
                 else {status=checks.stream().allMatch(Check::matches)&&items.stream().allMatch(i->i.verdict().equals("MATCH"))?"MATCH":"MISMATCH";reason=status.equals("MATCH")?"EXACT_LEDGER_CHAIN_MATCH":"LEDGER_CHAIN_OR_COVERAGE_CONFLICT";}
             }
-        }catch(Bounded|FuturesAuditSnapshot.Limit|ReserveStore.CutLimitException bounded){reason="BOUNDED_READ_LIMIT";complete=false;}
+        }catch(FuturesAuditSnapshot.AuthorizedCoverageUnavailable pending){reason="AUTHORIZED_CONTRACT_COVERAGE_REQUIRED";complete=false;}
+        catch(Bounded|FuturesAuditSnapshot.Limit|ReserveStore.CutLimitException bounded){reason="BOUNDED_READ_LIMIT";complete=false;}
         catch(Exception unavailable){reason="DEPENDENCY_OR_HISTORICAL_EVIDENCE_UNAVAILABLE";complete=false;}
         if(reason.equals("CUT_CHANGED")) {
             var provisional=new ArrayList<Item>();for(var i:items)provisional.add(new Item(i.operationId(),i.positionId(),i.userId(),i.action(),i.dbState(),"INCONCLUSIVE","CUT_CHANGED",i.txHash(),i.blockNumber(),i.blockHash()));items=provisional;

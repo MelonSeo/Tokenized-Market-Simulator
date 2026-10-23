@@ -13,6 +13,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import com.pricetrack.exchange.common.schema.SchemaStartupMode;
+import com.pricetrack.exchange.common.schema.PreinstalledSchemaVerifier;
 
 /** All mutation helpers run inside the caller's single JPA/PostgreSQL transaction. No RPC. */
 @Component @DependsOn("entityManagerFactory")
@@ -20,12 +24,28 @@ public class FaucetStore {
     final JdbcTemplate jdbc;
     final String version;
     boolean postgres;
+    private final SchemaStartupMode startupMode;
     public FaucetStore(DataSource ds,@Value("${app.faucet.policy-version:kst-v1}") String version) {
+        this(ds,version,SchemaStartupMode.INSTALL);
+    }
+    @Autowired public FaucetStore(DataSource ds,@Value("${app.faucet.policy-version:kst-v1}") String version,
+            @Value("${app.schema.startup-mode:install}")String mode,Environment environment) {
+        this(ds,version,SchemaStartupMode.resolve(mode,environment));
+    }
+    private FaucetStore(DataSource ds,String version,SchemaStartupMode mode) {
         this.jdbc=new JdbcTemplate(ds);jdbc.setQueryTimeout(3);this.version=version;
+        this.startupMode=mode;
         if(!version.matches("[A-Za-z0-9_-]{1,64}")) throw new IllegalArgumentException("Invalid faucet policy version");
     }
     @PostConstruct void initialize() throws Exception {
         try(var c=jdbc.getDataSource().getConnection()){postgres=c.getMetaData().getDatabaseProductName().equals("PostgreSQL");}
+        if(startupMode==SchemaStartupMode.VERIFY_EXISTING) {
+            if(!postgres)throw new IllegalStateException("PREINSTALLED_SCHEMA_POSTGRESQL_REQUIRED");
+            PreinstalledSchemaVerifier.faucet(jdbc);
+            if(jdbc.queryForObject("SELECT count(*) FROM faucet_budget_usage",Long.class)!=1L
+                    ||!configured()||!consistent())throw new IllegalStateException("PREINSTALLED_FAUCET_NOT_READY");
+            return;
+        }
         new ResourceDatabasePopulator(new ClassPathResource("faucet-schema.sql")).execute(jdbc.getDataSource());
         if(postgres) {
             jdbc.execute("CREATE OR REPLACE FUNCTION reject_faucet_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'append-only faucet evidence'; END $$");

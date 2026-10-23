@@ -32,7 +32,21 @@ export class ApiClient {
   me() {
     return this.#request('/api/me');
   }
+  cRequest(path, options = {}) {
+    if (!/^\/api\/c-futures\/(?:[A-Za-z0-9._~%-]+\/?)+(?:\?[A-Za-z0-9._~%=&-]+)?$/.test(path)) throw new Error('Invalid C endpoint');
+    if (options.method && options.method !== 'POST') throw new Error('Invalid C method');
+    return this.#request(path, options);
+  }
   futuresPositions() { return this.#request('/api/futures/positions'); }
+  futuresOperation(id) { return this.#request('/api/futures/operations/'+encodeURIComponent(id)); }
+  dappConfig() { return this.#request('/api/futures/authorized-v2/config'); }
+  dappWallet() { return this.#request('/api/futures/authorized-v2/wallet'); }
+  dappNonce() { return this.#request('/api/futures/authorized-v2/nonce'); }
+  dappChallenge(wallet) { return this.#request('/api/futures/authorized-v2/wallet/challenges',{method:'POST',body:JSON.stringify({wallet})}); }
+  dappLink(challengeId,signature) { return this.#request('/api/futures/authorized-v2/wallet/link',{method:'POST',body:JSON.stringify({challengeId,signature})}); }
+  dappDraft(body,key) { return this.#request('/api/futures/authorized-v2/drafts',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify(body)}); }
+  dappSubmit(id,signature,key) { return this.#request('/api/futures/authorized-v2/drafts/'+encodeURIComponent(id)+'/submit',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({signature})}); }
+  dappPosition(id) { return this.#request('/api/futures/authorized-v2/positions/'+encodeURIComponent(id)); }
   futuresAuditBaseline() { return this.#request('/api/admin/futures/audits/baseline'); }
   futuresAuditRun() { return this.#request('/api/admin/futures/audits', { method: 'POST' }); }
   futuresAuditHistory() { return this.#request('/api/admin/futures/audits'); }

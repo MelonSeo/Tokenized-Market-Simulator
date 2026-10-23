@@ -15,6 +15,7 @@ public final class FuturesAuditAccounting {
     private FuturesAuditAccounting() {}
     private static void eq(List<Check> c,String key,BigInteger e,BigInteger a){c.add(new Check(key,e.toString(),a.toString(),a.subtract(e).toString(),e.equals(a)));}
     private static void ok(List<Check> c,String key,boolean b){eq(c,key,BigInteger.ONE,b?BigInteger.ONE:Z);}
+    private static boolean ownerAccount(String account,String owner){try{return account.equals(com.pricetrack.exchange.futures.authorization.UserIntentCodec.account(owner));}catch(RuntimeException invalid){return false;}}
     public static FuturesImpact impact(FuturesAuditSnapshot s,ObjectMapper json) {
         var checks=new ArrayList<Check>();var wallets=new TreeMap<Long,BigInteger>();var locks=new TreeMap<Long,BigInteger>();
         var ops=new HashMap<String,Operation>();var positions=new HashMap<String,Position>();
@@ -35,6 +36,7 @@ public final class FuturesAuditAccounting {
                     case "CONFIRM" -> {valid=o.state().equals("CONFIRMED");wallet=o.expectedRealized();house=wallet.negate();locked=terminal?o.collateralBefore().negate():Z;debt=o.expectedBadDebt();}
                     case "RELEASE" -> {valid=o.state().equals("REJECTED");locked=o.reservedMargin().negate();}
                     case "REVERT_RELEASE" -> {valid=o.state().equals("REVERTED");locked=o.reservedMargin().negate();}
+                    case "REPRICE" -> {var a=s.authorizations().get(o.id());valid=a!=null&&Objects.equals(a.activeRevision(),1)&&a.revisions().size()==2;}
                     default -> valid=false;
                 }
                 ok(checks,"FUTURES_JOURNAL_VALUES_"+j.id(),valid&&wallet.equals(j.wallet())&&locked.equals(j.locked())&&house.equals(j.house())&&debt.equals(j.debt()));
@@ -62,6 +64,8 @@ public final class FuturesAuditAccounting {
                 boolean expected=type.equals("RESERVE")?o.reservedMargin().signum()>0:type.equals("CONFIRM")?o.state().equals("CONFIRMED"):type.equals("RELEASE")?o.state().equals("REJECTED"):o.state().equals("REVERTED");
                 eq(checks,"FUTURES_JOURNAL_COUNT_"+o.id()+":"+type,expected?BigInteger.ONE:Z,BigInteger.valueOf(counts.getOrDefault(o.id()+":"+type,0)));
             }
+            var authorization=s.authorizations().get(o.id());
+            eq(checks,"FUTURES_REPRICE_JOURNAL_COUNT_"+o.id(),authorization!=null&&Objects.equals(authorization.activeRevision(),1)?BigInteger.ONE:Z,BigInteger.valueOf(counts.getOrDefault(o.id()+":REPRICE",0)));
             long txs=s.transactions().stream().filter(t->t.stored().operationId().equals(o.id())).count();
             eq(checks,"FUTURES_TX_COUNT_"+o.id(),Set.of("PREPARED","REJECTED").contains(o.state())?Z:BigInteger.ONE,BigInteger.valueOf(txs));
         }
@@ -79,7 +83,12 @@ public final class FuturesAuditAccounting {
             long active=s.positions().stream().filter(q->q.userId()==p.userId()&&!Set.of("CLOSED","LIQUIDATED","OPEN_FAILED").contains(q.status())).count();
             ok(checks,"FUTURES_SINGLE_ACTIVE_"+p.id(),active<=1);
             var guard=s.guards().stream().filter(g->g.userId()==p.userId()).findFirst().orElse(null);
-            ok(checks,"FUTURES_GUARD_"+p.id(),guard!=null&&guard.accountRef().equals(p.accountRef())&&(terminal?!p.id().equals(guard.activePosition()):p.id().equals(guard.activePosition())));
+            // The DB admission guard retains a random legacy accountRef. Authorized positions use a wallet-derived accountRef.
+            var owner=s.positionAuthorizations().get(p.id());
+            boolean accountMatches=guard!=null&&(owner==null?guard.accountRef().equals(p.accountRef()):
+                guard.accountRef()!=null&&guard.accountRef().matches("0x[0-9a-fA-F]{64}")&&
+                ownerAccount(p.accountRef(),owner.owner()));
+            ok(checks,"FUTURES_GUARD_"+p.id(),accountMatches&&(terminal?!p.id().equals(guard.activePosition()):p.id().equals(guard.activePosition())));
         }
         for(var t:s.transactions())ok(checks,"FUTURES_TX_OPERATION_"+t.stored().operationId(),ops.containsKey(t.stored().operationId()));
         for(var g:s.guards())if(g.activePosition()!=null)ok(checks,"FUTURES_ACTIVE_GUARD_"+g.userId(),positions.containsKey(g.activePosition())&&positions.get(g.activePosition()).userId()==g.userId());

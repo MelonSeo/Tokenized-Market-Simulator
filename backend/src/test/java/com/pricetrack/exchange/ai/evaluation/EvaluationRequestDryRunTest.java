@@ -26,6 +26,7 @@ class EvaluationRequestDryRunTest {
             "../docs/ai-knowledge","../docs/ai/ingest-manifest.json","","guarded:stdio/","text-embedding-3-small","gpt-5.6-terra",1200,60,5,.25,20);
         var corpus=new KnowledgeLoader(p,json).load();var plans=new ArrayList<Map<String,Object>>();
         String source=sourceHash();
+        var selected=selectedQuestions(System.getenv("AI_DRY_RUN_QUESTION"));
         String snapshot=System.getenv("AI_DRY_RUN_EVIDENCE");
         for(boolean maximum:List.of(false,true)){
             var fixture=snapshot==null?EvaluationToolFixture.offline(json):EvaluationToolFixture.preserved(json,json.readTree(Path.of(snapshot).toFile()));
@@ -63,6 +64,7 @@ class EvaluationRequestDryRunTest {
             when(retrieval.search(any(),any(),any())).thenAnswer(search);when(retrieval.searchScoped(any(),any(),any(),any())).thenAnswer(search);
             try(var tools=fixture.dispatcher();var agent=new AgentService(new AgentProperties(true),()->new OpenAiAgentProvider(provider,json),()->retrieval,tools,json,Duration.ofSeconds(40),new SkillProperties(true),new SkillRegistry(json))){
                 for(int i=1;i<16;i++){
+                    if(!selected.contains(i+1))continue;
                     question.set(i);if(i==15)fixture.unverified.set(true);
                     var r=agent.answer(i==7||i==8?fixture.admin:fixture.user,body(i,fixture));
                     assertThat(r.httpStatus()).as("Q%d error=%s uncertainties=%s",i+1,r.error(),r.uncertainties()).isEqualTo(200);assertThat(r.uncertainties()).as("Q%d",i+1).doesNotContain("SYNTHESIS_UNAVAILABLE","RAG_UNAVAILABLE","AGENT_CONTEXT_LIMIT");
@@ -72,8 +74,21 @@ class EvaluationRequestDryRunTest {
             plans.add(Map.of("profile",maximum?"MAXIMUM_MIXED":"EXPECTED_STATE","requests",requests));
         }
         assertThat(sourceHash()).isEqualTo(source);
-        String out=System.getenv("AI_DRY_RUN_OUTPUT");if(out!=null)Files.writeString(Path.of(out),json.writeValueAsString(Map.of("providerCalls",0,"source","ACTUAL_SERIALIZATION_LOCAL_TRANSPORT_MAX_ELIGIBLE_CHUNKS","sourceHash",source,"processedQuestions",java.util.stream.IntStream.rangeClosed(2,16).boxed().toList(),"preservedFuturesEvidence",snapshot!=null,"profiles",plans)),StandardOpenOption.CREATE_NEW);
+        String evidenceHash=snapshot==null?"NONE":HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(Path.of(snapshot))));
+        String out=System.getenv("AI_DRY_RUN_OUTPUT");if(out!=null)Files.writeString(Path.of(out),json.writeValueAsString(Map.of("providerCalls",0,"source","ACTUAL_SERIALIZATION_LOCAL_TRANSPORT_MAX_ELIGIBLE_CHUNKS","sourceHash",source,"processedQuestions",selected,"preservedFuturesEvidence",snapshot!=null,"evidenceSha256",evidenceHash,"profiles",plans)),StandardOpenOption.CREATE_NEW);
         assertThat(plans).hasSize(2);
+    }
+    static List<Integer> selectedQuestions(String single){
+        if(single==null)return java.util.stream.IntStream.rangeClosed(2,16).boxed().toList();
+        if(!Set.of("12","14","15").contains(single))throw new IllegalArgumentException("QUESTION_SCOPE_INVALID");
+        return List.of(Integer.parseInt(single));
+    }
+    @Test void singleSelectorNeverExpandsQuestionScope(){
+        assertThat(selectedQuestions("12")).containsExactly(12);
+        assertThat(selectedQuestions("14")).containsExactly(14);
+        assertThat(selectedQuestions("15")).containsExactly(15);
+        assertThat(selectedQuestions(null)).hasSize(15);
+        assertThatThrownBy(()->selectedQuestions("2,12")).isInstanceOf(IllegalArgumentException.class);
     }
     String sourceHash()throws Exception {
         var p=new ProcessBuilder(System.getenv().getOrDefault("AI_EVAL_TEST_PYTHON","python"),"-B","-S","-c","import sys; sys.path.insert(0,'../deployment'); from ai_evaluation_broker import source_hash; print(source_hash())").redirectError(ProcessBuilder.Redirect.DISCARD).start();

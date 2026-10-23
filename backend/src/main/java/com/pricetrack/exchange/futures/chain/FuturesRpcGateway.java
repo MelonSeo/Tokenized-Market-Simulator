@@ -18,9 +18,14 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
     private final Web3jService service;
     private final FuturesChainIdentity chain;
     private final String codeHash;
+    private final String rulesCodeHash;
     public FuturesRpcGateway(Web3jService service,FuturesChainIdentity chain,String codeHash) {
+        this(service,chain,codeHash,null);
+    }
+    public FuturesRpcGateway(Web3jService service,FuturesChainIdentity chain,String codeHash,String rulesCodeHash) {
         if(codeHash==null || !codeHash.matches("0x[0-9a-fA-F]{64}")) throw new IllegalArgumentException("ENGINE_CODE_HASH_REQUIRED");
-        this.service=service; this.rpc=Web3j.build(service); this.chain=chain; this.codeHash=codeHash;
+        if(chain.authorized()&&(rulesCodeHash==null||!rulesCodeHash.matches("0x[0-9a-fA-F]{64}")))throw new IllegalArgumentException("RULES_CODE_HASH_REQUIRED");
+        this.service=new ObservedFuturesRpc(service,chain); this.rpc=Web3j.build(this.service); this.chain=chain; this.codeHash=codeHash;this.rulesCodeHash=rulesCodeHash;
     }
     @Override public void verifyDeployment(FuturesChainIdentity expected)throws IOException {
         if(!expected.equals(chain)) throw new IOException("FUTURES_DEPLOYMENT_CONFLICT");
@@ -28,10 +33,17 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
         if(!id.getChainId().equals(chain.chainId())) throw new IOException("FUTURES_CHAIN_MISMATCH");
         var code=rpc.ethGetCode(chain.engine(),DefaultBlockParameterName.LATEST).send(); check(code);
         if(code.getCode()==null || code.getCode().equals("0x") || !Numeric.toHexString(Hash.sha3(Numeric.hexStringToByteArray(code.getCode()))).equalsIgnoreCase(codeHash)) throw new IOException("FUTURES_CODE_MISMATCH");
-        if(!wordAddress(call(selector("executor()"),DefaultBlockParameterName.LATEST)).equalsIgnoreCase(chain.executor())
-            || !wordAddress(call(selector("priceSigner()"),DefaultBlockParameterName.LATEST)).equalsIgnoreCase(chain.priceSigner())
-            || !call(selector("supportedSymbolHash()"),DefaultBlockParameterName.LATEST).equalsIgnoreCase(FuturesReport.SYMBOL_HASH)
-            || !call(selector("policyHash()"),DefaultBlockParameterName.LATEST).equalsIgnoreCase(FuturesLedger.POLICY_HASH)) throw new IOException("FUTURES_IMMUTABLE_MISMATCH");
+        if(chain.authorized()){
+            var inner=rpc.ethGetCode(chain.rules(),DefaultBlockParameterName.LATEST).send();check(inner);
+            if(!Numeric.toHexString(Hash.sha3(Numeric.hexStringToByteArray(inner.getCode()))).equalsIgnoreCase(rulesCodeHash)
+                ||!wordAddress(call(selector("executor()"),DefaultBlockParameterName.LATEST)).equalsIgnoreCase(chain.executor())
+                ||!wordAddress(call(selector("rules()"),DefaultBlockParameterName.LATEST)).equalsIgnoreCase(chain.rules()))throw new IOException("AUTHORIZED_DEPLOYMENT_CONFLICT");
+        }
+        if(chain.v2()&&!Numeric.toBigInt(call(selector("MAX_USER_TTL()"),DefaultBlockParameterName.LATEST)).equals(BigInteger.valueOf(120)))throw new IOException("AUTHORIZED_VERSION_CONFLICT");
+        if(!wordAddress(callAt(chain.priceContract(),selector("executor()"),DefaultBlockParameterName.LATEST)).equalsIgnoreCase(chain.reportExecutor())
+            || !wordAddress(callAt(chain.priceContract(),selector("priceSigner()"),DefaultBlockParameterName.LATEST)).equalsIgnoreCase(chain.priceSigner())
+            || !callAt(chain.priceContract(),selector("supportedSymbolHash()"),DefaultBlockParameterName.LATEST).equalsIgnoreCase(FuturesReport.SYMBOL_HASH)
+            || !callAt(chain.priceContract(),selector("policyHash()"),DefaultBlockParameterName.LATEST).equalsIgnoreCase(FuturesLedger.POLICY_HASH)) throw new IOException("FUTURES_IMMUTABLE_MISMATCH");
     }
     @Override public BigInteger pendingNonce(String sender)throws IOException {
         var n=rpc.ethGetTransactionCount(sender,DefaultBlockParameterName.PENDING).send(); check(n); return n.getTransactionCount();
@@ -66,6 +78,28 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
         }
         return java.util.List.copyOf(found);
     }
+    /** Audit-only union of controller and rules destinations, including reverted/no-event calls. */
+    public java.util.List<org.web3j.protocol.core.methods.response.Transaction> auditTransactions(BigInteger number)throws IOException {
+        var response=rpc.ethGetBlockByNumber(DefaultBlockParameter.valueOf(number),true).send();check(response);
+        if(response.getBlock()==null||response.getBlock().getTransactions().size()>2000)throw new IOException("AUDIT_BLOCK_UNAVAILABLE");
+        var found=new java.util.ArrayList<org.web3j.protocol.core.methods.response.Transaction>();
+        for(var item:response.getBlock().getTransactions()){
+            if(!(item.get() instanceof org.web3j.protocol.core.methods.response.Transaction tx))throw new IOException("AUDIT_BLOCK_TRANSACTION_UNAVAILABLE");
+            if(chain.engine().equalsIgnoreCase(tx.getTo())||chain.priceContract().equalsIgnoreCase(tx.getTo()))found.add(tx);
+        }
+        return java.util.List.copyOf(found);
+    }
+    /** Exact-block bytecode commitments. Keys are controller/rules even in the legacy single-contract case. */
+    public java.util.Map<String,String> deploymentCodeHashes(BigInteger block)throws IOException {
+        String controller=codeHashAt(chain.engine(),block);
+        String rules=chain.authorized()?codeHashAt(chain.rules(),block):controller;
+        return java.util.Map.of("controller",controller,"rules",rules);
+    }
+    private String codeHashAt(String address,BigInteger block)throws IOException{
+        var code=rpc.ethGetCode(address,DefaultBlockParameter.valueOf(block)).send();check(code);
+        if(code.getCode()==null||!code.getCode().matches("0x(?:[0-9a-fA-F]{2})+") )throw new IOException("AUDIT_CODE_UNAVAILABLE");
+        return Numeric.toHexString(Hash.sha3(Numeric.hexStringToByteArray(code.getCode())));
+    }
     public BigInteger height()throws IOException { var b=rpc.ethBlockNumber().send(); check(b); return b.getBlockNumber(); }
     /** Candidate block time is a preflight hint only; the mined receipt remains authoritative. */
     public long pendingTimestamp()throws IOException {
@@ -74,8 +108,25 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
         catch(RuntimeException invalid) { throw new IOException("PENDING_BLOCK_TIME_UNAVAILABLE"); }
     }
     public String position(String positionId,BigInteger block)throws IOException {
-        return call(selector("getPosition(bytes32)")+Numeric.cleanHexPrefix(Hash.sha3String(positionId)),DefaultBlockParameter.valueOf(block));
+        return callAt(chain.priceContract(),selector("getPosition(bytes32)")+Numeric.cleanHexPrefix(Hash.sha3String(positionId)),DefaultBlockParameter.valueOf(block));
     }
+    public String destination(){return chain.engine();}
+    public boolean authorized(){return chain.authorized();}
+    public boolean v2(){return chain.v2();}
+    public String positionOwner(String id,BigInteger block)throws IOException {if(!chain.authorized())throw new IOException("USER_AUTHORIZATION_MODE_REQUIRED");return wordAddress(call(selector("positionOwner(bytes32)")+Numeric.cleanHexPrefix(Hash.sha3String(id)),DefaultBlockParameter.valueOf(block)));}
+    public BigInteger userNonce(String owner)throws IOException {return Numeric.toBigInt(call(selector("nonces(address)")+"0".repeat(24)+owner.substring(2),DefaultBlockParameterName.LATEST));}
+    /** Audit anchor: no latest fallback and no short/oversized ABI word acceptance. */
+    public BigInteger userNonce(String owner,BigInteger block)throws IOException {
+        if(!chain.v2()||owner==null||!owner.matches("0x[0-9a-fA-F]{40}")||block==null||block.signum()<0)throw new IOException("AUDIT_NONCE_ARGUMENT_REQUIRED");
+        String value=call(selector("nonces(address)")+"0".repeat(24)+owner.substring(2),DefaultBlockParameter.valueOf(block));
+        if(!value.matches("0x[0-9a-fA-F]{64}"))throw new IOException("AUDIT_NONCE_WORD_REQUIRED");
+        return Numeric.toBigInt(value);
+    }
+    public boolean eoa(String owner,BigInteger block)throws IOException {
+        if(owner==null||!owner.matches("0x[0-9a-fA-F]{40}")||block==null||block.signum()<0)throw new IOException("AUDIT_EOA_ARGUMENT_REQUIRED");
+        var code=rpc.ethGetCode(owner,DefaultBlockParameter.valueOf(block)).send();check(code);return "0x".equals(code.getCode());
+    }
+    public boolean eoa(String owner)throws IOException {var c=rpc.ethGetCode(owner,DefaultBlockParameterName.LATEST).send();check(c);return "0x".equals(c.getCode());}
     /** Read-only explicit-block log scan. No provider-error text escapes this boundary. */
     public java.util.List<Log> logs(BigInteger from,BigInteger to)throws IOException {
         if(from.signum()<0 || to.compareTo(from)<0 || to.subtract(from).compareTo(BigInteger.valueOf(249))>0)throw new IOException("AUDIT_LOG_RANGE_LIMIT");
@@ -87,8 +138,22 @@ public final class FuturesRpcGateway implements FuturesTransactionSender.Transpo
         for(var item:response.getLogs())if(item.get() instanceof Log log)result.add(log);else throw new IOException("AUDIT_LOG_UNAVAILABLE");
         return java.util.List.copyOf(result);
     }
+    /** No topic filtering: unexpected contract events must not disappear from reverse coverage. */
+    public java.util.List<Log> auditLogs(BigInteger from,BigInteger to)throws IOException {
+        if(from.signum()<0||to.compareTo(from)<0||to.subtract(from).compareTo(BigInteger.valueOf(249))>0)throw new IOException("AUDIT_LOG_RANGE_LIMIT");
+        java.util.List<String> addresses=chain.authorized()?java.util.List.of(chain.engine(),chain.rules()):java.util.List.of(chain.engine());
+        var filter=new org.web3j.protocol.core.methods.request.EthFilter(DefaultBlockParameter.valueOf(from),DefaultBlockParameter.valueOf(to),addresses);
+        var response=rpc.ethGetLogs(filter).send();check(response);
+        if(response.getLogs().size()>2000)throw new IOException("AUDIT_LOG_RESULT_LIMIT");
+        var result=new java.util.ArrayList<Log>();
+        for(var item:response.getLogs())if(item.get() instanceof Log log)result.add(log);else throw new IOException("AUDIT_LOG_UNAVAILABLE");
+        return java.util.List.copyOf(result);
+    }
     private String call(String data,DefaultBlockParameter block)throws IOException {
-        var value=rpc.ethCall(Transaction.createEthCallTransaction(chain.executor(),chain.engine(),data),block).send(); check(value);
+        return callAt(chain.engine(),data,block);
+    }
+    private String callAt(String to,String data,DefaultBlockParameter block)throws IOException {
+        var value=rpc.ethCall(Transaction.createEthCallTransaction(chain.executor(),to,data),block).send(); check(value);
         if(value.isReverted() || value.getValue()==null || !value.getValue().matches("0x[0-9a-fA-F]+")) throw new IOException("FUTURES_CALL_UNAVAILABLE");
         return value.getValue();
     }

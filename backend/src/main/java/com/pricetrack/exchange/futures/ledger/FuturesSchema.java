@@ -17,12 +17,13 @@ public class FuturesSchema {
     public FuturesSchema(DataSource source) { this.source=source; }
     @PostConstruct public void initialize() {
         new ResourceDatabasePopulator(new ClassPathResource("futures-schema.sql")).execute(source);
+        new ResourceDatabasePopulator(new ClassPathResource("futures-audit-deployments-schema.sql")).execute(source);
         var jdbc=new org.springframework.jdbc.core.JdbcTemplate(source);
         boolean pg=Boolean.TRUE.equals(jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<Boolean>)
             c->c.getMetaData().getDatabaseProductName().equals("PostgreSQL")));
         if(pg) {
             jdbc.execute("CREATE OR REPLACE FUNCTION reject_futures_evidence_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'append-only futures evidence'; END $$");
-            for(String table:java.util.List.of("futures_policy","futures_journal","futures_audit_baselines","futures_audit_runs")) {
+            for(String table:java.util.List.of("futures_policy","futures_journal","futures_audit_baselines","futures_audit_runs","futures_audit_deployments","futures_authorized_positions","futures_authorized_operations","futures_authorized_v2_positions","futures_authorized_v2_operations","futures_v2_execution_revisions")) {
                 if(jdbc.queryForObject("SELECT count(*) FROM pg_trigger WHERE tgname=? AND tgrelid=?::regclass",Integer.class,table+"_immutable",table)==0)
                     jdbc.execute("CREATE TRIGGER "+table+"_immutable BEFORE UPDATE OR DELETE OR TRUNCATE ON "+table+" FOR EACH STATEMENT EXECUTE FUNCTION reject_futures_evidence_mutation()");
             }

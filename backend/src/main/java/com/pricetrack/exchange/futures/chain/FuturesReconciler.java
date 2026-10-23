@@ -23,9 +23,10 @@ public final class FuturesReconciler {
         if(!Set.of("SIGNED","SUBMITTED").contains(s.status())) return Result.ALREADY_FINAL;
         try {
             rpc.verifyDeployment(chain);
-            FuturesTransactionStore.validateRaw(chain,s.report(),s.signature(),s.raw(),s.hash(),s.nonce());
+            store.assertActiveExecution(id,s.report(),s.signature());
+            FuturesTransactionStore.validateRaw(chain,s.report(),s.signature(),s.raw(),s.hash(),s.nonce(),s.authorization());
             var op=ledger.operation(id); var p=ledger.position(op.positionId(),op.userId());
-            if(!s.report().equals(FuturesReport.from(op,p,chain.executor())) || !FuturesReportCodec.signedBy(s.report(),chain.chainId(),chain.engine(),s.signature(),chain.priceSigner())) throw new FuturesLedger.Failure("STORED_REPORT_CONFLICT");
+            if(!s.report().equals(FuturesReport.from(op,p,chain.reportExecutor())) || !FuturesReportCodec.signedBy(s.report(),chain.chainId(),chain.priceContract(),s.signature(),chain.priceSigner())) throw new FuturesLedger.Failure("STORED_REPORT_CONFLICT");
             var optional=rpc.receipt(s.hash());
             if(optional.isEmpty()) { if(s.status().equals("SIGNED")) sender.recover(id); return Result.WAITING; }
             var receipt=optional.get(); var number=receipt.getBlockNumber();
@@ -38,10 +39,12 @@ public final class FuturesReconciler {
             boolean failed="0x0".equalsIgnoreCase(receipt.getStatus());
             if(failed && (receipt.getLogs()==null || !receipt.getLogs().isEmpty())) throw new FuturesLedger.Failure("FAILED_RECEIPT_WITH_LOGS");
             var event=failed?null:FuturesReceiptVerifier.success(s,p,receipt,tx,block,rpc.position(p.id(),number));
+            if(!failed&&chain.authorized()&&(s.authorization()==null||!rpc.positionOwner(p.id(),number).equalsIgnoreCase(s.authorization().owner())))throw new FuturesLedger.Failure("POSITION_OWNER_CONFLICT");
             if(!block.getHash().equalsIgnoreCase(rpc.block(number).getHash())) return Result.WAITING;
             if(failed) { ledger.settleReverted(id,s.hash(),number.longValueExact(),block.getHash()); return Result.REVERTED; }
             ledger.settle(event); return Result.CONFIRMED;
         } catch(IOException unavailable) { return Result.RPC_UNAVAILABLE; }
         catch(FuturesLedger.Failure mismatch) { ledger.markReview(id); return Result.REVIEW_REQUIRED; }
+        catch(IllegalArgumentException malformed) {ledger.markReview(id);return Result.REVIEW_REQUIRED;}
     }
 }

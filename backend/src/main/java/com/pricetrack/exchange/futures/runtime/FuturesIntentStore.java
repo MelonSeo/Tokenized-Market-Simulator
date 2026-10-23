@@ -65,7 +65,7 @@ public class FuturesIntentStore {
         Operation op=ledger.prepare(uid,pid,key,action,version,mark.price(),mark.observedAt().getEpochSecond(),added);
         bind(op,mark);return op;
     }
-    private void bind(Operation op,FuturesMarketGate.Mark mark) {
+    protected void bind(Operation op,FuturesMarketGate.Mark mark) {
         var existing=jdbc.queryForList("SELECT operation_id FROM futures_market_evidence WHERE operation_id=?",String.class,op.id());
         if(existing.isEmpty())jdbc.update("INSERT INTO futures_market_evidence VALUES(?,?,?,?,?)",op.id(),new BigDecimal(mark.price()),Timestamp.from(mark.observedAt()),mark.provider(),mark.generation());
         else if(!mark.equals(evidence(op.id())))throw new Failure("IDEMPOTENCY_CONFLICT");
@@ -74,7 +74,7 @@ public class FuturesIntentStore {
         return jdbc.query("SELECT * FROM futures_market_evidence WHERE operation_id=?",(r,n)->new FuturesMarketGate.Mark(r.getBigDecimal("price").toBigIntegerExact(),r.getTimestamp("observed_at").toInstant(),r.getString("provider"),(Long)r.getObject("generation")),op)
             .stream().findFirst().orElseThrow(()->new Failure("MARKET_EVIDENCE_MISSING"));
     }
-    public List<String> prepared() { return jdbc.queryForList("SELECT id FROM futures_operations WHERE state='PREPARED' ORDER BY created_at,id LIMIT 50",String.class); }
+    public List<String> prepared() { return jdbc.queryForList("SELECT id FROM futures_operations o WHERE state='PREPARED' AND NOT EXISTS(SELECT 1 FROM futures_authorized_positions a WHERE a.position_id=o.position_id) ORDER BY created_at,id LIMIT 50",String.class); }
     public Optional<Operation> marginReplay(long uid,String pid,String key,long version,BigInteger added) {
         var ids=jdbc.queryForList("SELECT id FROM futures_operations WHERE user_id=? AND key_hash=?",String.class,uid,FuturesLedger.fingerprint(key));
         if(ids.isEmpty())return Optional.empty();

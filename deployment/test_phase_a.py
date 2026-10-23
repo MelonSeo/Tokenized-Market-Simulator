@@ -16,7 +16,7 @@ class PhaseAGuardTest(unittest.TestCase):
             run=Path(folder);(run/'evidence').mkdir()
             a.java_test(run,'default');a.java_test(run,'isolated',isolate_workers=True)
             first,second=execute.call_args_list
-            self.assertEqual(first.args[1],[str(a.REPO/'backend/gradlew.bat'),'test','--offline','--no-daemon','--rerun-tasks'])
+            self.assertEqual(first.args[1],[str(a.REPO/'backend/gradlew.bat'),'test','--offline','--no-daemon','--rerun-tasks','--stacktrace'])
             self.assertEqual(second.args[1],first.args[1]+['--init-script',str(a.ROOT/'phase-a-test-isolation.gradle')])
             self.assertEqual(first.args[4],second.args[4]);self.assertNotIn('--tests',second.args[1]);self.assertNotIn('-x',second.args[1])
             self.assertEqual(json.loads((run/'evidence/isolated/summary.json').read_text()),counts)
@@ -83,6 +83,8 @@ class PhaseAGuardTest(unittest.TestCase):
             self.assertEqual(env['AI_TOOL_POSTGRES_TESTS'],'false')
             self.assertEqual(env['SPRING_CONFIG_IMPORT'],'')
             self.assertIn('-Dhttps.proxyPort=1',env['JAVA_TOOL_OPTIONS'])
+            self.assertIn('-Djava.net.preferIPv4Stack=true',env['JAVA_TOOL_OPTIONS'])
+            self.assertIn('-Djava.net.preferIPv6Addresses=false',env['JAVA_TOOL_OPTIONS'])
     def test_session_rejects_old_or_outside_runtime(self):
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaises(ValueError):a.load_session(folder)
@@ -127,5 +129,23 @@ class PhaseAGuardTest(unittest.TestCase):
         with patch.object(a.subprocess,'run') as run,self.assertRaises(ValueError):
             a.execute(Path('unused'),['ignored'],'ignored',env={'OPENAI_API_KEY':'do-not-leak'})
         run.assert_not_called()
+
+    def test_partial_ai_creation_stops_only_owned_immutable_id(self):
+        target={'Id':'sha256:new-only','Config':{'Labels':{'ai-evaluation.run':'new-probe'}}}
+        with patch.object(a,'execute',side_effect=[json.dumps([target]),'']) as execute:
+            a.stop_new_ai_probe(Path('session'),{'runId':'new-probe'},'partial-create')
+            self.assertEqual(execute.call_args_list[1].args[1],['docker','stop','--time','60','sha256:new-only'])
+    def test_partial_ai_creation_refuses_foreign_owner(self):
+        target={'Id':'foreign','Config':{'Labels':{'ai-evaluation.run':'old-probe'}}}
+        with patch.object(a,'execute',return_value=json.dumps([target])) as execute:
+            with self.assertRaisesRegex(RuntimeError,'AI_STOP_OWNER_INVALID'):
+                a.stop_new_ai_probe(Path('session'),{'runId':'new-probe'},'partial-create')
+            self.assertEqual(execute.call_count,1)
+    def test_partial_ai_creation_tolerates_only_explicit_absence(self):
+        for stderr in ('Error: No such object: new-probe-ai-postgres-1','HTTP 500','timeout'):
+            with patch.object(a,'execute',side_effect=a.CommandFailed('inspect',1,stderr)):
+                if 'No such object:' in stderr:a.stop_new_ai_probe(Path('session'),{'runId':'new-probe'},'partial-create')
+                else:
+                    with self.assertRaises(a.CommandFailed):a.stop_new_ai_probe(Path('session'),{'runId':'new-probe'},'partial-create')
 
 if __name__=='__main__':unittest.main()

@@ -1,4 +1,5 @@
 import { node, button, fields } from './ui.js';
+import { terminalPosition, futuresRisk, positionSummary, positionDetails } from './futures-display.js';
 
 export function futuresAmount(value) {
   if (typeof value !== 'string' || !/^\d{1,12}(\.\d{1,18})?$/.test(value) || !/[1-9]/.test(value)) throw new Error('양수 증거금을 소수점18자리 이내로 입력하세요.');
@@ -12,10 +13,10 @@ export async function futureIntent(uid, request, storage = localStorage, locks =
   };
   return locks ? locks.request(`futures-intent:${uid}`, choose) : choose();
 }
-const STATES = { OPEN_PENDING: '개설 확인 중', OPEN: '포지션 유지', CLOSING: '전체 종료 확인 중', LIQUIDATING: '자동청산 확인 중', CLOSED: '종료 확정', LIQUIDATED: '자동청산 확정', OPEN_FAILED: '개설 실패', REVIEW_REQUIRED: '수동 확인 필요 · 잠금 유지' };
+const STATES = { OPEN_PENDING: '개설 확인 중', OPEN: '진행 중', CLOSING: '전체 종료 확인 중', LIQUIDATING: '자동청산 확인 중', CLOSED: '종료 확정', LIQUIDATED: '자동청산 확정', OPEN_FAILED: '개설 실패', REVIEW_REQUIRED: '수동 확인 필요 · 잠금 유지' };
 export function createFuturesPanel(api, unauthorized = () => {}, diagnose = () => {}) {
   const $ = id => document.getElementById(id); let user = null, route = '', epoch = 0, revision = 0, previewRevision = 0, busy = false, preview = null, poll = null;
-  const marginDrafts = new Map();
+  const marginDrafts = new Map(), expanded = new Set();
   const notice = text => { $('futures-message').textContent = text; };
   const uid = () => user?.id ?? user?.userId;
   function clearPreview() { previewRevision++; preview = null; $('futures-preview').replaceChildren(); controls(); }
@@ -25,13 +26,22 @@ export function createFuturesPanel(api, unauthorized = () => {}, diagnose = () =
     const ticket = epoch, serial = ++revision;
     try {
       const { body } = await api.futuresPositions(); if (ticket !== epoch || serial !== revision) return;
-      $('futures-positions').replaceChildren(...body.map(p => {
-        const card = node('article', '', 'card'); card.append(node('h2', `${p.side} · ${p.leverage}배 · ${STATES[p.status] || p.status}`), fields([
-          ['수량', `${p.quantity} mSEC 가격 노출`], ['진입 / 평가 가격', `${p.entryPrice} / ${p.markPrice ?? '조회 불가'}`],
-          ['DB 격리증거금', p.collateral], ['미실현 손익', p.unrealized ?? '산출 불가/종료'], ['Equity / 유지증거금', `${p.equity ?? '—'} / ${p.maintenance ?? '—'}`],
-          ['위험 상태', p.riskStatus === 'GRACE' ? `마진콜 · 체인 유예 종료 ${new Date(p.deadline * 1000).toLocaleTimeString('ko-KR')} · 남은 ${Math.max(0, p.deadline - Math.floor(Date.now() / 1000))}초` : p.riskStatus],
-          ['확정 실현손익 / 악성 부채 기록', `${p.realized ?? '미확정'} / ${p.badDebt ?? '미확정'}`], ['실행 중', p.pendingOperation || '없음'], ['차단 사유', p.blockReason || '없음'],
-        ]));
+      const ordered = [...body.filter(p => !terminalPosition(p)), ...body.filter(terminalPosition)];
+      let group = '';
+      $('futures-positions').replaceChildren(...ordered.map(p => {
+        const ended = terminalPosition(p), nextGroup = ended ? '종료 포지션' : '활성 · 처리 중 포지션';
+        const card = node('article', '', `card futures-position ${ended ? 'futures-ended' : ''}`);
+        if (group !== nextGroup) { card.append(node('p', nextGroup, 'eyebrow')); group = nextGroup; }
+        const header = node('div', '', 'futures-position-heading');
+        header.append(node('h2', `${p.side} · ${p.leverage}배`), node('span', STATES[p.status] || p.status, 'futures-state'));
+        card.append(header, positionSummary(p));
+        const risk = futuresRisk(p);
+        if (risk) card.append(node('p', risk, p.status === 'OPEN' && p.riskStatus === 'GRACE' ? 'notice warning' : 'muted'));
+        if (!ended && p.priceAvailable !== true) card.append(node('p', '가격 평가 불가 · 표시 값만으로 거래 가능 여부를 판단하지 마세요.', 'notice warning'));
+        if (p.pendingOperation || p.blockReason) card.append(fields([['실행 중', p.pendingOperation || '없음'], ['차단 사유', p.blockReason || '없음']]));
+        const details = positionDetails(p); details.open = expanded.has(p.id);
+        details.addEventListener('toggle', () => { if (ticket === epoch && serial === revision) { if (details.open) expanded.add(p.id); else expanded.delete(p.id); } });
+        card.append(details);
         if (p.status === 'OPEN' && !p.pendingOperation) {
           const close = button('전체 종료 견적 확인', () => void makePreview({ action: 'CLOSE', positionId: p.id, expectedVersion: p.version })); close.disabled = busy;
           const label = node('label', '추가 증거금 (mKRW)'), input = node('input'); input.inputMode = 'decimal'; input.placeholder = '추가할 금액'; label.append(input);
@@ -43,7 +53,7 @@ export function createFuturesPanel(api, unauthorized = () => {}, diagnose = () =
         return card;
       }));
       if (!body.length) $('futures-positions').append(node('p', '아직 선물 포지션이 없습니다.'));
-    } catch (e) { if (ticket === epoch) { notice(e.status === 404 ? '이 환경에서는 선물 기능이 비활성입니다.' : '선물 조회 실패 · 표시 상태가 최신이 아닐 수 있습니다.'); if (e.status === 401) unauthorized(); } }
+    } catch (e) { if (ticket === epoch && serial === revision) { notice(e.status === 404 ? '이 환경에서는 선물 기능이 비활성입니다.' : '선물 조회 실패 · 표시 상태가 최신이 아닐 수 있습니다.'); if (e.status === 401) unauthorized(); } }
   }
   async function makePreview(body) {
     if (!user || busy) return; const ticket = epoch; busy = true; clearPreview(); const previewTicket = previewRevision; controls();
@@ -89,7 +99,7 @@ export function createFuturesPanel(api, unauthorized = () => {}, diagnose = () =
   $('futures-refresh').onclick = () => void refresh();
   for (const id of ['futures-side', 'futures-leverage', 'futures-margin']) $(id).oninput = clearPreview;
   return { refresh, setContext(next, nextRoute) {
-    if ((next?.id ?? next?.userId) !== uid() || nextRoute !== route) { epoch++; revision++; busy = false; marginDrafts.clear(); clearPreview(); $('futures-positions').replaceChildren(); notice(''); }
+    if ((next?.id ?? next?.userId) !== uid() || nextRoute !== route) { epoch++; revision++; busy = false; marginDrafts.clear(); expanded.clear(); clearPreview(); $('futures-positions').replaceChildren(); notice(''); }
     user = next; route = nextRoute; controls(); if (user && route === 'futures') void refresh();
     if (poll) clearInterval(poll); poll = user && route === 'futures' ? setInterval(() => { if (!busy) void refresh(); }, 3000) : null;
   } };

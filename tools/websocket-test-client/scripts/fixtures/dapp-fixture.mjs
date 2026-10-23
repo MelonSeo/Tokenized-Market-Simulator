@@ -1,0 +1,8 @@
+// Deterministic REST/wallet fixture only. No private key, real signature, DB or chain.
+import {accountRef,hashText,domainFields,intentFields} from '../../src/dapp-intent.js';
+export const owner='0x'+'1'.repeat(40);
+export const cfg={enabled:true,chainId:'31337',controller:'0x'+'2'.repeat(40),rules:'0x'+'3'.repeat(40),relayer:'0x'+'4'.repeat(40),symbolHash:hashText('mSEC'),policyHash:hashText('offline-test-policy'),maxUserTtlSeconds:'120',auditCoverage:'INCONCLUSIVE',custody:'POSTGRESQL_MOCK_COLLATERAL'};
+export function draftFor(r,now=Math.floor(Date.now()/1000)){
+  const id='00000000-0000-4000-8000-000000000001',positionId=r.positionId||'00000000-0000-4000-8000-000000000002',operationId='00000000-0000-4000-8000-000000000003';
+  return {id,positionId,operationId,typedData:{primaryType:'FuturesUserIntentV2',domain:{name:'TokenizedMarketFuturesUserIntent',version:'2',chainId:cfg.chainId,verifyingContract:cfg.controller},types:{EIP712Domain:domainFields.map(([name,type])=>({type,name})),FuturesUserIntentV2:intentFields.map(([name,type])=>({type,name}))},message:{owner,relayer:cfg.relayer,operationId:hashText(operationId),positionId:hashText(positionId),accountRef:accountRef(owner,cfg.symbolHash),symbolHash:cfg.symbolHash,action:String({OPEN:0,TOP_UP:1,CLOSE:4}[r.action]),expectedVersion:String(r.expectedVersion),expectedCallEpoch:'0',side:r.side==='LONG'?'0':'1',leverage:String(r.leverage),entryPriceE8:'0',collateralBefore:'0',collateralAfter:r.margin,priceMinE8:r.priceMinE8,priceMaxE8:r.priceMaxE8,quantityMin:r.quantityMin,quantityMax:r.quantityMax,nonce:'0',issuedAt:String(now),deadline:String(now+r.ttlSeconds),policyHash:cfg.policyHash}}};
+}

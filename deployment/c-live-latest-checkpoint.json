@@ -1,0 +1,28 @@
+{
+  "scope": "C_LOCAL_EXPLICIT_LIVE_SUCCESSOR_CHECKPOINT",
+  "parent": "cdemo-8d5fd2ff832345bb",
+  "parentDirectory": "deployment/runtime/c-checkpoint-resume/cdemo-8d5fd2ff832345bb",
+  "parentSource": "4d7cee7e06a761f14d960e2ecb2ca729705b1437cce4d0487bf75c88ed12292d",
+  "anchors": {
+    "result.json": "666389a4809e614f9bc7f3e738242328e822ec1431322f319629b3da61ab7608",
+    "checkpoint-lineage.json": "b18407be0c566208f53d933c28bf8756622c985a674938f50d030a5174e2ea9e"
+  },
+  "snapshotSha256": "71192dd8e8cdbb58e78d6463efea3cb0d793964c9c1ccb71fae6b7ea123f6b19",
+  "snapshotBytes": 14800699,
+  "snapshotHead": 7438,
+  "snapshotTransactionCount": 14,
+  "manualDirectory": "deployment/runtime/c-direct-resume/cdemo-135ae9a88bb244c6",
+  "manualSha256": "6d4c5fede1d390f40f87eb2605ac796e665ac73dc313fed099716c736cc2e264",
+  "dataRun": "cdemo-e0e5a24638b0416f",
+  "dataSource": "2ed9c86b83163a5741b0718c99f90e3442618ca49d22052e557d42795cb82fb5",
+  "frozenHelpers": {
+    "deployment/c-checkpoint-resume-gate.py": "30801a29dad0be079822d3cf457ab34466662c9b6931ece59065ba4b610a6d29",
+    "deployment/c_checkpoint_profile.py": "e7945826f62e0fe86a4f82d5115061739f4e765536dfde4eec114996a4c08dbb",
+    "deployment/c-direct-same-state-resume.py": "592d23aa360eadd320fcd069e7d60ff9db2680240f12638b7d7785a6a26a93e6",
+    "deployment/c-direct-browser-run.py": "c06d1e8b12a45031ae45ed7c9c427792d92beaf52d35370388d3bb872c6a01e4",
+    "deployment/c-anvil-snapshot-clone-check.py": "70925acdb91f6bde10a2906888a2e3ad0d3820a1ce6738bb90a942288a106c75"
+  },
+  "sessionSeconds": 3600,
+  "appPort": 32171,
+  "rpcPort": 32172
+}

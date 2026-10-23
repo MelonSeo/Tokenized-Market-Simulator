@@ -1,0 +1,15 @@
+.c-direct-panel .buttons { display:flex; flex-wrap:wrap; gap:.65rem; margin:1rem 0; }
+.c-direct-panel .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }
+.c-direct-panel .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; }
+.c-direct-panel .metrics strong { display:block; overflow-wrap:anywhere; }
+.c-direct-panel button { border:1px solid var(--line,#cbd5e1); border-radius:.65rem; padding:.65rem 1rem; cursor:pointer; }
+.c-direct-panel button:disabled { opacity:.45; cursor:not-allowed; }
+.c-direct-panel pre,.c-direct-panel dd { overflow-wrap:anywhere; white-space:pre-wrap; word-break:break-word; }
+.c-direct-panel .check { display:flex; gap:.6rem; align-items:flex-start; }
+.c-direct-panel .check input { width:auto; }
+.c-direct-panel dl { display:grid; grid-template-columns:minmax(100px,1fr) minmax(0,3fr); gap:.5rem; }
+.c-direct-panel dd { margin:0; }
+@media (max-width:760px) {
+  .navigation { overflow-x:auto; justify-content:flex-start; }
+  .navigation a { flex-shrink:0; }
+}

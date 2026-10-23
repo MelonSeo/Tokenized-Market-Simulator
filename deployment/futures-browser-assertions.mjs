@@ -1,5 +1,13 @@
 // Pure assertions shared by the actual-browser runner and offline negative tests. No product/test response injection.
 export function futuresCardMatches(p,card,status,risk){
+  if(card?.state){
+    const labels={OPEN:'진행 중',CLOSED:'종료 확정',LIQUIDATED:'자동청산 확정'},f=card.fields;
+    if(card.heading!==`${p.side} · ${p.leverage}배`||card.state!==labels[status])return false;
+    if(f?.['포지션 ID']!==p.id||f['수량 (mSEC)']!==p.quantity||f['DB 담보 원본 · 종료 후 현재 잠금액 아님']!==p.collateral||f['진입가격 / 현재 참고가격']?.split(' / ')[0]!==p.entryPrice)return false;
+    if(f['실현손익 / 악성 부채']!==`${p.realized??'미확정'} / ${p.badDebt??'미확정'}`)return false;
+    if(risk&&f['기록된 위험 상태 (과거 이력 포함)']!==risk)return false;
+    return risk!=='GRACE'||f['기록된 유예 종료 (체인 초)']===String(p.deadline);
+  }
   const label={OPEN:'포지션 유지',CLOSED:'종료 확정',LIQUIDATED:'자동청산 확정'}[status];
   if(!card||card.heading!==`${p.side} · ${p.leverage}배 · ${label}`)return false;
   const f=card.fields;

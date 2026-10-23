@@ -27,6 +27,12 @@ public class FuturesAuditStore {
         var s=FuturesAuditSnapshot.read(jdbc,json);var impact=FuturesAuditAccounting.impact(s,json);
         return new Cut(s,ReserveStore.readSpot(jdbc,impact));
     }
+    /** Separate opt-in consistent cut; does not relax legacy full-audit coverage. */
+    @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ,propagation=Propagation.REQUIRES_NEW,timeout=5)
+    public Cut authorizedCut(){
+        var s=FuturesAuditSnapshot.readAuthorized(jdbc,json);var impact=FuturesAuditAccounting.impact(s,json);
+        return new Cut(s,ReserveStore.readSpot(jdbc,impact));
+    }
     public String fingerprint(Cut c){return Hash.sha3String(encode(List.of(c.futures(),c.spot().balances(),c.spot().orders(),c.spot().trades(),c.spot().transactions(),c.spot().grants())));}
     public Optional<Baseline> baseline(){return jdbc.query("SELECT payload FROM futures_audit_baselines WHERE id=1",(r,i)->decode(r.getString(1),Baseline.class)).stream().findFirst();}
     @Transactional(timeout=5) public Baseline create(Baseline b){jdbc.update("INSERT INTO futures_audit_baselines(id,payload,actor_id,created_at) VALUES(1,?,?,?)",encode(b),b.actorId(),Timestamp.from(b.dbAt()));return b;}

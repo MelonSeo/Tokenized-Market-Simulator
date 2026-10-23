@@ -9,6 +9,8 @@ import com.pricetrack.exchange.user.UserRole;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /** Server principal -> SQL candidate role filter. No USER-to-ADMIN principal substitution. */
 public class AuthorizedKnowledgeRetrieval {
@@ -16,6 +18,23 @@ public class AuthorizedKnowledgeRetrieval {
     private final KnowledgeLoader loader;
     private final KnowledgeStore store;
     private final EmbeddingProvider embedding;
+    public enum Stage { CORPUS_LOAD, INDEX_ACTIVE, EMBEDDING_BUDGET, EMBEDDING, VECTOR_VALIDATION,
+        CANDIDATE_BUDGET, CANDIDATE_SEARCH, FILTER_RESULTS, APPROVAL_VERIFY, DEADLINE_CHECK }
+    /** Fixed metadata only: never question, vectors, documents, exception text, URLs or credentials. */
+    public record Diagnostic(Stage stage, boolean success, String code, long elapsedMillis, long remainingMillis, long budgetMillis) {}
+    private Consumer<Diagnostic> diagnostics = ignored -> {};
+    public AuthorizedKnowledgeRetrieval diagnose(Consumer<Diagnostic> sink) { diagnostics=java.util.Objects.requireNonNull(sink);return this; }
+    private static final Set<String> SAFE_CODES=Set.of("AI_INDEX_NOT_READY","AI_QUERY_TIMEOUT","AI_APPROVAL_MISMATCH",
+        "AI_DATABASE_UNAVAILABLE","AI_ROLE_FILTER_INVALID","AI_DOMAIN_FILTER_INVALID","AI_DOMAIN_FILTER_UNAVAILABLE",
+        "AI_VECTOR_INVALID","AI_PROVIDER_UNAVAILABLE","AI_PROVIDER_RESPONSE_INVALID","AI_MANIFEST_INVALID","AI_SOURCE_INVALID",
+        "AI_KNOWLEDGE_INVALID","AI_EVALUATION_TRANSPORT_UNCERTAIN","AI_EVALUATION_GUARD_REJECTED","AI_EVALUATION_STOPPED");
+    private <T>T step(Stage stage,long end,Duration budget,Supplier<T> work) {
+        long start=System.nanoTime();boolean success=false;String code="OTHER_FAILURE";
+        try { T result=work.get();success=true;code="OK";return result; }
+        catch(RuntimeException e) { if(e instanceof AiFailure f && SAFE_CODES.contains(f.code()))code=f.code();throw e; }
+        finally { try { diagnostics.accept(new Diagnostic(stage,success,code,Math.max(0,(System.nanoTime()-start)/1_000_000),
+            Math.max(0,(end-System.nanoTime())/1_000_000),Math.max(0,budget.toMillis()))); } catch(RuntimeException ignored) { /* Preserve original result. */ } }
+    }
     private com.pricetrack.exchange.ai.observability.AiObservability observation;
     public AuthorizedKnowledgeRetrieval observe(com.pricetrack.exchange.ai.observability.AiObservability value){observation=value;return this;}
     public AuthorizedKnowledgeRetrieval(AiProperties p, KnowledgeLoader loader, KnowledgeStore store, EmbeddingProvider embedding) {
@@ -48,22 +67,28 @@ public class AuthorizedKnowledgeRetrieval {
             throw new org.springframework.security.access.AccessDeniedException("Authentication required");
         if (question == null || question.isBlank() || question.length() > 1000) throw new AiFailure("AI_INPUT_LIMIT");
         long end = System.nanoTime() + budget.toNanos();
-        var corpus=loader.load();
-        if(!store.active(corpus.fingerprint())) throw new AiFailure("AI_INDEX_NOT_READY");
-        float[] vector=(bounded?embedding.embed(List.of(question),remaining(end)):embedding.embed(List.of(question))).getFirst();
-        PgKnowledgeStore.vector(vector);
-        var candidates=domains!=null
+        var corpus=step(Stage.CORPUS_LOAD,end,budget,loader::load);
+        step(Stage.INDEX_ACTIVE,end,budget,()->{if(!store.active(corpus.fingerprint()))throw new AiFailure("AI_INDEX_NOT_READY");return true;});
+        if(bounded)step(Stage.EMBEDDING_BUDGET,end,budget,()->remaining(end));
+        // Recompute immediately before calling dependencies: diagnostic I/O must not grant extra time.
+        float[] vector=step(Stage.EMBEDDING,end,budget,()->(bounded?embedding.embed(List.of(question),remaining(end)):embedding.embed(List.of(question))).getFirst());
+        step(Stage.VECTOR_VALIDATION,end,budget,()->PgKnowledgeStore.vector(vector));
+        if(domains!=null || bounded)step(Stage.CANDIDATE_BUDGET,end,budget,()->remaining(end));
+        var candidates=step(Stage.CANDIDATE_SEARCH,end,budget,()->domains!=null
                 ? store.searchForScope(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),domains,remaining(end))
                 : !bounded
                 ? store.search(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity())
-                : store.searchForRole(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),remaining(end));
-        var hits=EvidenceSelector.select(candidates,p.topK(),2);
+                : store.searchForRole(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),remaining(end)));
+        var hits=step(Stage.FILTER_RESULTS,end,budget,()->{
+        var selected=EvidenceSelector.select(candidates,p.topK(),2);
         // Defense in depth; primary protection is SQL before top-K.
-        if (principal.role() == UserRole.USER && hits.stream().anyMatch(h -> !"USER".equals(h.role())))
+        if (principal.role() == UserRole.USER && selected.stream().anyMatch(h -> !"USER".equals(h.role())))
             throw new AiFailure("AI_ROLE_FILTER_INVALID");
-        if(domains!=null && hits.stream().anyMatch(h -> corpus.documents().stream().noneMatch(d ->
+        if(domains!=null && selected.stream().anyMatch(h -> corpus.documents().stream().noneMatch(d ->
                 d.path().equals(h.path()) && domains.contains(d.metadata().get("domain")))))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
-        verify(corpus.fingerprint()); remaining(end);
+        return selected;});
+        step(Stage.APPROVAL_VERIFY,end,budget,()->{verify(corpus.fingerprint());return true;});
+        step(Stage.DEADLINE_CHECK,end,budget,()->remaining(end));
         return new Evidence(corpus.fingerprint(), hits);
     }
     public void verify(String version) {

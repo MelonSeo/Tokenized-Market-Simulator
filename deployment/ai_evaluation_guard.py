@@ -114,7 +114,7 @@ class EvaluationGuard:
     do not derive it from existing AI_* environment variables or mere key presence.
     """
     def __init__(self, ledger, *, run_id, source_hash, corpus_hash, create=False,
-                 execution_approved=False, context_hash="0" * 64, carry=None, validate_lineage=None):
+                 execution_approved=False, context_hash="0" * 64, carry=None, validate_lineage=None, local_limits=None):
         if (not re.fullmatch(r"[a-zA-Z0-9_-]{1,80}", run_id)
                 or any(not re.fullmatch(r"[0-9a-f]{64}", h) for h in (source_hash, corpus_hash, context_hash))
                 or type(execution_approved) is not bool):
@@ -126,12 +126,19 @@ class EvaluationGuard:
         self.policy = MappingProxyType(dict(POLICY))
         self.carry = dict(carry or {})
         self.validate_lineage = validate_lineage
+        self.local_limits = dict(local_limits) if local_limits is not None else None
         identity = {"run": run_id, "source": source_hash, "corpus": corpus_hash, "context": context_hash, "policy": dict(self.policy)}
         if carry is not None:
             expected = {"llm_calls","embedding_calls","input_tokens","output_tokens","embedding_tokens","reserved_nusd"}
             if set(carry)!=expected or any(type(v) is not int or v<0 for v in carry.values()) or validate_lineage is None:
                 raise GuardError("LINEAGE_INVALID")
             identity["carry"] = self.carry
+        if local_limits is not None:
+            keys={"llm_calls","embedding_calls","input_tokens","output_tokens","embedding_tokens","reserved_nusd"}
+            if (set(local_limits)!=keys or carry is None or any(type(v) is not int or v<0 or
+                    v>self.policy['cap_nusd' if k=='reserved_nusd' else k] for k,v in local_limits.items())):
+                raise GuardError("LOCAL_SCOPE_INVALID")
+            identity["local_limits"] = self.local_limits
         self.identity = _canonical(identity).decode()
         if carry is not None and (any(v>self.policy[k] for k,v in carry.items() if k!='reserved_nusd') or carry['reserved_nusd']>self.policy['cap_nusd']):
             raise GuardError("LINEAGE_INVALID")
@@ -229,6 +236,11 @@ class EvaluationGuard:
                     raise GuardError("RUN_LIMIT")
                 if totals["reserved_nusd"] + cost > self.policy["cap_nusd"]:
                     raise GuardError("COST_LIMIT")
+                if self.local_limits is not None:
+                    local = self._totals(db)
+                    if (any(local[k] + v > self.local_limits[k] for k, v in additions.items())
+                            or local['reserved_nusd'] + cost > self.local_limits['reserved_nusd']):
+                        raise GuardError("LOCAL_SCOPE_LIMIT")
                 db.execute("INSERT INTO reservations VALUES(?,?,?,?,?,?,?,?)",
                            (request_id, kind, inp, out, emb, cost, "RESERVED", hashlib.sha256(raw).hexdigest()))
             # Durable COMMIT precedes any transport invocation; uncertain failures

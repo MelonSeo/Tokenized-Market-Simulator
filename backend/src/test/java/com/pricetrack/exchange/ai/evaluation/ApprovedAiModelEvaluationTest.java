@@ -47,9 +47,15 @@ class ApprovedAiModelEvaluationTest {
         // Evaluation itself is not replayed after a crash just to obtain a PASS.
         Files.writeString(run.resolve("EVALUATION_STARTED"),Instant.now().toString(),StandardOpenOption.CREATE_NEW);
         Path repo=Path.of("..").toAbsolutePath().normalize();
-        var meta=json.readTree(run.resolve("run.json").toFile());boolean child=meta.has("lineage");
-        if(child)assertThat(meta.path("questions")).isEqualTo(json.valueToTree(java.util.stream.IntStream.rangeClosed(2,16).boxed().toList()));
-        var captured=json.readTree(Path.of(Objects.requireNonNull(System.getenv("AI_APPROVED_EVIDENCE_SNAPSHOT"))).toFile());
+        var meta=json.readTree(run.resolve("run.json").toFile());boolean continuation=meta.has("continuation"),child=meta.has("lineage")||continuation;
+        if(continuation){
+            assertThat(meta.path("questions").size()).isEqualTo(1);
+            assertThat(meta.path("questions").get(0).asInt()).isIn(12,14,15);
+        }else if(child)assertThat(meta.path("questions")).isEqualTo(json.valueToTree(java.util.stream.IntStream.rangeClosed(2,16).boxed().toList()));
+        var evidencePath=Path.of(Objects.requireNonNull(System.getenv("AI_APPROVED_EVIDENCE_SNAPSHOT")));
+        if(continuation)assertThat(HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(evidencePath))))
+            .isEqualTo(meta.at("/continuation/evidence/sha256").asText());
+        var captured=json.readTree(evidencePath.toFile());
         var fixture=EvaluationToolFixture.preserved(json,captured);String pid=fixture.pid;
         var props=new Properties();try(var in=Files.newInputStream(run.resolve("db.env"))){props.load(in);}
         try {
@@ -98,6 +104,7 @@ class ApprovedAiModelEvaluationTest {
                     assertThat(tools.invoke(user,"listAbnormalOrders",json.writeValueAsBytes(Map.of("arguments",Map.of()))).error()).isEqualTo("TOOL_FORBIDDEN");
                     write("authorization.json",Map.of("foreignUser404",true,"userAdminToolForbidden",true,"dataSource","CONTROLLED_FIXTURE_OWNERSHIP_CHECK_NOT_NEW_JPA_E2E"));
                     for(int i=child?1:0;i<questions.length;i++){
+                        if(continuation && i+1!=meta.path("questions").get(0).asInt())continue;
                         if(uncertain.get())throw new IllegalStateException("UNCERTAIN_STOP");
                         var body=new LinkedHashMap<String,Object>();body.put("question",questions[i]);
                         if(Set.of(3,5,6,8).contains(i))body.put("target",Map.of("orderId",1));
@@ -110,6 +117,7 @@ class ApprovedAiModelEvaluationTest {
                         var row=new LinkedHashMap<String,Object>();row.put("number",i+1);row.put("question",questions[i]);row.put("result",result);row.put("generated",generated[0]);
                         row.put("providerUsage",runner.summary());row.put("verdict",EvaluationVerdict.classify(result,true,false));row.put("source","ACTUAL_LLM_PGVECTOR_WITH_CONTROLLED_TRADING_READS_AND_PRESERVED_FUTURES_SNAPSHOT");
                         rows.add(row);write("questions.json",rows);
+                        if(continuation)Files.writeString(run.resolve("question-result.private.json"),json.writeValueAsString(row),StandardOpenOption.CREATE_NEW);
                         if(uncertain.get())throw new IllegalStateException("UNCERTAIN_STOP");
                     }
                 }

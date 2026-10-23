@@ -29,9 +29,12 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
     private final OpenAiProvider provider;
     private final Mode mode;
     private PgKnowledgeStore verifiedStore;
-    private boolean closed;
+    private volatile boolean closed;
 
     public GuardedAiEvaluationRunner(Path repo, Path run, Path python, Mode mode, Path approval, ObjectMapper json) throws Exception {
+        this(repo,run,python,mode,approval,json,null,null);
+    }
+    public GuardedAiEvaluationRunner(Path repo, Path run, Path python, Mode mode, Path approval, ObjectMapper json,Path webScript,Path index) throws Exception {
         this.json=json;this.run=run.toRealPath();this.mode=mode;
         meta=json.readTree(Files.readAllBytes(this.run.resolve("run.json")));
         String db=meta.path("dbName").asText();int port=meta.path("dbPort").asInt();
@@ -43,7 +46,9 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
                 "","guarded:stdio/","text-embedding-3-small","gpt-5.6-terra",1200,60,5,.25,20);
         if(!new KnowledgeLoader(properties,json).load().fingerprint().equals(meta.path("corpusHash").asText()))
             throw new AiFailure("AI_EVALUATION_CORPUS_MISMATCH");
-        var command=new ArrayList<>(List.of(python.toString(),"-B","-S",repo.resolve("deployment/ai_evaluation_broker.py").toString(),"--run-dir",this.run.toString()));
+        if(webScript!=null && (!webScript.toRealPath().equals(repo.resolve("deployment/ai_web_demo_broker.py").toRealPath())||index==null))throw new AiFailure("AI_WEB_MODE_INVALID");
+        var command=new ArrayList<>(List.of(python.toString(),"-B","-S",(webScript==null?repo.resolve("deployment/ai_evaluation_broker.py"):webScript).toString(),"--run-dir",this.run.toString()));
+        if(webScript!=null){command.add("--index");command.add(index.toString());}
         if(mode==Mode.LIVE){command.add("--live");command.add("--approval");command.add(approval.toString());}
         var builder=new ProcessBuilder(command).directory(repo.toFile()).redirectError(ProcessBuilder.Redirect.DISCARD);
         // Do not import .env, live flags, OpenAI key, proxy, PYTHONPATH/startup hooks.
@@ -61,6 +66,16 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
         } catch(Exception failure){close();throw new AiFailure("AI_EVALUATION_BROKER_NOT_READY");}
     }
     public OpenAiProvider provider(){return provider;}
+    public synchronized void claimWebSubmission() throws Exception {
+        send(Map.of("claimSubmission",true));if(!receive(Duration.ofSeconds(3)).path("claimed").asBoolean())throw new AiFailure("AI_WEB_ALREADY_SUBMITTED");
+    }
+    public JsonNode guardedWebPost(String path,byte[] raw,Duration timeout){return post(path,raw,timeout);}
+    /** Deadline thread must not wait for the synchronized in-flight stdio call. */
+    public void abortWeb(){
+        closed=true;
+        try{Files.writeString(run.resolve("STOP"),"WEB_DEADLINE",StandardOpenOption.CREATE_NEW);}catch(IOException ignored){}
+        broker.destroyForcibly();reader.shutdownNow();
+    }
     public OpenAiAgentProvider model(){return new OpenAiAgentProvider(provider,json);}
     public AiProperties properties(){return properties;}
     public JsonNode identity(){return meta.deepCopy();}
@@ -84,15 +99,29 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
         if(closed||Files.exists(run.resolve("STOP")))throw new AiFailure("AI_EVALUATION_STOPPED");
         if(raw.length>100000 || timeout.isNegative()||timeout.isZero()||timeout.toMillis()>60000)
             throw new AiFailure("AI_EVALUATION_INPUT_LIMIT");
+        long started=System.nanoTime();
         try {
+            EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.FRAME_SEND_BEGIN,EvaluationStageTrace.Code.OK,started,timeout);
             send(Map.of("id",id,"path",path,"body",Base64.getEncoder().encodeToString(raw),"timeoutMs",Math.max(1,timeout.toMillis())));
+            EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.FRAME_FLUSHED,EvaluationStageTrace.Code.OK,started,timeout);
             var response=receive(timeout);
-            if(!response.path("ok").asBoolean())throw new AiFailure("AI_EVALUATION_GUARD_REJECTED");
+            EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.BROKER_REPLIED,EvaluationStageTrace.Code.OK,started,timeout);
+            if(!response.path("ok").asBoolean()){
+                EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.GUARD_REJECTED,EvaluationStageTrace.Code.GUARD_REJECTED,started,timeout);
+                throw new AiFailure("AI_EVALUATION_GUARD_REJECTED");
+            }
             byte[] bytes=Base64.getDecoder().decode(response.path("body").asText());
             if(bytes.length>2000000)throw new IOException();
-            return json.readTree(bytes);
+            var result=json.readTree(bytes);
+            EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.RESPONSE_DECODED,EvaluationStageTrace.Code.OK,started,timeout);
+            return result;
         } catch(AiFailure failure){throw failure;}
-        catch(Exception failure){halt();throw new AiFailure("AI_EVALUATION_TRANSPORT_UNCERTAIN");}
+        catch(Exception failure){
+            EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.ABORTED,
+                failure instanceof TimeoutException?EvaluationStageTrace.Code.BROKER_REPLY_TIMEOUT:
+                failure instanceof InterruptedException?EvaluationStageTrace.Code.INTERRUPTED:EvaluationStageTrace.Code.IO_OR_PROTOCOL_FAILURE,started,timeout);
+            halt();throw new AiFailure("AI_EVALUATION_TRANSPORT_UNCERTAIN");
+        }
     }
     private void send(Object value)throws Exception {
         byte[] bytes=json.writeValueAsBytes(value);
@@ -159,6 +188,7 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
     }
     public AuthorizedKnowledgeRetrieval retrieval(){
         if(verifiedStore==null)throw new AiFailure("AI_EVALUATION_INDEX_NOT_READY");
-        return new AuthorizedKnowledgeRetrieval(properties,new KnowledgeLoader(properties,json),verifiedStore,provider);
+        return new AuthorizedKnowledgeRetrieval(properties,new KnowledgeLoader(properties,json),verifiedStore,provider)
+            .diagnose(step->EvaluationStageTrace.retrieval(run,step));
     }
 }

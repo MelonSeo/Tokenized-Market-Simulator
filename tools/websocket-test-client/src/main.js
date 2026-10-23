@@ -14,9 +14,11 @@ import { createGooglePanel } from './google-auth.js';
 import { createSellAllAction } from './sell-all.js';
 import { createFuturesPanel } from './futures-panel.js';
 import { createFuturesAuditPanel } from './futures-audit-panel.js';
+import { createCDirectPanel } from './c-direct-panel.js';
 
 const $ = (id) => document.getElementById(id);
 const api = new ApiClient(); const requests = new RequestState();
+const cDirectPanel = createCDirectPanel(api, expireSession);
 const futuresPanel = createFuturesPanel(api, expireSession, id => selectAi('futures', id, '이 선물 포지션의 마진콜과 청산 근거를 설명해 주세요.'));
 const reservePanel = createReservePanel(api);
 const tradeAuditPanel = createTradeAuditPanel(api);
@@ -78,9 +80,10 @@ function requireUser(destination = routeName()) { if (state.user) return true; s
 function routeName() { return location.hash.slice(1); }
 function navigate(name) { if (routeName() === name) route(); else location.hash = name; }
 function route() {
-  let name = routeName(); if (!['market', 'futures', 'history', 'portfolio', 'ai', 'admin'].includes(name)) name = 'market';
+  let name = routeName(); if (!['market', 'futures', 'custody', 'history', 'portfolio', 'ai', 'admin'].includes(name)) name = 'market';
   if (name !== 'market' && !state.user) { showAuth(name); name = 'market'; }
   if (name === 'admin' && state.user?.role !== 'ADMIN') { name = 'market'; toast('ADMIN 운영 화면은 관리자 전용입니다.'); }
+  if (name !== 'ai') invalidateAi();
   document.querySelectorAll('.view').forEach((view) => { view.hidden = view.id !== `view-${name}`; });
   document.querySelectorAll('[data-route]').forEach((link) => { if (link.dataset.route === name) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current'); });
   if (name === 'portfolio') void loadPortfolio();
@@ -93,6 +96,7 @@ function route() {
   conditionalPanel.setContext(state.user, name);
   transactionObservationPanel.setContext(state.user,name);
   futuresPanel.setContext(state.user,name);
+  void cDirectPanel.setContext(state.user,name);
 }
 function connect() { socket.connect({ transport: $('transport').value, token: api.token, debug: false }); }
 function renderIdentity() {
@@ -101,6 +105,7 @@ function renderIdentity() {
   $('admin-nav').hidden = state.user?.role !== 'ADMIN'; updateTradeControls();
 }
 function resetPrivate() {
+  void cDirectPanel.setContext(null, 'market');
   futuresPanel.setContext(null, 'market');
   sellAll.cancel();
   googlePanel.cancel();
@@ -308,9 +313,11 @@ function socketEvent(channel, event) {
 }
 $('ai-kind').add(new Option('내 선물 포지션·청산 진단', 'futures'));
 function syncAiTarget() { $('ai-target-wrap').hidden = !['quote', 'order', 'futures'].includes($('ai-kind').value); }
-function selectAi(kind, target, question) { if (!requireUser('ai')) return; $('ai-kind').value = kind; $('ai-target').value = target || ''; $('ai-question').value = question; syncAiTarget(); navigate('ai'); }
+function invalidateAi() { requests.invalidate('ai'); $('ai-result').replaceChildren(); message('ai-message'); }
+function selectAi(kind, target, question) { if (!requireUser('ai')) return; invalidateAi(); $('ai-kind').value = kind; $('ai-target').value = target || ''; $('ai-question').value = question; syncAiTarget(); navigate('ai'); }
+for (const id of ['ai-kind', 'ai-target', 'ai-question']) $(id).addEventListener('input', invalidateAi);
 async function runAi(event) {
-  event.preventDefault(); if (!requireUser('ai') || requests.busy('ai')) return;
+  event.preventDefault(); if (!requireUser('ai') || $('ai-submit').disabled || requests.busy('ai')) return;
   const kind = $('ai-kind').value, value = $('ai-target').value.trim(), question = $('ai-question').value.trim();
   let target = null, skill = null;
   if (kind === 'order') { const id = Number(value); if (!Number.isSafeInteger(id) || id <= 0) { message('ai-message', '양의 정수 주문 번호를 입력해 주세요.', 'warning'); return; } target = { orderId: id }; }

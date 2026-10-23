@@ -91,3 +91,59 @@ CREATE TABLE IF NOT EXISTS futures_audit_runs (
  id VARCHAR(36) PRIMARY KEY, payload TEXT NOT NULL, actor_id BIGINT NOT NULL,
  created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+
+-- B/v1 additive metadata. User keys are never accepted or stored. Private signatures: no public DTO/log access.
+CREATE TABLE IF NOT EXISTS futures_wallet_links (
+ user_id BIGINT PRIMARY KEY REFERENCES users(id), wallet VARCHAR(42) NOT NULL UNIQUE,
+ inflight_draft VARCHAR(36), linked_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS futures_wallet_challenges (
+ id VARCHAR(36) PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id), wallet VARCHAR(42) NOT NULL,
+ message TEXT NOT NULL, expires_at TIMESTAMP WITH TIME ZONE NOT NULL, consumed BOOLEAN NOT NULL DEFAULT FALSE, proof_signature TEXT
+);
+CREATE TABLE IF NOT EXISTS futures_authorized_positions (
+ position_id VARCHAR(36) PRIMARY KEY REFERENCES futures_positions(id), user_id BIGINT NOT NULL REFERENCES users(id),
+ metadata_json TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS futures_authorized_drafts (
+ id VARCHAR(36) PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id), position_id VARCHAR(36) NOT NULL,
+ operation_id VARCHAR(36) NOT NULL UNIQUE, request_key VARCHAR(64) NOT NULL,
+ report_json TEXT NOT NULL, price_signature TEXT NOT NULL, metadata_json TEXT NOT NULL,
+ price NUMERIC(78,0) NOT NULL, observed_at TIMESTAMP WITH TIME ZONE NOT NULL, provider VARCHAR(32) NOT NULL, generation BIGINT,
+ expires_at TIMESTAMP WITH TIME ZONE NOT NULL, state VARCHAR(16) NOT NULL,
+ UNIQUE(user_id,request_key)
+);
+CREATE TABLE IF NOT EXISTS futures_authorized_operations (
+ operation_id VARCHAR(36) PRIMARY KEY REFERENCES futures_operations(id), metadata_json TEXT NOT NULL,
+ report_json TEXT, price_signature TEXT
+);
+-- V2 supplemental routing: never add positional columns to existing V1 evidence tables.
+CREATE TABLE IF NOT EXISTS futures_authorized_v2_drafts (
+ id VARCHAR(36) PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id),
+ position_id VARCHAR(36) NOT NULL, operation_id VARCHAR(36) NOT NULL UNIQUE,
+ request_key VARCHAR(64) NOT NULL, intent_json TEXT NOT NULL, metadata_json TEXT NOT NULL,
+ expires_at TIMESTAMP WITH TIME ZONE NOT NULL, state VARCHAR(16) NOT NULL,
+ UNIQUE(user_id,request_key)
+);
+CREATE TABLE IF NOT EXISTS futures_authorized_v2_positions (
+ position_id VARCHAR(36) PRIMARY KEY REFERENCES futures_authorized_positions(position_id),
+ controller VARCHAR(42) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS futures_authorized_v2_operations (
+ operation_id VARCHAR(36) PRIMARY KEY REFERENCES futures_authorized_operations(operation_id),
+ controller VARCHAR(42) NOT NULL
+);
+
+-- B-v2 user-action executions only. Original approval/report rows remain immutable.
+CREATE TABLE IF NOT EXISTS futures_v2_execution_revisions (
+ operation_id VARCHAR(36) NOT NULL REFERENCES futures_authorized_v2_operations(operation_id),
+ revision INT NOT NULL CHECK (revision IN (0,1)), report_json TEXT NOT NULL, price_signature TEXT NOT NULL,
+ price NUMERIC(78,0) NOT NULL, observed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+ provider VARCHAR(32) NOT NULL, generation BIGINT, created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+ PRIMARY KEY(operation_id,revision)
+);
+CREATE TABLE IF NOT EXISTS futures_v2_execution_heads (
+ operation_id VARCHAR(36) PRIMARY KEY REFERENCES futures_authorized_v2_operations(operation_id),
+ active_revision INT NOT NULL CHECK (active_revision IN (0,1)),
+ FOREIGN KEY(operation_id,active_revision) REFERENCES futures_v2_execution_revisions(operation_id,revision)
+);

@@ -1,4 +1,5 @@
 import { label, number, time } from './state.js';
+import { futuresEvidenceSummary } from './ai-futures-evidence.js';
 
 /** Text-only DOM construction: no API/model value ever becomes HTML, a URL or executable markup. */
 export function node(tag, text = '', className = '') {
@@ -55,11 +56,22 @@ export function renderDiagnosis(container, response) {
   container.append(node('p', '읽기 전용 분석입니다. 거래·잔고를 수정하거나 주문을 재전송하지 않습니다.', 'notice'));
   if (response.approvalStatus) container.append(node('p', '현재 문서 승인을 확인할 수 없어 정책 해석이 숨겨졌습니다.', 'notice warning'));
   if (response.error) container.append(node('p', `처리 안내: ${response.error}`, 'notice warning'));
+  const futures = futuresEvidenceSummary(response);
+  if (futures) {
+    const section = node('section', '', 'ai-futures-evidence');
+    section.append(node('h3', 'Tool 원본 수치 요약 · LLM 생성 문장 아님'),
+      node('p', futures.scope, 'notice warning'),
+      node('p', '약 표시는 표시 자릿수 생략입니다. 금융 계산을 다시 하지 않으며 정확한 전체 값은 아래 Tool 원본에서 확인합니다.', 'muted'),
+      node('p', '종료 상태가 우선입니다. 종료 후 GRACE와 유예 기한은 마지막 마진콜 기록이며 진행 중인 유예가 아닙니다. DB 담보는 온체인 예치·지급능력 보증이 아닙니다.', 'muted'), fields(futures.rows));
+    container.append(section);
+  }
   for (const [title, values] of [['불확실성', response.uncertainties], ['다음 확인 사항', response.recommendedNextCheck]]) {
     if (values?.length) { const list = node('ul'); values.forEach((value) => list.append(node('li', value))); container.append(node('h3', title), list); }
   }
   for (const evidence of response.toolEvidence || []) {
     const section = node('details'); section.append(node('summary', `관측 사실 · ${evidence.tool} · ${label(evidence.status)} · ${time(evidence.retrievedAt)}`), fields(factRows(evidence.data)));
+    const raw = node('pre', JSON.stringify(evidence.data ?? null, null, 2), 'ai-tool-raw');
+    section.append(node('p', '서버가 반환한 Tool 원본 · 모델의 해석과 구분합니다.', 'muted'), raw);
     if (evidence.error) section.append(node('p', evidence.error)); container.append(section);
   }
   if (response.knowledgeSources?.length) {

@@ -33,4 +33,19 @@ class FuturesMarketGateTest {
         when(market.currentForTrading()).thenReturn(context("SIMULATED",0,0,true,MarketStatus.OPEN,PriceStatus.SIMULATED,"75000"));var fixed=gate.capture();
         when(market.currentForTrading()).thenReturn(context("SIMULATED",0,0,true,MarketStatus.OPEN,PriceStatus.SIMULATED,"75001"));assertThatThrownBy(()->gate.validate(fixed)).hasMessage("PRICE_CHANGED");
     }
+    @Test void newerSamePriceTickKeepsOriginalFixedEvidenceWithoutRepricing() {
+        when(market.currentForTrading()).thenReturn(context("SIMULATED",0,1,true,MarketStatus.OPEN,PriceStatus.SIMULATED,"75000"));
+        var fixed=gate.capture();
+        when(market.currentForTrading()).thenReturn(context("SIMULATED",0,0,true,MarketStatus.OPEN,PriceStatus.SIMULATED,"75000"));
+        gate.validate(fixed);
+        assertThat(fixed.observedAt()).isEqualTo(now.minusSeconds(1));
+    }
+    @Test void originalFixedEvidenceIsAcceptedAtFiveSecondsButNotOneNanosecondLater() {
+        when(market.currentForTrading()).thenReturn(context("SIMULATED",0,0,true,MarketStatus.OPEN,PriceStatus.SIMULATED,"75000"));
+        var current=gate.capture();
+        var boundary=new FuturesMarketGate.Mark(current.price(),now.minusSeconds(5),current.provider(),current.generation());
+        gate.validate(boundary);
+        var expired=new FuturesMarketGate.Mark(current.price(),boundary.observedAt().minusNanos(1),current.provider(),current.generation());
+        assertThatThrownBy(()->gate.validate(expired)).hasMessage("MARKET_UNAVAILABLE");
+    }
 }

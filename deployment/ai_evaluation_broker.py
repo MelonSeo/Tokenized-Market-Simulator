@@ -26,7 +26,9 @@ def source_hash():
     paths += list((REPO / "backend/src/test/java/com/pricetrack/exchange/ai/evaluation").rglob("*.java"))
     paths += list((REPO / "docs/ai-knowledge").glob("*.md"))
     paths += [REPO / "backend/build.gradle", REPO / "docs/ai/ingest-manifest.json", Path(__file__), Path(__file__).with_name("ai_evaluation_guard.py")]
-    paths += [Path(__file__).with_name(name) for name in ("ai_live_run_prepare.py","ai_db_relay.py","ai_evaluation_lineage.py","ai_reevaluation_plan.py","ai_index_copy_fixture.py","ai_evaluation_dry_run.py")]
+    paths += [Path(__file__).with_name(name) for name in ("ai_live_run_prepare.py","ai_db_relay.py","ai_evaluation_lineage.py","ai_reevaluation_plan.py","ai_index_copy_fixture.py","ai_evaluation_dry_run.py","ai_evaluation_continuation.py")]
+    paths += [Path(__file__).with_name(name) for name in ("ai_web_demo_scope.py","ai_web_demo_broker.py")]
+    paths += list((REPO/'backend/src/test/java/com/pricetrack/exchange/futures/chain').glob('FuturesWeb*.java'))
     digest = hashlib.sha256()
     # Importing from backend via ../deployment must yield the SAME identity as
     # the root CLI. Normalize __file__-derived paths before sorting and naming.
@@ -94,7 +96,17 @@ def live_sender(folder, meta, approval_path):
             raise ValueError()
         expected = {"runId": meta["runId"], "sourceHash": meta["sourceHash"], "corpusHash": meta["corpusHash"],
                     "capUsd": "2.00", "llmCalls": 32, "embeddingCalls": 80, "paidApproved": True}
-        if 'lineage' in meta:
+        if 'continuation' in meta:
+            from ai_evaluation_continuation import verify, assess, context
+            verify(folder,meta)
+            expected['continuationContextHash']=context(meta)
+            expected['questions']=meta['questions']
+            expected['localLimits']=meta['continuation']['scope']
+            assess(meta,_decode((folder/'dry-run.private.json').read_bytes(),max_bytes=2000000))
+            proof=_decode((folder/'index-copy-verification.json').read_bytes())
+            if proof.get('status')!='PASS' or proof.get('newOwner')!=meta['runId'] or proof.get('providerCalls')!=0:
+                raise ValueError()
+        elif 'lineage' in meta:
             from ai_evaluation_lineage import verify
             from ai_evaluation_dry_run import assess
             verify(folder,meta)
@@ -125,14 +137,28 @@ def live_sender(folder, meta, approval_path):
         if time.time() >= permit["expiresAt"] or (folder / "STOP").exists():
             raise GuardError("RUN_STOPPED")
         # A fresh connection; no implicit SDK retry, redirect, proxy or token refresh.
-        connection = http.client.HTTPSConnection("api.openai.com", 443, timeout=timeout)
         deadline = time.monotonic() + timeout
+        started = time.monotonic()
+        attempt = uuid.uuid4().hex
+        connection = None
+        phase, status = "CONNECTION_SETUP", None
+        def record(code):
+            _transport_event(folder, attempt, path, phase, code, started, timeout, status)
         try:
+            record("STARTED")
+            connection = http.client.HTTPSConnection("api.openai.com", 443, timeout=timeout)
+            phase = "REQUEST_CALL_BEGIN"
+            record("STARTED")
             connection.request("POST", "/v1/" + path, body=raw,
                                headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
+            phase = "REQUEST_CALL_RETURNED"
+            record("OK")
             response = connection.getresponse()
+            phase, status = "RESPONSE_HEADERS", response.status
+            record("OK")
             if response.status != 200:
                 raise GuardError("UPSTREAM_UNCERTAIN")
+            phase = "RESPONSE_BODY"
             chunks = bytearray()
             while True:
                 remaining = deadline - time.monotonic()
@@ -149,10 +175,38 @@ def live_sender(folder, meta, approval_path):
             result = json.loads(bytes(chunks))
             if path == "responses" and result.get("service_tier") != "default":
                 raise GuardError("UPSTREAM_TIER_UNVERIFIED")
+            phase = "PAYLOAD_DECODED"
+            record("OK")
             return result
+        except Exception as failure:
+            code = "UPSTREAM_TIMEOUT" if isinstance(failure, TimeoutError) else "UPSTREAM_CONNECTION_FAILURE" if isinstance(failure, OSError) else "UPSTREAM_RESPONSE_INVALID" if isinstance(failure, (ValueError, TypeError)) else "UPSTREAM_UNCERTAIN"
+            record(code)
+            raise
         finally:
-            connection.close()
+            if connection is not None:
+                connection.close()
     return send
+
+
+def _transport_event(folder, attempt, path, phase, code, started, timeout, status):
+    """Private best-effort allow-list. A phase is local observation, never proof of remote billing/completion."""
+    phases = {"CONNECTION_SETUP", "REQUEST_CALL_BEGIN", "REQUEST_CALL_RETURNED", "RESPONSE_HEADERS", "RESPONSE_BODY", "PAYLOAD_DECODED"}
+    codes = {"STARTED", "OK", "UPSTREAM_TIMEOUT", "UPSTREAM_CONNECTION_FAILURE", "UPSTREAM_RESPONSE_INVALID", "UPSTREAM_UNCERTAIN"}
+    try:
+        if not re.fullmatch(r"[0-9a-f]{32}", attempt) or phase not in phases or code not in codes:
+            return
+        target = Path(folder) / ("python-transport-" + attempt + ".jsonl")
+        if target.is_symlink() or target.exists() and target.stat().st_size > 65536:
+            return
+        event = {"version": 1, "phase": phase, "resultCode": code,
+                 "endpoint": path if path in {"responses", "embeddings"} else "UNKNOWN",
+                 "elapsedMillis": max(0, int((time.monotonic()-started)*1000)),
+                 "timeoutMillis": max(0, int(timeout*1000)), "observedAt": time.time(),
+                 "httpStatus": status if type(status) is int and 100 <= status <= 599 else None}
+        with target.open("a", encoding="utf-8") as output:
+            output.write(json.dumps(event, separators=(",", ":"))+"\n")
+    except Exception:
+        pass  # Never replace the guard's original uncertainty or mutate budget/STOP.
 
 
 def offline_sender(fixture):
@@ -191,12 +245,17 @@ def broker(folder, *, live=False, approval=None, inp=None, out=None):
     if ("live" if live else "offline") != meta.get("mode"):
         raise GuardError("MODE_CONFLICT")
     carry,validator=None,None
-    if 'lineage' in meta:
+    local_limits=None
+    if 'continuation' in meta:
+        from ai_evaluation_continuation import verify
+        carry=verify(folder,meta);validator=lambda:verify(folder,meta)
+        local_limits=meta['continuation']['scope']
+    elif 'lineage' in meta:
         from ai_evaluation_lineage import verify
         carry=verify(folder,meta);validator=lambda:verify(folder,meta)
     guard = EvaluationGuard(folder / "budget.sqlite", run_id=meta["runId"], source_hash=meta["sourceHash"],
                             corpus_hash=meta["corpusHash"], execution_approved=True,
-                            context_hash=hashlib.sha256(_canonical(meta)).hexdigest(),carry=carry,validate_lineage=validator)
+                            context_hash=hashlib.sha256(_canonical(meta)).hexdigest(),carry=carry,validate_lineage=validator,local_limits=local_limits)
     sender = live_sender(folder, meta, approval) if live else offline_sender(meta["fixture"])
     def emit(value):
         out.write(_canonical(value) + b"\n")
@@ -232,6 +291,14 @@ def broker(folder, *, live=False, approval=None, inp=None, out=None):
                 raise GuardError("RESPONSE_LIMIT")
             emit({"ok": True, "body": base64.b64encode(encoded).decode()})
         except Exception as error:
+            if 'continuation' in meta:
+                # The single-question continuation never continues after an
+                # error (including uncertain transport or local cap rejection).
+                try:
+                    with (folder/'STOP').open('xb') as marker:marker.write(b'STOPPED')
+                except OSError:pass
+                try:guard.stop()
+                except GuardError:pass
             code = str(error) if isinstance(error, GuardError) else "BROKER_FAILURE"
             if not re.fullmatch(r"[A-Z_]{1,60}", code):
                 code = "BROKER_FAILURE"

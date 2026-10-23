@@ -53,14 +53,23 @@ public class FuturesLedger {
 
     @Transactional(timeout=5)
     public Operation prepareOpen(long uid,String rawKey,Side side,BigInteger margin,int leverage,BigInteger price,long observedAt) {
+        return prepareOpenInternal(uid,rawKey,side,margin,leverage,price,observedAt,null,null,null);
+    }
+    @Transactional(timeout=5)
+    public Operation prepareAuthorizedOpen(long uid,String rawKey,Side side,BigInteger margin,int leverage,BigInteger price,long observedAt,String pid,String op,String account) {
+        UUID.fromString(pid);UUID.fromString(op);
+        if(account==null||!account.matches("0x[0-9a-f]{64}"))throw new Failure("INVALID_ACCOUNT_REF");
+        return prepareOpenInternal(uid,rawKey,side,margin,leverage,price,observedAt,pid,op,account);
+    }
+    private Operation prepareOpenInternal(long uid,String rawKey,Side side,BigInteger margin,int leverage,BigInteger price,long observedAt,String fixedPid,String fixedOp,String fixedAccount) {
         String key=fingerprint(rawKey), request=Hash.sha3String("OPEN|"+side+"|"+margin+"|"+leverage+"|"+price+"|"+observedAt);
         guard(uid); Operation replay=replay(uid,key,request); if(replay!=null) return replay;
         requirePolicy(); BigInteger q=FuturesMath.quantity(margin,leverage,price);
         String active=jdbc.queryForObject("SELECT active_position FROM futures_user_guards WHERE user_id=?",String.class,uid);
         if(active!=null) throw new Failure("ACTIVE_POSITION_EXISTS");
-        String pid=UUID.randomUUID().toString(),op=UUID.randomUUID().toString();
+        String pid=fixedPid==null?UUID.randomUUID().toString():fixedPid,op=fixedOp==null?UUID.randomUUID().toString():fixedOp;
         lockHouse(); Balance balance=balance(uid); reserve(balance,margin);
-        String account=jdbc.queryForObject("SELECT account_ref FROM futures_user_guards WHERE user_id=?",String.class,uid);
+        String account=fixedAccount==null?jdbc.queryForObject("SELECT account_ref FROM futures_user_guards WHERE user_id=?",String.class,uid):fixedAccount;
         jdbc.update("INSERT INTO futures_positions(id,user_id,account_ref,side,leverage,quantity,entry_price,collateral,status,risk_status,pending_operation,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,'OPEN_PENDING','HEALTHY',?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",
             pid,uid,account,side.name(),leverage,decimal(q),decimal(price),decimal(margin),op);
         jdbc.update("UPDATE futures_user_guards SET active_position=? WHERE user_id=?",pid,uid);
@@ -73,6 +82,15 @@ public class FuturesLedger {
     @Transactional(timeout=5)
     public Operation prepare(long uid,String pid,String rawKey,Action action,long expectedVersion,
                              BigInteger price,long observedAt,BigInteger addedMargin) {
+        return prepareInternal(uid,pid,rawKey,action,expectedVersion,price,observedAt,addedMargin,null,false);
+    }
+    @Transactional(timeout=5)
+    public Operation prepareAuthorized(long uid,String pid,String rawKey,Action action,long expectedVersion,BigInteger price,long observedAt,BigInteger addedMargin,String id) {
+        UUID.fromString(id);return prepareInternal(uid,pid,rawKey,action,expectedVersion,price,observedAt,addedMargin,id,true);
+    }
+    private Operation prepareInternal(long uid,String pid,String rawKey,Action action,long expectedVersion,BigInteger price,long observedAt,BigInteger addedMargin,String fixedId,boolean authorized) {
+        boolean owned=count("SELECT count(*) FROM futures_authorized_positions WHERE position_id=? AND user_id=?",pid,uid)>0;
+        if(owned!=authorized)throw new Failure("FUTURES_CONTRACT_VERSION_CONFLICT");
         if(action==null || action==Action.OPEN) throw new Failure("INVALID_ACTION");
         String key=fingerprint(rawKey),request=Hash.sha3String(action+"|"+pid+"|"+expectedVersion+"|"+price+"|"+observedAt+"|"+addedMargin);
         guard(uid); Operation replay=replay(uid,key,request); if(replay!=null) return replay;
@@ -95,13 +113,51 @@ public class FuturesLedger {
         requireWalletRange(b.amount().add(realized));
         if(house.amount().subtract(house.reserved()).compareTo(houseReservation)<0) throw new Failure("POOL_INSUFFICIENT");
         jdbc.update("UPDATE futures_house SET reserved=reserved+? WHERE id=1",decimal(houseReservation));
-        String id=UUID.randomUUID().toString();
+        String id=fixedId==null?UUID.randomUUID().toString():fixedId;
         insertOperation(id,pid,uid,action,p.version(),p.callEpoch(),key,request,price,observedAt,p.collateral(),after,reservedMargin,houseReservation,realized,debt);
         String state=action==Action.CLOSE?"CLOSING":action==Action.LIQUIDATE?"LIQUIDATING":"OPEN";
         jdbc.update("UPDATE futures_positions SET pending_operation=?,status=?,block_reason=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=?",id,state,pid);
         if(reservedMargin.signum()>0) journal(id,pid,uid,"RESERVE",ZERO,reservedMargin,ZERO,ZERO);
         changed(uid,pid,id);
         return operation(id);
+    }
+
+    /** Joins the revision-store transaction. No RPC/signing while holding these locks. */
+    @Transactional(timeout=5)
+    public Operation reviseAuthorizedV2(String id,com.pricetrack.exchange.futures.chain.FuturesReport previous,
+                                      com.pricetrack.exchange.futures.chain.FuturesReport next) {
+        Operation hint=operation(id);guard(hint.userId());Position p=positionForUpdate(hint.positionId(),hint.userId());
+        Operation op=operationForUpdate(id);
+        if(!op.state().equals("PREPARED") || !Objects.equals(p.pendingOperation(),id)
+            || count("SELECT count(*) FROM futures_transactions WHERE operation_id=?",id)!=0
+            || count("SELECT count(*) FROM futures_authorized_v2_operations WHERE operation_id=?",id)!=1
+            || !Set.of(Action.OPEN,Action.TOP_UP,Action.CLOSE).contains(op.action()))throw new Failure("REVISION_CONFLICT");
+        Integer revision=jdbc.queryForObject("SELECT active_revision FROM futures_v2_execution_heads WHERE operation_id=? FOR UPDATE",Integer.class,id);
+        if(revision!=0 || !com.pricetrack.exchange.futures.chain.FuturesReport.from(op,p,previous.executor()).equals(previous))throw new Failure("REVISION_CONFLICT");
+        if(p.version()!=op.expectedVersion() || p.callEpoch()!=op.expectedEpoch() || next.observedAt().longValueExact()<p.lastObservedAt())throw new Failure("STALE_POSITION_VERSION");
+        requirePolicy();
+        BigInteger q=op.action()==Action.OPEN?FuturesMath.quantity(op.collateralAfter(),p.leverage(),next.priceE8()):p.quantity();
+        var m=FuturesMath.mark(p.side(),q,op.action()==Action.OPEN?next.priceE8():p.entryPrice(),op.collateralAfter(),next.priceE8());
+        BigInteger realized=op.action()==Action.CLOSE?m.realized():ZERO,debt=op.action()==Action.CLOSE?m.badDebt():ZERO,reserved=realized.max(ZERO);
+        House h=lockHouse();Balance b=balance(op.userId());requireWalletRange(b.amount().add(realized));
+        BigInteger free=h.amount().subtract(h.reserved()).add(op.reservedHouse());
+        if(free.compareTo(reserved)<0)throw new Failure("POOL_INSUFFICIENT");
+        if(op.action()==Action.OPEN)jdbc.update("UPDATE futures_positions SET quantity=?,entry_price=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",decimal(q),decimal(next.priceE8()),p.id());
+        jdbc.update("UPDATE futures_house SET reserved=reserved+? WHERE id=1",decimal(reserved.subtract(op.reservedHouse())));
+        jdbc.update("UPDATE futures_operations SET price=?,observed_at=?,reserved_house=?,expected_realized=?,expected_bad_debt=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",decimal(next.priceE8()),next.observedAt().longValueExact(),decimal(reserved),decimal(realized),decimal(debt),id);
+        var updated=operation(id);
+        if(!com.pricetrack.exchange.futures.chain.FuturesReport.from(updated,position(p.id(),p.userId()),next.executor()).equals(next))throw new Failure("AUTHORIZED_REPORT_CONFLICT");
+        // A reservation-only revision changes neither owned balance nor house capital. Full reports remain append-only.
+        journal(id,p.id(),p.userId(),"REPRICE",ZERO,ZERO,ZERO,ZERO);changed(p.userId(),p.id(),id);
+        return updated;
+    }
+
+    /** Conditional rejection prevents a losing worker from releasing a newer execution revision. */
+    @Transactional(timeout=5)
+    public void rejectUnsignedAtReport(String id,String reason,com.pricetrack.exchange.futures.chain.FuturesReport expected) {
+        Operation hint=operation(id);guard(hint.userId());Position p=positionForUpdate(hint.positionId(),hint.userId());Operation op=operationForUpdate(id);
+        if(!com.pricetrack.exchange.futures.chain.FuturesReport.from(op,p,expected.executor()).equals(expected))throw new Failure("REVISION_CONFLICT");
+        rejectUnsigned(id,reason);
     }
 
     /** A receipt may settle only a durably signed transaction bound to this operation. */
@@ -220,9 +276,13 @@ public class FuturesLedger {
     public void lockUserIntent(long uid) { guard(uid); }
     /** Keyset scan: pending/review/terminal positions are not candidates for a new risk action. */
     public List<Position> riskCandidates(String after,int limit) {
-        if(limit<1 || limit>50) throw new Failure("INVALID_LIMIT");
-        return jdbc.query("SELECT * FROM futures_positions WHERE status='OPEN' AND pending_operation IS NULL AND id>? ORDER BY id LIMIT ?",(r,n)->readPosition(r),after,limit);
+        return riskCandidates(after,limit,false);
     }
+    public List<Position> riskCandidates(String after,int limit,boolean authorized) {
+        if(limit<1 || limit>50) throw new Failure("INVALID_LIMIT");
+        return jdbc.query("SELECT * FROM futures_positions p WHERE status='OPEN' AND pending_operation IS NULL AND id>? AND "+(authorized?"":"NOT ")+"EXISTS(SELECT 1 FROM futures_authorized_positions a WHERE a.position_id=p.id) AND NOT EXISTS(SELECT 1 FROM futures_authorized_v2_positions v WHERE v.position_id=p.id) ORDER BY id LIMIT ?",(r,n)->readPosition(r),after,limit);
+    }
+    public List<Position> riskCandidatesV2(String after,int limit,String controller){if(limit<1||limit>50)throw new Failure("INVALID_LIMIT");return jdbc.query("SELECT p.* FROM futures_positions p JOIN futures_authorized_v2_positions v ON v.position_id=p.id WHERE status='OPEN' AND pending_operation IS NULL AND p.id>? AND v.controller=? ORDER BY p.id LIMIT ?",(r,n)->readPosition(r),after,controller,limit);}
     public Operation operation(String id) { return jdbc.query("SELECT * FROM futures_operations WHERE id=?",(r,n)->readOperation(r),id).stream().findFirst().orElseThrow(()->new Failure("OPERATION_NOT_FOUND")); }
     private Operation operationForUpdate(String id) { return jdbc.queryForObject("SELECT * FROM futures_operations WHERE id=? FOR UPDATE",(r,n)->readOperation(r),id); }
     private Position positionForUpdate(String id,long uid) { return jdbc.query("SELECT * FROM futures_positions WHERE id=? AND user_id=? FOR UPDATE",(r,n)->readPosition(r),id,uid).stream().findFirst().orElseThrow(()->new Failure("POSITION_NOT_FOUND")); }

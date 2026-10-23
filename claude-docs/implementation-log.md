@@ -1,5 +1,12 @@
 # 구현 로그 — Phase 0: 모노레포 뼈대
 
+## 2026-10-24: 발표 전 B-v2/C/통합 웹/AI 소스 선별 통합
+
+- 기존 미커밋 원본은 d595375에 보존하고 별도 후보에서 최신 B-v2 감사·RPC, C 계약·Vault, P0/AI/C 웹을 선별했다. 원본 worktree와 사용자 체크포인트는 수정하지 않았다.
+- fresh main361/test252 컴파일, 선택 JUnit878 PASS/실제PG10 SKIP, Foundry190 PASS, 웹211 PASS 및 빌드 PASS. Python은 최초98 중 mock1오류 보완 후 관련28 PASS, 나머지70 최초 PASS. 유료 호출·신규 금융 거래0.
+- 별도 검토 결과 발견된 필수 수정 없음. 공개 비밀번호 외부화와 staged 비공개 경계를 확인했다. 최신 통합 보고서와 [발표 큐시트](../docs/presentation/DEMO_CUE_2026-10-24.md)를 사용한다.
+- 소스 통합은 전체 라이브 READY가 아니다. 현물 Playground는 source identity BLOCKED, C 실제 1시간 창은 미기동이며 기존 Chrome 부분 실패와 기능 OFF를 보존한다. [상세 판정](presentation-integration-2026-10-24.md).
+
 ## 2026-10-14: 키움 첫 실제 장중 읽기 진단 — 연결 성공 / 거래 가용성 BLOCKED
 
 - 사용자 서비스/IP 완료 확인을 반영하고 동일 조건을 다시 요구하지 않은 뒤, 통합240cb39의 기존 capture만 1회 실행했다. OAuth1+native1m3=REST4,WS1/180초,COMPLETE/exit0/이벤트1,226. LOGIN/REG승인,0B1,163건(regular·시각호환),0s0건. 재시도/추가연결/주문/AI/배포0,제품코드·기존환경변경0.

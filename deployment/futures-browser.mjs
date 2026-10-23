@@ -7,12 +7,15 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { futuresCardMatches,unsignedPriceReconfirmation,safeBrowserFailure,faucetObservation,previewObservation } from './futures-browser-assertions.mjs';
 import { createServer } from '../tools/websocket-test-client/node_modules/vite/dist/node/index.js';
 const run=resolve(process.argv[2]), backend=Number(process.argv[3]);
-if(!/futures-browser-[0-9a-f]{8}$/.test(run)||!Number.isInteger(backend)||backend<1024||backend>65535)throw Error('NEW_BROWSER_FIXTURE_REQUIRED');
+const aiStage1=process.argv.includes('--ai-stage1');
+const aiStage2=process.argv.includes('--ai-stage2');
+if(!(aiStage1?/futures-ai-web-[0-9a-f]{8}$/:/futures-browser-[0-9a-f]{8}$/).test(run)||!Number.isInteger(backend)||backend<1024||backend>65535)throw Error('NEW_BROWSER_FIXTURE_REQUIRED');
 const out=join(run,'browser');await mkdir(out,{recursive:false});
 const account=JSON.parse(await readFile(join(run,'secrets/browser-account.json'),'utf8'));
 const adminAccount=JSON.parse(await readFile(join(run,'secrets/browser-admin-account.json'),'utf8'));
 const profile=join(out,'chrome-profile');await mkdir(profile);
 const base=`http://127.0.0.1:${backend}`, result={stages:[],operations:[],events:[],previewRejections:[],browserErrors:[],faucetHttp:[],previewHttp:[],status:'NOT_RUN',step:'PREPARE'};
+const aiResponses=[],aiRequests=[];
 let server,browser,ws,serial=0,controlSerial=0,token=null;const pending=new Map(),writes=[];
 const budget=new AbortController(),until=Date.now()+465000;
 const checkpoint=()=>{if(budget.signal.aborted||Date.now()>=until)throw Error('BROWSER_DEADLINE');};
@@ -25,11 +28,11 @@ const fill=(id,value)=>evaluate(`{const e=document.getElementById(${JSON.stringi
 async function previewFromUi(action){const before=result.previewHttp.length;await action();const received=await poll(()=>result.previewHttp.slice(before)[0]);if(received.status!==200)throw Error('PREVIEW_HTTP_'+received.status);await poll(()=>evaluate("!document.getElementById('futures-confirm').disabled"));}
 async function api(path){checkpoint();const r=await fetch(base+path,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.any([budget.signal,AbortSignal.timeout(8000)])});if(!r.ok)throw Error('READ_API_'+r.status);return r.json();}
 async function control(label){const sequence=++controlSerial,temp=join(run,`browser-control-${sequence}.tmp`);await writeFile(temp,JSON.stringify({sequence,label}),{flag:'wx'});await rename(temp,join(run,`browser-control-${sequence}.json`));await poll(async()=>{try{return JSON.parse(await readFile(join(run,`browser-control-${sequence}.ack.json`),'utf8')).committed===true;}catch{return false;}});}
-async function screenshot(name,pid=null){if(pid){const rows=await api('/api/futures/positions'),index=rows.findIndex(p=>p.id===pid);if(index<0)throw Error('POSITION_NOT_FOUND');await evaluate(`document.getElementById('futures-positions').children[${index}].scrollIntoView({block:'start'})`);await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');}const shot=await command('Page.captureScreenshot',{format:'png'});await writeFile(join(out,name+'.png'),Buffer.from(shot.data,'base64'),{flag:'wx'});}
+async function screenshot(name,pid=null){if(pid){await evaluate(`[...document.getElementById('futures-positions').children].find(c=>c.textContent.includes(${JSON.stringify(pid)})).scrollIntoView({block:'start'})`);await evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');}const shot=await command('Page.captureScreenshot',{format:'png'});await writeFile(join(out,name+'.png'),Buffer.from(shot.data,'base64'),{flag:'wx'});}
 async function current(pid,status,risk=null,ms=30000){return poll(async()=>{
   const rows=await api('/api/futures/positions'),index=rows.findIndex(p=>p.id===pid),p=rows[index];if(p?.status==='REVIEW_REQUIRED'||p?.status==='OPEN_FAILED')throw Error('POSITION_'+p.status);
   if(p?.status!==status||(risk&&p.riskStatus!==risk))return false;
-  const card=await evaluate(`(()=>{const c=document.getElementById('futures-positions').children[${index}];return c?{heading:c.querySelector('h2')?.textContent,fields:Object.fromEntries([...c.querySelectorAll('dt')].map(t=>[t.textContent,t.nextElementSibling?.textContent])),deadlineText:new Date(${p.deadline}*1000).toLocaleTimeString('ko-KR')}:null;})()`);
+  const card=await evaluate(`(()=>{const c=[...document.getElementById('futures-positions').children].find(c=>c.textContent.includes(${JSON.stringify(pid)}));return c?{heading:c.querySelector('h2')?.textContent,state:c.querySelector('.futures-state')?.textContent,fields:Object.fromEntries([...c.querySelectorAll('dt')].map(t=>[t.textContent,t.nextElementSibling?.textContent])),deadlineText:new Date(${p.deadline}*1000).toLocaleTimeString('ko-KR')}:null;})()`);
   return futuresCardMatches(p,card,status,risk)?p:false;
 },ms);}
 async function eventFor(pid,action,operationId=null){return poll(async()=>{
@@ -63,9 +66,10 @@ async function open(side,leverage){
   }throw Error('PREVIEW_RECONFIRM_EXHAUSTED');
 }
 async function cardAction(label,amount=null){
-  await poll(()=>evaluate("[...document.getElementById('futures-positions').children].some(e=>e.textContent.includes('포지션 유지')&&e.querySelector('button'))"));
-  if(amount!==null)await evaluate(`{const c=[...document.getElementById('futures-positions').children].find(e=>e.textContent.includes('포지션 유지')&&e.querySelector('button'));const i=c.querySelector('input');i.value=${JSON.stringify(amount)};i.dispatchEvent(new Event('input',{bubbles:true}));}`);
-  await evaluate(`{const c=[...document.getElementById('futures-positions').children].find(e=>e.textContent.includes('포지션 유지')&&e.querySelector('button'));[...c.querySelectorAll('button')].find(b=>b.textContent===${JSON.stringify(label)}).click();}`);
+  const active="(e.querySelector('.futures-state')?.textContent==='진행 중'||e.textContent.includes('포지션 유지'))&&e.querySelector('button')";
+  await poll(()=>evaluate(`[...document.getElementById('futures-positions').children].some(e=>${active})`));
+  if(amount!==null)await evaluate(`{const c=[...document.getElementById('futures-positions').children].find(e=>${active});const i=c.querySelector('input');i.value=${JSON.stringify(amount)};i.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  await evaluate(`{const c=[...document.getElementById('futures-positions').children].find(e=>${active});[...c.querySelectorAll('button')].find(b=>b.textContent===${JSON.stringify(label)}).click();}`);
 }
 async function close(pid){for(let attempt=0;attempt<3;attempt++){await nextProductTick();const before=writes.length;await previewFromUi(()=>cardAction('전체 종료 견적 확인'));await click('futures-confirm');const sent=await poll(()=>writes.slice(before).find(x=>x.path.endsWith('/close')));if(sent.status===409&&sent.body.code==='FUTURES_REQUEST_REJECTED'){result.previewRejections.push({positionId:pid,status:409});continue;}if(sent.status!==202)throw Error('CLOSE_HTTP_'+sent.status);if((await outcome(sent)).reconfirm){await current(pid,'OPEN');continue;}await current(pid,'CLOSED');result.operations.push(await eventFor(pid,'CLOSE',sent.body.id));return;}throw Error('CLOSE_RECONFIRM_EXHAUSTED');}
 async function topup(pid){for(let attempt=0;attempt<3;attempt++){await nextProductTick();const before=writes.length;await cardAction('증거금 추가','100000');const sent=await poll(()=>writes.slice(before).find(x=>x.path.endsWith('/margin')));if(sent.status!==202)throw Error('MARGIN_HTTP_'+sent.status);if((await outcome(sent)).reconfirm){await current(pid,'OPEN');continue;}await poll(async()=>{const p=await current(pid,'OPEN');return p.collateral==='200000.000000000000000000'?p:false;});result.operations.push(await eventFor(pid,'TOP_UP',sent.body.id));return;}throw Error('MARGIN_RECONFIRM_EXHAUSTED');}
@@ -82,31 +86,75 @@ try{
   const responses=new Map();
   ws.addEventListener('message',async e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);if(m.error)p?.reject(Error('CDP_ERROR'));else p?.resolve(m.result);return;}
     if(m.method==='Runtime.exceptionThrown'){const error=m.params.exceptionDetails?.exception;result.browserErrors.push({code:error?.description?.includes('global is not defined')?'GLOBAL_UNDEFINED':['ReferenceError','TypeError','SyntaxError'].includes(error?.className)?error.className:'SCRIPT_EXCEPTION'});}
+    if(aiStage1&&m.method==='Network.requestWillBeSent'&&new URL(m.params.request.url).pathname==='/api/ai/agent/answers'){
+      const body=JSON.parse(m.params.request.postData||'{}');aiRequests.push({question:body.question,target:body.target,skillId:body.skillId});
+    }
     if(m.method==='Network.webSocketFrameReceived')try{const r=m.params.response,raw=r.opcode===2?Buffer.from(r.payloadData,'base64').toString():r.payloadData;for(const f of raw.split('\0')){if(!f.includes('MESSAGE')||!f.includes('/queue/futures'))continue;const event=JSON.parse(f.slice(f.indexOf('\n\n')+2));result.events.push({type:event.type,eventId:event.eventId,data:event.data,at:new Date().toISOString()});}}catch{}
     if(m.method==='Network.responseReceived'){const p=m.params,url=new URL(p.response.url);if(p.type==='XHR'||p.type==='Fetch')responses.set(p.requestId,{path:url.pathname,status:p.response.status});}
-    if(m.method==='Network.loadingFinished'){const r=responses.get(m.params.requestId);if(!r)return;responses.delete(m.params.requestId);const faucet=faucetObservation(r.path,r.status,null);if(r.path!=='/api/auth/login'&&!r.path.startsWith('/api/futures/')&&!faucet)return;try{const response=await command('Network.getResponseBody',{requestId:m.params.requestId}),body=JSON.parse(response.base64Encoded?Buffer.from(response.body,'base64').toString():response.body);if(faucet){if(result.faucetHttp.length<50)result.faucetHttp.push({...faucetObservation(r.path,r.status,body),at:new Date().toISOString()});}else if(r.path==='/api/auth/login'){token=body.accessToken;}else if(r.path==='/api/futures/previews'){if(result.previewHttp.length<50)result.previewHttp.push(previewObservation(r.status,body));}else if(!Array.isArray(body))writes.push({...r,body});}catch{if(faucet&&result.faucetHttp.length<50)result.faucetHttp.push({...faucet,bodyUnavailable:true,at:new Date().toISOString()});else if(r.path==='/api/futures/previews'&&result.previewHttp.length<50)result.previewHttp.push({...previewObservation(r.status,null),bodyUnavailable:true});}}
+    if(m.method==='Network.loadingFinished'){const r=responses.get(m.params.requestId);if(!r)return;responses.delete(m.params.requestId);const faucet=faucetObservation(r.path,r.status,null);if(r.path!=='/api/auth/login'&&!r.path.startsWith('/api/futures/')&&r.path!=='/api/ai/agent/answers'&&!faucet)return;try{const response=await command('Network.getResponseBody',{requestId:m.params.requestId}),body=JSON.parse(response.base64Encoded?Buffer.from(response.body,'base64').toString():response.body);if(r.path==='/api/ai/agent/answers'){aiResponses.push({status:r.status,body});}else if(faucet){if(result.faucetHttp.length<50)result.faucetHttp.push({...faucetObservation(r.path,r.status,body),at:new Date().toISOString()});}else if(r.path==='/api/auth/login'){token=body.accessToken;}else if(r.path==='/api/futures/previews'){if(result.previewHttp.length<50)result.previewHttp.push(previewObservation(r.status,body));}else if(!Array.isArray(body))writes.push({...r,body});}catch{if(faucet&&result.faucetHttp.length<50)result.faucetHttp.push({...faucet,bodyUnavailable:true,at:new Date().toISOString()});else if(r.path==='/api/futures/previews'&&result.previewHttp.length<50)result.previewHttp.push({...previewObservation(r.status,null),bodyUnavailable:true});}}
   });
   result.step='LOAD_PRODUCT_UI';await command('Page.enable');await command('Runtime.enable');await command('Network.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});await command('Page.navigate',{url:web});
   await poll(()=>evaluate("typeof document.getElementById('futures-preview-open')?.onclick==='function'"));
   result.step='LOGIN';await click('auth-open');await fill('login-id',account.loginId);await fill('password',account.password);await evaluate("document.getElementById('auth-form').requestSubmit()");await poll(()=>token);result.userId=(await api('/api/me')).id;
   await poll(()=>evaluate("!document.getElementById('auth-dialog').open&&document.getElementById('auth-open').hidden&&!document.getElementById('logout').hidden"));
   result.step='FAUCET';await evaluate("location.hash='portfolio'");await poll(()=>evaluate("!document.getElementById('faucet').disabled"));await click('faucet');await poll(async()=>Number((await api('/api/portfolio')).krwBalance)===1000000);result.stages.push('LOGIN_FAUCET');
-  await evaluate("location.hash='futures'");const normal=await open('LONG',2);await topup(normal);await close(normal);result.stages.push('LONG_2_TOPUP_CLOSE');
+  await evaluate("location.hash='futures'");
+  if(!aiStage1){const normal=await open('LONG',2);await topup(normal);await close(normal);result.stages.push('LONG_2_TOPUP_CLOSE');
   const short=await open('SHORT',5);await close(short);result.stages.push('SHORT_5_CLOSE');
   // Actual wall time, no clock override or expired-report bypass.
   result.step='REAL_30S_PREVIEW_EXPIRY';await nextProductTick();const beforeExpiry=writes.length;await previewFromUi(()=>click('futures-preview-open'));await sleep(31000);await click('futures-confirm');await poll(()=>evaluate("document.getElementById('futures-message').textContent.includes('견적 만료')"));if(writes.length!==beforeExpiry)throw Error('EXPIRED_PREVIEW_SUBMITTED');result.stages.push('REAL_30S_PREVIEW_EXPIRY');
-  for(const side of ['LONG','SHORT']){
+  }
+  for(const side of aiStage1?['LONG']:['LONG','SHORT']){
     const pid=await open(side,10);result.step='WAIT_'+side+'_GRACE';await control(side==='LONG'?'LONG_CRASH':'SHORT_CRASH');const grace=await current(pid,'OPEN','GRACE');result.operations.push(await eventFor(pid,'START_CALL'));const begun=Date.now();await screenshot(side.toLowerCase()+'-grace',pid);result.step='WAIT_'+side+'_LIQUIDATION';
     const liquidated=await current(pid,'LIQUIDATED',null,100000);result.operations.push(await eventFor(pid,'LIQUIDATE'));if(Date.now()<grace.deadline*1000)throw Error('EARLY_LIQUIDATION');await screenshot(side.toLowerCase()+'-liquidated',pid);result.stages.push({name:side+'_AUTO_LIQUIDATED',positionId:pid,deadline:grace.deadline,observedGraceAt:begun,completedAt:Date.now(),position:liquidated});
   }
-  const recovered=await open('LONG',10);await control('LONG_CALL');await current(recovered,'OPEN','GRACE');await control('LONG_RECOVER');await current(recovered,'OPEN','HEALTHY');await close(recovered);result.stages.push('GRACE_PRICE_RECOVERY');
+  if(!aiStage1){const recovered=await open('LONG',10);await control('LONG_CALL');await current(recovered,'OPEN','GRACE');await control('LONG_RECOVER');await current(recovered,'OPEN','HEALTHY');await close(recovered);result.stages.push('GRACE_PRICE_RECOVERY');
   const added=await open('SHORT',10);await control('SHORT_CALL');await current(added,'OPEN','GRACE');await topup(added);await current(added,'OPEN','HEALTHY');await close(added);result.stages.push('GRACE_TOPUP_RECOVERY');
+  }
   const latestPid=(await api('/api/futures/positions'))[0].id;
   await command('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:true});if(!await evaluate('document.documentElement.scrollWidth<=innerWidth'))throw Error('MOBILE_OVERFLOW');await screenshot('mobile-final',latestPid);
   await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});await screenshot('desktop-final',latestPid);
   result.positions=await api('/api/futures/positions');result.portfolio=await api('/api/portfolio');
   if(result.events.length===0||result.positions.some(p=>!['CLOSED','LIQUIDATED'].includes(p.status)&&!(p.status==='OPEN_FAILED'&&result.previewRejections.some(r=>r.positionId===p.id&&r.phase==='DEFINITIVE_UNSIGNED_REJECTION'))))throw Error('FINAL_STATE_OR_PRIVATE_WS');
   if(!await evaluate("document.getElementById('futures-audit-panel').hidden"))throw Error('USER_AUDIT_VISIBLE');
+  if(aiStage1){
+    const pid=result.positions.find(p=>p.status==='LIQUIDATED').id;result.step='ACTUAL_AI_WEB_READ';
+    if(aiStage2)await control('AI_PREPARE');
+    const post=async(path,body,bearer=token)=>{const response=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json',...(bearer?{Authorization:'Bearer '+bearer}:{})},body:JSON.stringify(body),signal:AbortSignal.any([budget.signal,AbortSignal.timeout(15000)])});return {status:response.status,body:await response.json()};};
+    const owned=await post('/api/ai/tools/getFuturesLiquidationEvidence',{arguments:{positionId:pid}});
+    if(owned.status!==200||owned.body.data?.verification!=='VERIFIED')throw Error('AI_TOOL_READ_FAILED');
+    const before=aiRequests.length;
+    await evaluate(`[...document.getElementById('futures-positions').children].find(c=>c.textContent.includes(${JSON.stringify(pid)})).querySelectorAll('button')[0].click()`);
+    await poll(()=>evaluate("location.hash==='#ai'"));
+    if(await evaluate("document.getElementById('ai-target').value")!==pid||aiRequests.length!==before)throw Error('AI_TARGET_SELECTION_FAILED');
+    await fill('ai-question','내 Long 포지션은 왜 강제청산됐나요? 기록된 근거로 진단해주세요.');
+    await evaluate("document.getElementById('ai-form').requestSubmit();document.getElementById('ai-form').requestSubmit()");
+    const answer=await poll(()=>aiResponses[0],20000);
+    result.aiObservedResponse=answer; // private allowlisted Agent output, never authorization headers
+    if(aiRequests.length!==before+1||aiRequests[0].skillId!=='futures-liquidation-diagnosis'||aiRequests[0].target?.positionId!==pid)throw Error('AI_REQUEST_FORMAT_FAILED');
+    const ev=answer.body.toolEvidence?.find(e=>e.tool==='getFuturesLiquidationEvidence');
+    if(answer.status!==200||answer.body.status!=='PARTIAL'||answer.body.metrics?.modelCalls!==(aiStage2?1:0)||answer.body.metrics?.toolCalls!==2||ev?.data?.verification!=='VERIFIED')throw Error('AI_PARTIAL_BOUNDARY_FAILED');
+    if(aiStage2&&(!answer.body.answer?.includes('fake')||!answer.body.uncertainties?.includes('FAKE_MODEL_NOT_REAL_QUALITY_EVALUATION')||!Array.isArray(answer.body.citationIds)||answer.body.citationIds.length<2||!answer.body.skill?.trace?.some(t=>t.stepId==='SUMMARIZE'&&t.resultCode==='VALIDATED')))throw Error('AI_FAKE_EVIDENCE_FAILED');
+    await poll(()=>evaluate("document.getElementById('ai-result').textContent.includes('Tool 원본 수치 요약')"));
+    for(const [width,height,mobile] of [[1366,768,false],[390,844,true]]){
+      await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
+      await evaluate("document.getElementById('ai-result').scrollIntoView()");await screenshot('ai-real-tools-'+width);
+      if(!await evaluate('document.documentElement.scrollWidth<=innerWidth'))throw Error('AI_MOBILE_OVERFLOW');
+    }
+    const unauth=await post('/api/ai/tools/getFuturesLiquidationEvidence',{arguments:{positionId:pid}},null);
+    if(![401,403].includes(unauth.status))throw Error('AI_AUTH_REQUIRED');
+    await fill('ai-target','11111111-1111-1111-1111-111111111111');await evaluate("document.getElementById('ai-form').requestSubmit()");
+    const missing=await poll(()=>aiResponses[1]);if(missing.status!==(aiStage2?403:404))throw Error('AI_MISSING_TARGET_NOT_HIDDEN');
+    if(aiStage2){const retry=await post('/api/ai/agent/answers',aiRequests[0]);if(retry.status!==403)throw Error('AI_SCOPE_NOT_STOPPED');}
+    const stranger=JSON.parse(await readFile(join(run,'secrets/browser-stranger-account.json'),'utf8'));
+    const strangerLogin=await post('/api/auth/login',stranger,null);const foreign=await post('/api/ai/tools/getFuturesLiquidationEvidence',{arguments:{positionId:pid}},strangerLogin.body.accessToken);
+    const deniedAgent=await post('/api/ai/agent/answers',aiRequests[0],strangerLogin.body.accessToken);
+    if(foreign.status!==404||deniedAgent.status!==(aiStage2?403:404))throw Error('AI_FOREIGN_TARGET_NOT_HIDDEN');
+    const adminDenied=await post('/api/ai/tools/listAbnormalOrders',{arguments:{}},strangerLogin.body.accessToken);
+    if(adminDenied.status!==403)throw Error('AI_ADMIN_TOOL_NOT_FORBIDDEN');
+    result.aiWeb={status:answer.body.status,verification:ev.data.verification,source:'LIVE_TRADING_POSTGRES_AND_LOCAL_ANVIL_RPC',agent:answer.body,directTool:owned.body,request:aiRequests[0],unauthStatus:unauth.status,foreignToolStatus:foreign.status,foreignAgentStatus:deniedAgent.status,adminToolStatus:adminDenied.status,paidCalls:0};
+    result.stages.push('AI_WEB_ACTUAL_TOOL_CANONICAL_JOURNAL_PARTIAL_NO_PAID');
+  }
   result.step='ADMIN_AUDIT_UI';await click('logout');await poll(()=>evaluate("!document.getElementById('auth-open').hidden"));token=null;
   await click('auth-open');await fill('login-id',adminAccount.loginId);await fill('password',adminAccount.password);await evaluate("document.getElementById('auth-form').requestSubmit()");await poll(()=>token);
   await poll(()=>evaluate("!document.getElementById('auth-dialog').open&&document.getElementById('auth-open').hidden&&!document.getElementById('logout').hidden"));

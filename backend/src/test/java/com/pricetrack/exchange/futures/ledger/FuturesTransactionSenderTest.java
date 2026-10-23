@@ -28,12 +28,12 @@ class FuturesTransactionSenderTest {
     Fake rpc; FuturesTransactionSender sender;
     class Fake implements FuturesTransactionSender.Transport {
         boolean estimateFails,loseResponse,wrongHash,known; int sends,nonceReads,verifications;
-        List<String> raws=new ArrayList<>();
+        List<String> raws=new ArrayList<>();Runnable afterEstimate=()->{};
         public void verifyDeployment(FuturesChainIdentity c) { assertThat(c).isEqualTo(CHAIN); verifications++; }
         public BigInteger pendingNonce(String a) { nonceReads++; return BigInteger.valueOf(7); }
         public BigInteger gasPrice() { return BigInteger.ONE; }
         public BigInteger estimate(String a,BigInteger n,BigInteger g,String to,String data)throws IOException {
-            if(estimateFails) throw new IOException("DO_NOT_EXPOSE_PROVIDER_BODY"); return BigInteger.valueOf(500000);
+            if(estimateFails) throw new IOException("DO_NOT_EXPOSE_PROVIDER_BODY");afterEstimate.run(); return BigInteger.valueOf(500000);
         }
         public boolean known(String hash) { return known; }
         public String broadcast(String raw)throws IOException {
@@ -72,6 +72,22 @@ class FuturesTransactionSenderTest {
         assertThatThrownBy(()->sender.submit(op.id(),r,sig,()->{checks.incrementAndGet();throw new FuturesLedger.Failure("MARKET_CONNECTION_CHANGED");})).hasMessage("MARKET_CONNECTION_CHANGED");
         assertThat(checks.get()).isEqualTo(1);assertThat(rpc.nonceReads).isEqualTo(1);assertThat(rpc.sends).isZero();
         assertThat(store.find(op.id())).isEmpty();assertThat(ledger.operation(op.id()).state()).isEqualTo("PREPARED");
+    }
+    @Test void nextFreshSyntheticTickDuringEstimateRejectsFixedReportWithoutRepricing(){
+        var prices=org.mockito.Mockito.mock(com.pricetrack.exchange.market.MarketPriceService.class);
+        var now=java.time.Instant.ofEpochSecond(1000);var clock=java.time.Clock.fixed(now,java.time.ZoneOffset.UTC);
+        java.util.function.Function<String,com.pricetrack.exchange.market.TradingPriceContext> tick=value->new com.pricetrack.exchange.market.TradingPriceContext(new com.pricetrack.exchange.market.model.MarketPriceSnapshot("mSEC",new java.math.BigDecimal(value),new java.math.BigDecimal("75000"),java.math.BigDecimal.ZERO,java.math.BigDecimal.ZERO,com.pricetrack.exchange.market.model.MarketStatus.OPEN,com.pricetrack.exchange.market.model.PriceStatus.SIMULATED,"SIMULATED",now),true,"fixture",0L);
+        org.mockito.Mockito.when(prices.currentForTrading()).thenReturn(tick.apply("75000"));
+        var gate=new com.pricetrack.exchange.futures.runtime.FuturesMarketGate(prices,clock);var mark=gate.capture();var op=open();var report=report(op);String signed=signature(report);
+        rpc.afterEstimate=()->org.mockito.Mockito.when(prices.currentForTrading()).thenReturn(tick.apply("75001"));
+        assertThatThrownBy(()->sender.submit(op.id(),report,signed,()->gate.validate(mark))).hasMessage("PRICE_CHANGED");
+        assertThat(store.find(op.id())).isEmpty();assertThat(rpc.sends).isZero();assertThat(ledger.operation(op.id()).price()).isEqualTo(FuturesLedgerTest.ENTRY);
+        ledger.rejectUnsigned(op.id(),"PRICE_CHANGED");assertThat(jdbc.queryForObject("SELECT locked_amount FROM user_balances",java.math.BigDecimal.class)).isZero();
+    }
+    @Test void signedRecoveryIgnoresLaterMarketChangeAndKeepsSameRaw(){
+        var op=open();var report=report(op);String sig=signature(report);rpc.loseResponse=true;var first=sender.submit(op.id(),report,sig);
+        rpc.loseResponse=false;var second=sender.submit(op.id(),report,sig,()->{throw new AssertionError("SIGNED must not reprice/revalidate replacement raw");});
+        assertThat(first.status()).isEqualTo("SIGNED");assertThat(second.status()).isEqualTo("SUBMITTED");assertThat(second.txHash()).isEqualTo(first.txHash());assertThat(rpc.raws.get(1)).isEqualTo(rpc.raws.get(0));assertThat(rpc.nonceReads).isEqualTo(1);
     }
     @Test void responseLossRetainsSignedAndRecoveryUsesSameRawNonceHash() {
         var op=open(); rpc.loseResponse=true; var first=submit(op);

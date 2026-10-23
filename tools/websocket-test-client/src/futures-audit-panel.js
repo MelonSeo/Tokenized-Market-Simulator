@@ -5,13 +5,31 @@ const verdict = value => ['MATCH', 'MISMATCH', 'INCONCLUSIVE'].includes(value) ?
 export function renderFuturesAudit(container, result) {
   container.replaceChildren();
   Object.assign(container.dataset, { auditId: result.id, status: verdict(result.status), complete: String(result.coverage?.complete === true) });
-  container.append(node('h3', `선물 감사 · ${verdict(result.status)}`), fields([
+  const status = verdict(result.status), complete = result.coverage?.complete === true;
+  const summary = node('section', '', 'futures-audit-summary');
+  summary.append(node('span', `선물 감사 · ${status}`, `futures-verdict ${status === 'MATCH' && complete ? 'audit-match' : status === 'MISMATCH' ? 'audit-mismatch' : 'audit-uncertain'}`), node('p', `coverage.complete = ${complete} · ${complete ? '요청 범위 검증 완료' : '불완전 · 전수 일치 아님'}`, 'futures-coverage'));
+  const metrics = node('div', '', 'futures-audit-metrics');
+  for (const [label, basis, value] of [
+    ['거래', '검증/전체', `${result.coverage?.verifiedTransactions ?? '?'} / ${result.coverage?.transactions ?? '?'}`],
+    ['이벤트', '검증/스캔', `${result.coverage?.verifiedEvents ?? '?'} / ${result.coverage?.scannedEvents ?? '?'}`],
+    ['DB', '검사/불일치', `${result.dbCheckCount ?? '?'} / ${result.dbMismatchCount ?? '?'}`],
+  ]) { const metric = node('div'); metric.append(node('span', label), node('small', basis), node('strong', value)); metrics.append(metric); }
+  summary.append(metrics, fields([
+    ['감사 블록', result.block?.number ?? '확인 불가'], ['기준점 블록', result.baseline?.block?.number ?? '확인 불가'],
+    ['관측 시각', time(result.createdAt)], ['DB 기준 시각', time(result.dbAt)], ['판정 근거', result.reason ?? '확인 불가'],
+  ]));
+  const reasons = [...new Set((result.items || []).filter(i => verdict(i.verdict) !== 'MATCH').map(i => i.reason || '근거 미제공'))];
+  for (const check of result.checks || []) if (check.matches !== true) reasons.push(`장부: ${check.name} · ${check.matches === false ? '불일치' : '확인 불가'}`);
+  if (reasons.length) { const list = node('ul'); for (const reason of reasons) list.append(node('li', reason)); summary.append(node('h3', '불일치 · 판정 불가 사유'), list); }
+  container.append(summary);
+  const details = node('details', '', 'futures-audit-details');
+  details.append(node('summary', '원시 값 · 거래별 상세 증거'), fields([
     ['실행 번호', result.id], ['판정 근거', result.reason], ['관측 시각', time(result.createdAt)],
     ['DB 기준 시각', time(result.dbAt)], ['확정 블록', result.block?.number ?? '확인 불가'],
-    ['블록 해시', result.block?.hash ?? '확인 불가'], ['DB 검사 / 불일치', `${result.dbCheckCount ?? 0} / ${result.dbMismatchCount ?? 0}`],
+    ['블록 해시', result.block?.hash ?? '확인 불가'], ['DB 검사 / 불일치', `${result.dbCheckCount ?? '?'} / ${result.dbMismatchCount ?? '?'}`],
   ]));
   const c = result.coverage;
-  container.append(node('h3', '검증 범위 · coverage'), fields([
+  details.append(node('h3', '검증 범위 · coverage'), fields([
     ['전체 operation', c?.operations ?? '확인 불가'],
     ['검증 / 전체 transaction', `${c?.verifiedTransactions ?? '?'} / ${c?.transactions ?? '?'}`],
     ['검증 / 스캔 이벤트', `${c?.verifiedEvents ?? '?'} / ${c?.scannedEvents ?? '?'}`],
@@ -19,9 +37,9 @@ export function renderFuturesAudit(container, result) {
     ['범위 완전성', c?.complete === true ? '완전' : '불완전 · 전수 일치로 해석하지 마세요'],
   ]));
   if (c?.complete !== true) container.append(node('p', '일부 조회·스캔이 불완전합니다. 개별 MATCH를 전수 MATCH로 해석하지 마세요.', 'notice warning'));
-  for (const check of result.checks || []) container.append(fields([
+  for (const check of result.checks || []) details.append(fields([
     ['장부 검사', check.name], ['예상 / 실제 (원시 정수)', `${check.expected} / ${check.actual}`],
-    ['차이', check.difference], ['일치', check.matches === true ? '예' : '아니오'],
+    ['차이', check.difference], ['일치', check.matches === true ? '예' : check.matches === false ? '아니오' : '확인 불가'],
   ]));
   for (const item of result.items || []) {
     const card = node('article', '', 'record');
@@ -29,8 +47,9 @@ export function renderFuturesAudit(container, result) {
       ['operation / position', `${item.operationId ?? '없음'} / ${item.positionId ?? '없음'}`],
       ['사용자 / DB 상태', `${item.userId} / ${item.dbState}`], ['판정 근거', item.reason],
       ['txHash', item.txHash ?? '미확정 또는 없음'], ['블록 번호', item.blockNumber ?? '없음'],
-    ])); container.append(card);
+    ])); details.append(card);
   }
+  container.append(details);
   container.append(node('p', '범위: FuturesEngine 상태·정규 Receipt/Event와 DB 증거금·손익 풀·journal. DB 담보의 온체인 예치, 사용자별 토큰 소유권 또는 미래 지급 보증이 아닙니다.', 'notice'));
 }
 

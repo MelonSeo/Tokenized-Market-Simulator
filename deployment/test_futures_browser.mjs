@@ -4,6 +4,11 @@ import {futuresCardMatches,unsignedPriceReconfirmation,safeBrowserFailure,faucet
 const p={side:'LONG',leverage:10,quantity:'13.333333333333333333',entryPrice:'75000.00000000',collateral:'100000.000000000000000000',realized:'0.000000000000000000',badDebt:'0.000000000000000000'};
 function card(){return {heading:'LONG · 10배 · 자동청산 확정',fields:{'수량':p.quantity+' mSEC 가격 노출','진입 / 평가 가격':p.entryPrice+' / 76000','DB 격리증거금':p.collateral,'확정 실현손익 / 악성 부채 기록':p.realized+' / '+p.badDebt,'위험 상태':'HEALTHY'},deadlineText:'오후 1:00:00'};}
 test('exact labelled terminal values match without numeric conversion',()=>assert.equal(futuresCardMatches(p,card(),'LIQUIDATED'),true));
+test('P0 presentation cards compare exact evidence rather than rounded summaries or array order',()=>{
+  const q={...p,id:'position-1',deadline:100};const c={heading:'LONG · 10배',state:'진행 중',fields:{'포지션 ID':q.id,'수량 (mSEC)':q.quantity,'DB 담보 원본 · 종료 후 현재 잠금액 아님':q.collateral,'진입가격 / 현재 참고가격':q.entryPrice+' / 70000','실현손익 / 악성 부채':q.realized+' / '+q.badDebt,'기록된 위험 상태 (과거 이력 포함)':'GRACE','기록된 유예 종료 (체인 초)':'100'}};
+  assert.equal(futuresCardMatches(q,c,'OPEN','GRACE'),true);assert.equal(futuresCardMatches({...q,deadline:101},c,'OPEN','GRACE'),false);
+  assert.equal(futuresCardMatches({...q,collateral:'1'},c,'OPEN','GRACE'),false);assert.equal(futuresCardMatches({...q,id:'other'},c,'OPEN','GRACE'),false);
+});
 test('zero in another field cannot hide incorrect realized or bad debt',()=>{for(const value of ['1 / '+p.badDebt,p.realized+' / 1']){const c=card();c.fields['확정 실현손익 / 악성 부채 기록']=value;assert.equal(futuresCardMatches(p,c,'LIQUIDATED'),false);}});
 test('collateral precision and historical entry price must match their own fields',()=>{for(const field of ['DB 격리증거금','진입 / 평가 가격','수량']){const c=card();c.fields[field]='0';assert.equal(futuresCardMatches(p,c,'LIQUIDATED'),false);}});
 test('wrong side, leverage or terminal heading cannot match',()=>{for(const h of ['SHORT · 10배 · 자동청산 확정','LONG · 5배 · 자동청산 확정','LONG · 10배 · 포지션 유지']){const c=card();c.heading=h;assert.equal(futuresCardMatches(p,c,'LIQUIDATED'),false);}});

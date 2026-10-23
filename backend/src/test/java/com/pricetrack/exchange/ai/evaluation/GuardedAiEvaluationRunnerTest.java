@@ -100,6 +100,8 @@ class GuardedAiEvaluationRunnerTest {
         try(var runner=start(run)){
             assertThatThrownBy(()->runner.provider().embed(List.of("x"),Duration.ofMillis(200))).hasMessage("AI_EVALUATION_TRANSPORT_UNCERTAIN");
             assertThat(Files.exists(run.resolve("STOP"))).isTrue();
+            String trace=Files.readString(run.resolve("java-transport-diagnostics.jsonl"));
+            assertThat(trace).contains("FRAME_FLUSHED","BROKER_REPLY_TIMEOUT").doesNotContain("Bearer","offline-sentinel","\"body\"");
         }
         try(var resumed=start(run)){
             assertThat(resumed.summary().path("embedding_calls").asInt()).isEqualTo(1);
@@ -119,6 +121,14 @@ class GuardedAiEvaluationRunnerTest {
                     .hasMessage("AI_EVALUATION_OFFLINE_DB_DISABLED");
             assertThatThrownBy(runner::retrieval).hasMessage("AI_EVALUATION_INDEX_NOT_READY");
             assertThat(runner.summary().path("embedding_calls").asInt()).isZero();
+        }
+    }
+    @Test void diagnosticOutputFailureDoesNotReplaceValidatedResponseOrExposeRequestBody()throws Exception {
+        Path run=prepare("success");
+        Files.createDirectory(run.resolve("java-transport-diagnostics.jsonl"));
+        try(var runner=start(run)) {
+            assertThat(runner.provider().embed(List.of("SECRET_INPUT"))).hasSize(1);
+            assertThat(runner.summary().path("embedding_calls").asInt()).isEqualTo(1);
         }
     }
 }

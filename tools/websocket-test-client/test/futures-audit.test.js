@@ -19,6 +19,25 @@ const result = { id: 'audit-fixture', status: 'MATCH', reason: 'EXACT_LEDGER_CHA
 const admin = { id: 1, role: 'ADMIN' };
 const flush = () => new Promise(r => setImmediate(r));
 
+test('verdict summary keeps incomplete MATCH amber and raw evidence collapsed without execution', () => {
+  const { ids } = setup(); const target = ids.get('result');
+  renderFuturesAudit(target, { ...result, coverage: { ...result.coverage, complete: false }, block: { number: 42, hash: 'hash-exact' }, baseline: { block: { number: 1 } } });
+  const summary = target.children[0];
+  assert.match(summary.textContent, /coverage.complete = false/);
+  assert.equal(summary.children[0].className.includes('audit-match'), false);
+  assert.match(summary.children[0].className, /audit-uncertain/);
+  assert.match(summary.textContent, /42/); assert.doesNotMatch(summary.textContent, /hash-exact|1000000000000000001/);
+  const details = target.children.find(c => c.className === 'futures-audit-details');
+  assert.ok(details); assert.notEqual(details.open, true); assert.match(details.textContent, /hash-exact|1000000000000000001/);
+});
+test('missing DB counts stay unknown and mismatch reasons are in the primary summary', () => {
+  const { ids } = setup();
+  renderFuturesAudit(ids.get('result'), { status: 'MISMATCH', items: [{ verdict: 'MISMATCH', reason: 'JOURNAL_CONFLICT' }], checks: [{ name: 'pool', matches: false }] });
+  const summary = ids.get('result').children[0];
+  assert.match(summary.textContent, /\? \/ \?/); assert.match(summary.textContent, /JOURNAL_CONFLICT/); assert.match(summary.textContent, /pool/);
+  assert.match(summary.children[0].className, /audit-mismatch/);
+});
+
 test('inactive ADMIN and USER cannot trigger reads or execution; activation never auto-runs', () => {
   let count = 0; const { ids, panel } = setup({ futuresAuditRun: () => { count++; } });
   for (const [user, route] of [[{ id: 2, role: 'USER' }, 'admin'], [admin, 'market']]) {
