@@ -1,5 +1,11 @@
 # 발표 전 소스 통합 및 운영 확인 — 2026-10-24
 
+## GitHub 반영 결과
+
+사용자 변경 보존 `d595375`, 검증된 공개 소스 통합 `951b97804305cf35cfdb8c4e74cf326fd1ff1501`. `melon-init`을 fast-forward했고 `https://github.com/HYU-CSE-2123/Tokenized-Market-Simulator.git`의 같은 브랜치에 일반 push 성공, 원격 SHA 일치를 확인했다. force·이력 재작성·브랜치 삭제는 없다. 최종 staged406파일의 경로/credential 검사 검출0·공백 검사 PASS이며 기존 미업로드 이력의 API token/JWT/PEM 추가 패턴도 검출0이다. 이는 검사 범위에서의 결과이며 비밀 부재의 절대 증명은 아니다.
+
+push 후 원래 C launcher의 무기동 계획 검사를 다시 실행했다. parent8d/snapshot `71192dd8e8cdbb58e78d6463efea3cb0d793964c9c1ccb71fae6b7ea123f6b19` 일치, Docker0/claim0/유료0이다. live 창이나 새 거래는 시작하지 않았다. 이 결과를 기존 5거래의 새 실시간 RPC 재인수로 표현하지 않는다.
+
 ## 통합 범위
 
 - 원본 `melon-init@f9353c3`의 미커밋10파일은 독립 읽기 검토/credential scan 후 `d595375`로 원문을 보존했다. runtime/data는 stage하지 않았다.
