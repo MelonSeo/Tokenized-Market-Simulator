@@ -72,6 +72,9 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/markets/**")
                         .permitAll()
+                        // Optional same-origin built web assets only; API/JWT rules above remain unchanged.
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

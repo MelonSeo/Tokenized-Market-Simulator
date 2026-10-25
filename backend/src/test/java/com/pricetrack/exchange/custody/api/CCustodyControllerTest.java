@@ -45,6 +45,11 @@ class CCustodyControllerTest {
         assertNotEquals(out.value().free(),new java.math.BigInteger(out.value().free()).add(new java.math.BigInteger(out.value().totalUnpaidProfit())).toString());
         assertEquals(h.fixture.owner,h.api.wallet(user(UserRole.USER)).wallet());assertTrue(h.fixture.calls>0);
     }
+    @Test void configDefaultsToReadOnlyAndPreservesPinnedObservationScope()throws Exception{
+        var h=new Harness(true);var config=h.api.config(user(UserRole.USER));
+        assertEquals("true",config.value().get("readOnly"));assertNotNull(config.block());
+        assertFalse(config.completeCoverage());assertFalse(config.globalCanonicalVerified());
+    }
     @Test void linkedUserAndAdministratorCannotReadForeignPositionOrClaim()throws Exception{
         var h=new Harness(true);h.fixture.foreignOwner=true;
         for(UserRole role:List.of(UserRole.USER,UserRole.ADMIN)){

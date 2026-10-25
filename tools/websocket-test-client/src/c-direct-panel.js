@@ -35,10 +35,11 @@ function fields(rows){const dl=document.createElement('dl');for(const [a,b]of ro
 function raw(value){const d=document.createElement('details');d.append(node('summary','정확한 원본 값 / calldata'),node('pre',JSON.stringify(value,null,2)));return d;}
 function say(text){if(active)$('c-message').textContent=text;}
 function money(n){try{return decimal(n,18)+' cMKRW';}catch{return '미확인';}}
-function update(){if(!active||!document.getElementById('c-connect'))return;for(const id of ['c-connect','c-link','c-refresh','c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-position-read','c-resolve','c-ack'])$(id).disabled=wallet.busy||!user||!wallet.cfg;try{const p=user&&wallet.cfg?wallet.pending():null;$('c-pending').replaceChildren(p?fields([['기존 단계',p.phase],['동작',p.kind??p.request?.action],['intentId',p.intentId],['txHash',p.txHash]]):node('p','이 브라우저에 기록된 미확정 C 거래 없음'));}catch(e){say(e.message);}if(wallet.cfg)$('c-identity').replaceChildren(fields([['로그인',user?.loginId??user?.id??user?.userId],['MetaMask',wallet.owner??'연결 전'],['chainId',wallet.cfg.chainId],['genesis',wallet.cfg.genesisHash],['controller',wallet.cfg.controller],['Vault',wallet.cfg.vault]]));reportCountdown();}
+function update(){if(!active||!document.getElementById('c-connect'))return;for(const id of ['c-connect','c-link','c-refresh','c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-position-read','c-resolve','c-ack'])$(id).disabled=wallet.busy||!user||!wallet.cfg;try{const p=user&&wallet.cfg?wallet.pending():null;$('c-pending').replaceChildren(p?fields([['기존 단계',p.phase],['동작',p.kind??p.request?.action],['intentId',p.intentId],['txHash',p.txHash]]):node('p','이 브라우저에 기록된 미확정 C 거래 없음'));}catch(e){say(e.message);}if(wallet.cfg)$('c-identity').replaceChildren(fields([['로그인',user?.loginId??user?.id??user?.userId],['MetaMask',wallet.owner??'연결 전'],['chainId',wallet.cfg.chainId],['genesis',wallet.cfg.genesisHash],['controller',wallet.cfg.controller],['Vault',wallet.cfg.vault],['이 서버의 C 기능',wallet.cfg.readOnly==='true'?'조회·지갑 소유 증명 전용':'직접 거래 경로 설정됨']]));reportCountdown();if(wallet.cfg?.readOnly==='true')for(const id of ['c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-resolve'])$(id).disabled=true;}
 function reportCountdown() {
   if (!active) return;
   $('c-send').disabled = true;
+  if(wallet.cfg?.readOnly==='true'){$('c-deadline').textContent='현재 서버는 C 조회·지갑 소유 증명 전용입니다. 자산 변경과 거래 전송은 비활성입니다.';return;}
   try {
     const pending = user && wallet.cfg ? wallet.pending() : null;
     const report = pending?.execution?.report;
@@ -58,7 +59,7 @@ function reportCountdown() {
 async function act(task){const epoch=wallet.epoch;try{await task();}catch(e){if(epoch!==wallet.epoch||!active)return;say(e.code===4001?'사용자가 지갑 승인을 거절했습니다. 자동 재서명하지 않습니다.':e.message||'요청 실패');if(e.status===401){unauthorized();}}finally{update();}}
 async function refresh(current = beginRead('account')) {
   try {
-    const [a, m] = await Promise.all([api.get('/api/c-futures/account'), api.get('/api/c-futures/direct/market')]);
+    const [a, m] = await Promise.all([api.get('/api/c-futures/account'), api.market()]);
     if (!current()) return false;
     const v = a.value;
     $('c-account').replaceChildren(...[['내 ERC-20',money(v.walletBalance)],['내 인출 가능 free',money(v.free)],['내 locked',money(v.locked)],['house',money(v.house)],['전체 미지급 Claims',money(v.totalUnpaidProfit)],['Vault 허용량',money(v.allowanceToVault)]].map(([label,value])=>{const d=node('div',label);d.append(node('strong',value));return d;}),fields([['조회 기준 블록',a.block?.number],['관측시각',a.observedAt],['범위',a.verificationScope]]));

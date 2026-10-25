@@ -1,0 +1,26 @@
+// CI-only build tasks. No private local classpath, old build output or runtime input.
+def ciHelpers = ['ProductReadGate', 'ProductReadDriver', 'ProductReadDriverRpcTest',
+    'ProductReadConnection', 'ProductReadConnectionTest', 'ProductReadFixture',
+    'FullAppReadGate', 'FullAppReadDriver', 'FaucetSchemaFixtureBridge',
+    'ConditionalSchemaFixtureBridge', 'CDirectBrowserPipe', 'CAnvilContractGate', 'CAnvilRiskClaimsScenario']
+allprojects {
+    afterEvaluate { p ->
+        if (p.plugins.hasPlugin('java')) {
+            tasks.register('productReadCiClasses', JavaCompile) {
+                dependsOn tasks.named('classes')
+                source ciHelpers.collect { rootProject.file('../deployment/' + it + '.java') }
+                classpath = sourceSets.main.runtimeClasspath
+                destinationDirectory = layout.buildDirectory.dir('product-read-ci/helpers')
+                javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(21) }
+                options.release = 21
+                options.encoding = 'UTF-8'
+                options.compilerArgs += ['-parameters', '-proc:none']
+            }
+            tasks.register('productReadCiRuntime', Copy) {
+                from configurations.runtimeClasspath
+                into layout.buildDirectory.dir('product-read-ci/jars')
+            }
+            tasks.withType(JavaCompile).configureEach { options.compilerArgs += ['-parameters'] }
+        }
+    }
+}

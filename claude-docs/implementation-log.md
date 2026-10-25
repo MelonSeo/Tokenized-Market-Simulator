@@ -2895,3 +2895,17 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 새fixture14개 exact ownerlabel/정지확인·데이터보존, 시각오차+불확실성최대1.067438초/기존2초guard통과, 현재product hash일치. 54통합파일보안패턴/경로·NXT제외최종확인.
 - checkout의LF→CRLF로기존5174 bytesourceguard가중단됨을확인했다. 정규화코드동일/imageID·mount소유권일치, 기존manifest변경·guard우회·재배포없음. 기존KRX worktree/image와새통합버전은구분하고최신PhaseB는신규환경으로준비한다. [상세및다음인수계획](google-sell-all-integration-2026-10-18.md).
 - 최종독립재검토 review_google_sell_integration: 발견된필수수정없음. Git부모/tree동일·제품추가변경없음·문서수치/범위와PhaseB준비제약확인. 직접테스트재실행/private/DB접근없음. 마지막문서4개만별도커밋하며제품테스트HEAD426cb0b와구분한다. NXT미커밋구간제외·원격push없음, PhaseB실키움/PhaseC유료AI는NOT_RUN이다.
+# 개인 Fork Linux 통합조회 CI 준비 (2026-10-25)
+
+- 기준207f603에서 ci/linux-product-read/별도worktree를생성하고 기존조회변경22파일만선별했다. 원본·기존20worktree/자산/체크포인트는보존한다.
+- Linux adapter/공개생성recipe/고정도구·이미지/개인Fork브랜치한정workflow/안전artifact와종료를구현했다. 기존Windows경로·금융정책·RPC블록고정·인증은유지한다.
+- Python59/웹213 PASS,웹build107modules,main361/helper13javac/최종helper재컴파일·무소켓시험PASS,solc0.8.24계약41filescompilePASS,actionlint/YAMLscopePASS.
+- 실제LinuxGradle/PG/Anvil/Chrome/Actions/MetaMask는NOT_RUN이며commit/push0. 독립검토와최초실행위험은 [CI준비보고서](product-read-linux-ci-2026-10-25.md)에기록한다. 다음금융개발이나CI실행을자동시작하지않는다.
+- 최종독립검토 review_product_read_integration: 발견된필수수정없음. 중첩cgroup경로확장은비차단후속제안으로기록했다. 최종source460/hash e0a34080…87d7e,Git후보32파일,기존20worktree와기존head/tag/upstream불변. 최초개인Fork CI는사용자commit/push/실행승인후별도검증한다.
+
+## CI 설치경로 최소 보완 (2026-10-25)
+
+- 조건부승인에따라JDK2/Chrome1 설치절대경로를탐색기로대체했다. JAVA_HOME/PATH·Java21동일설치/버전검증,CHROME_PATH/PATH/환경기반Windows위치·파일버전검증·고정오류를추가했다. 다른제품·금융·Fixture조건은미변경이다.
+- Python69/웹223 PASS. 실제PATH Java23거부/임시JAVA_HOME21.0.10통과/Chrome155메타데이터조회PASS. Linux실행은최초CI에귀속하며기존프로필·세션은미변경이다.
+- 추가독립검토·staged검사통과후에만personal단일브랜치commit/push/최초CI1회진행한다. 결과는 [누적보고서](product-read-linux-ci-2026-10-25.md)에분리기록한다.
+- 추가독립검토1회필수수정없음. Gitleaks8.24.2로stageddiff/전체index검사탐지0,후보36파일일치/설치절대경로및비공개자료경로0확인. 무유출절대보증은아니며실제Linux결과는최초1회실행에귀속한다.

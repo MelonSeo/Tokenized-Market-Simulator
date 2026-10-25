@@ -21,6 +21,7 @@ test('C adapter uses current shared JWT, unwraps transport only and preserves id
   } finally { globalThis.fetch = previous; }
 });
 function harness(client) {
+  client.market ??= () => client.cRequest('/api/markets/mSEC');
   const elements = new Map(), events = {}, storage = new Map(), timers = new Map();
   let clock = 1800000000, timerId = 0;
   const element = () => ({value:'',checked:false,disabled:false,children:[],textContent:'',
@@ -80,6 +81,32 @@ test('Report countdown expires send without repricing, fails closed on corrupt p
 function deferred() { let resolve; const promise=new Promise(r=>resolve=r); return {promise,resolve}; }
 const flush=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
 const textTree=e=>[e.textContent,...e.children.map(textTree)].join(' ');
+
+test('read-only C config keeps wallet/account reads but disables every financial control',async()=>{
+  const calls=[];
+  const h=harness({cRequest:async path=>{calls.push(path);return {body:path.endsWith('/config')?{value:{...cfg,readOnly:'true'}}:{value:{walletBalance:'1000000000000000000',free:'0',locked:'0',house:'0',totalUnpaidProfit:'0',allowanceToVault:'0'}}};},
+    market:async()=>{calls.push('/api/markets/mSEC');return {body:{price:'75000',provider:'SIMULATED'}};}});
+  await h.panel.setContext({id:1},'custody');h.panel.wallet.linked=async()=>{};
+  await h.elements.get('c-refresh').onclick();
+  assert.match(textTree(h.elements.get('c-account')),/1 cMKRW/);
+  assert.ok(calls.includes('/api/markets/mSEC'));assert.ok(!calls.includes('/api/c-futures/direct/market'));
+  for(const id of ['c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-resolve'])assert.equal(h.elements.get(id).disabled,true,id);
+  for(const id of ['c-connect','c-link','c-refresh','c-position-read'])assert.equal(h.elements.get(id).disabled,false,id);
+  h.tick(2);assert.equal(h.elements.get('c-send').disabled,true);
+});
+
+test('switching JWT accounts clears prior assets, position and identity before config resolves',async()=>{
+  let finish;let first=true;
+  const h=harness({cRequest:async()=>first?{body:{value:cfg}}:new Promise(r=>finish=r)});
+  await h.panel.setContext({id:1,loginId:'alice'},'custody');
+  h.elements.get('c-account').children=['alice balance'];h.elements.get('c-position').children=['alice position'];
+  first=false;const pending=h.panel.setContext({id:2,loginId:'bob'},'custody');
+  assert.equal(h.elements.get('c-account').children.length,0);assert.equal(h.elements.get('c-position').children.length,0);
+  assert.doesNotMatch(textTree(h.elements.get('c-identity')),/alice/);
+  finish({body:{value:{...cfg,readOnly:'true'}}});await pending;
+  assert.match(textTree(h.elements.get('c-identity')),/bob/);
+  await h.panel.setContext(null,'market');assert.equal(h.elements.get('c-identity').children.length,0);
+});
 test('same-epoch refresh renders latest account and market pair, never older reversed responses',async()=>{
   const accounts=[],markets=[];
   const h=harness({cRequest(path){

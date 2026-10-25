@@ -4,6 +4,8 @@ import com.pricetrack.exchange.auth.AuthenticatedUser;
 import com.pricetrack.exchange.custody.auth.*;
 import com.pricetrack.exchange.custody.runtime.*;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,8 +19,13 @@ public final class CCustodyController {
     public record WalletRequest(String wallet) {}
     public record LinkRequest(String challengeId,String signature) {}
     private final CCustodyRpcReader reads;private final CWalletProofService proof;
+    @Value("${app.c-futures.direct.enabled:false}") private boolean directEnabled;
     public CCustodyController(CCustodyRpcReader reads,CWalletProofService proof){this.reads=reads;this.proof=proof;}
-    @GetMapping("/config") public CCustodyRpcReader.Observation<Map<String,String>> config(@AuthenticationPrincipal AuthenticatedUser u){uid(u);return reads.config();}
+    @GetMapping("/config") public CCustodyRpcReader.Observation<Map<String,String>> config(@AuthenticationPrincipal AuthenticatedUser u){
+        uid(u);var observed=reads.config();var config=new LinkedHashMap<>(observed.value());
+        config.put("readOnly",Boolean.toString(!directEnabled));
+        return new CCustodyRpcReader.Observation<>(observed.deploymentId(),observed.block(),observed.observedAt(),Map.copyOf(config));
+    }
     @PostMapping("/wallet/challenges") public CWalletProofService.ChallengeView challenge(@AuthenticationPrincipal AuthenticatedUser u,@RequestHeader(value="Origin",required=false)String origin,@RequestBody WalletRequest r){long id=uid(u);if(r==null)throw invalid();return proof.challenge(id,r.wallet(),origin);}
     @PostMapping("/wallet/link") public CWalletLinkStore.Link link(@AuthenticationPrincipal AuthenticatedUser u,@RequestHeader(value="Origin",required=false)String origin,@RequestBody LinkRequest r){long id=uid(u);if(r==null)throw invalid();return proof.link(id,r.challengeId(),r.signature(),origin);}
     @GetMapping("/wallet") public CWalletLinkStore.Link wallet(@AuthenticationPrincipal AuthenticatedUser u){return proof.wallet(uid(u));}

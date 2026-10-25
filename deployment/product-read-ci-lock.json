@@ -1,0 +1,14 @@
+{
+  "baseCommit": "207f60313e507fff6f098f4843db599d0a8b8101",
+  "jdk": "21.0.10+7",
+  "node": "22.22.0",
+  "python": "3.12",
+  "solc": "0.8.24",
+  "openzeppelin": "69c8def5f222ff96f2b5beff05dfba996368aa79",
+  "forgeStd": "bf647bd6046f2f7da30d0c2bf435e5c76a780c1b",
+  "images": {
+    "java": "eclipse-temurin:21.0.10_7-jdk-jammy@sha256:25d1276565738d3c805e632a4542c3a7598866ef967f4def6544c15de3a74b14",
+    "pg": "postgres:16@sha256:c1b3783309b6499c795eed7c20135a1a4d25cae1b575c3d52c6f536129a1b109",
+    "anvil": "ghcr.io/foundry-rs/foundry@sha256:0c00cb0bda1ab1b91c9a6bf60f4c76c09c1a8870824b6d4718afbabacf6f9a17"
+  }
+}
