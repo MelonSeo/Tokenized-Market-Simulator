@@ -2914,3 +2914,8 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 
 - 최초 CI의 JDK 설치 실패에 한정해 workflow 배포 표현을 `21.0.10+7.0.LTS`로 변경한다. Lock의 런타임 릴리스 `21.0.10+7`과 고정 이미지/제품/금융 조건은 유지한다.
 - Python69 및 actionlint PASS. 검토·보안 검사 후 개인 CI 브랜치만 commit/push하고 신규 실행 1회를 관측한다. 상세 및 실제 도달 범위는 [2차 기록](product-read-linux-ci-jdk-resolution-2026-10-26.md)으로 구분한다.
+
+## Linux CI 자율 오류 해결 (2026-10-26)
+
+- 사용자 승인 신규CI최대5회 범위에서 시험 compile scope 누락을 먼저 수정한다. H2/JUnitLauncher를 testImplementation으로 옮겼고 제품runtime/금융/인증/Fixture정책은 유지한다.
+- Python70 PASS, 독립검토 review_ci_test_dependencies 필수수정없음(직접관련Python19/diff검사PASS). 실제Gradle/실환경은 새CI로 확인한다. 사건·원인·결정·실행한도는 [자율CI기록](product-read-linux-ci-autonomous-2026-10-26.md)에 누적한다. 취업용 후보 인덱스는 ignored runtime 로컬전용이다.

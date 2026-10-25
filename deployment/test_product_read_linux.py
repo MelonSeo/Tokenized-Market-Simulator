@@ -8,6 +8,11 @@ import product_read_resources as resources
 ROOT=Path(__file__).resolve().parents[1]
 
 class LinuxRead(unittest.TestCase):
+ def test_direct_test_imports_have_compile_dependencies(self):
+  gradle=(ROOT/'backend/build.gradle').read_text(encoding='utf8')
+  for dependency in ['com.h2database:h2','org.junit.platform:junit-platform-launcher']:
+   self.assertIn("testImplementation '"+dependency+"'",gradle)
+   self.assertNotIn("testRuntimeOnly '"+dependency+"'",gradle)
  def mem(self,d,text='MemTotal: 8388608 kB\nMemAvailable: 3145728 kB\n',limit='max',used='0'):
   p=Path(d);(p/'mem').write_text(text);(p/'max').write_text(limit);(p/'current').write_text(used)
   return linux.memory(p/'mem',p/'max',p/'current')
