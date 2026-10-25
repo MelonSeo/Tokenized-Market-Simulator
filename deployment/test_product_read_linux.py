@@ -8,6 +8,25 @@ import product_read_resources as resources
 ROOT=Path(__file__).resolve().parents[1]
 
 class LinuxRead(unittest.TestCase):
+ def test_korean_fonts_are_installed_and_observed_not_css_overridden(self):
+  workflow=(ROOT/'.github/workflows/product-read-linux.yml').read_text(encoding='utf8')
+  browser=(ROOT/'tools/websocket-test-client/scripts/product-read-browser.mjs').read_text(encoding='utf8')
+  for text in ['fonts-noto-cjk','fc-list :lang=ko','fc-cache -f','fc-match']:
+   self.assertIn(text,workflow)
+  for text in ['CSS.getPlatformFontsForNode','document.fonts.ready','platformFonts','Korean system font not used']:
+   self.assertIn(text,browser)
+  self.assertIn("process.platform==='linux'",browser)
+  self.assertIn("capture('06-position','#c-position','#c-position dt')",browser)
+  self.assertIn("capture('05-account','#c-account','#c-account > div')",browser)
+  self.assertNotIn('setProperty',browser)
+ def test_korean_screenshots_stay_on_public_allowlist(self):
+  with tempfile.TemporaryDirectory() as d:
+   p=Path(d);live=p/'live';(live/'browser').mkdir(parents=True)
+   for name in ['00-login.png','05-account.png','06-position.png']:
+    (live/'browser'/name).write_bytes(b'PNG_TEST_ONLY')
+   linux.safe_artifacts(live,p/'public',[])
+   for name in ['00-login.png','05-account.png','06-position.png']:
+    self.assertTrue((p/'public/browser'/name).is_file())
  def test_direct_test_imports_have_compile_dependencies(self):
   gradle=(ROOT/'backend/build.gradle').read_text(encoding='utf8')
   for dependency in ['com.h2database:h2','org.junit.platform:junit-platform-launcher']:

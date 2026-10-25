@@ -2919,3 +2919,9 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 
 - 사용자 승인 신규CI최대5회 범위에서 시험 compile scope 누락을 먼저 수정한다. H2/JUnitLauncher를 testImplementation으로 옮겼고 제품runtime/금융/인증/Fixture정책은 유지한다.
 - Python70 PASS, 독립검토 review_ci_test_dependencies 필수수정없음(직접관련Python19/diff검사PASS). 실제Gradle/실환경은 새CI로 확인한다. 사건·원인·결정·실행한도는 [자율CI기록](product-read-linux-ci-autonomous-2026-10-26.md)에 누적한다. 취업용 후보 인덱스는 ignored runtime 로컬전용이다.
+- commit8d9ca6c/run40218771542: 승인5회중1회로전체Linux조회Gate PASS. 실제PG/Anvil/JWT/REST/WS/Chrome사용자격리/정상정지확인, product금융요청0/MetaMask미실행. 한글폰트누락에따른캡처가독성은미완료로남긴다. 결과기록은로컬미커밋, 새개발·추가CI는중단했다.
+
+## Linux 한글 실화면 검증 보완 (2026-10-26)
+
+- 후속승인신규CI최대2회. Runner Noto CJK 설치전후목록/cache/match와실제Chrome glyph font를관측하며로그인/자산/포지션캡처를추가한다. 제품CSS·금융·JWT·WebSocket·사용자격리검증은유지한다.
+- Python72/JS문법/actionlint PASS. 독립검토의CDP수집깊이지적을fontSelector분리로수정하고재검토필수수정없음(직접Python21/JS문법PASS). 실제결과는 [한글폰트기록](product-read-linux-korean-fonts-2026-10-26.md)에누적한다. 로컬회고인덱스는업로드제외다.
