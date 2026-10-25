@@ -2909,3 +2909,8 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - Python69/웹223 PASS. 실제PATH Java23거부/임시JAVA_HOME21.0.10통과/Chrome155메타데이터조회PASS. Linux실행은최초CI에귀속하며기존프로필·세션은미변경이다.
 - 추가독립검토·staged검사통과후에만personal단일브랜치commit/push/최초CI1회진행한다. 결과는 [누적보고서](product-read-linux-ci-2026-10-25.md)에분리기록한다.
 - 추가독립검토1회필수수정없음. Gitleaks8.24.2로stageddiff/전체index검사탐지0,후보36파일일치/설치절대경로및비공개자료경로0확인. 무유출절대보증은아니며실제Linux결과는최초1회실행에귀속한다.
+
+## Linux CI Temurin 식별자 보완 (2026-10-26)
+
+- 최초 CI의 JDK 설치 실패에 한정해 workflow 배포 표현을 `21.0.10+7.0.LTS`로 변경한다. Lock의 런타임 릴리스 `21.0.10+7`과 고정 이미지/제품/금융 조건은 유지한다.
+- Python69 및 actionlint PASS. 검토·보안 검사 후 개인 CI 브랜치만 commit/push하고 신규 실행 1회를 관측한다. 상세 및 실제 도달 범위는 [2차 기록](product-read-linux-ci-jdk-resolution-2026-10-26.md)으로 구분한다.
