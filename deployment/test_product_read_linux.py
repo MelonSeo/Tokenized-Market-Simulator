@@ -83,7 +83,9 @@ class LinuxRead(unittest.TestCase):
    with self.assertRaises(RuntimeError):linux.safe_artifacts(live,p/'public',[])
  def test_workflow_scope_and_pins(self):
   s=(ROOT/'.github/workflows/product-read-linux.yml').read_text()
-  self.assertIn('branches: [ci/linux-product-read]',s);self.assertIn("github.repository == 'MelonSeo/Tokenized-Market-Simulator'",s)
+  self.assertIn('branches: [melon-init]',s);self.assertIn("github.repository == 'MelonSeo/Tokenized-Market-Simulator'",s)
+  self.assertIn("github.ref == 'refs/heads/melon-init'",s)
+  self.assertNotIn('branches: [ci/linux-product-read]',s)
   self.assertIn('contents: read',s);self.assertIn('ubuntu-24.04',s);self.assertIn('retention-days: 1',s)
   uses=re.findall(r'uses: ([^\s]+)',s);self.assertEqual(len(uses),4)
   for action in uses:self.assertRegex(action,r'^actions/[a-z-]+@[0-9a-f]{40}$')

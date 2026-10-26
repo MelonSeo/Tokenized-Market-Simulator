@@ -1,7 +1,7 @@
 name: Linux product read gate
 on:
   push:
-    branches: [ci/linux-product-read]
+    branches: [melon-init]
 permissions:
   contents: read
 concurrency:
@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   read-gate:
-    if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && github.ref == 'refs/heads/ci/linux-product-read'
+    if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && github.ref == 'refs/heads/melon-init'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

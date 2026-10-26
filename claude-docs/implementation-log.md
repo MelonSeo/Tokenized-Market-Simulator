@@ -2925,3 +2925,9 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 
 - 후속승인신규CI최대2회. Runner Noto CJK 설치전후목록/cache/match와실제Chrome glyph font를관측하며로그인/자산/포지션캡처를추가한다. 제품CSS·금융·JWT·WebSocket·사용자격리검증은유지한다.
 - Python72/JS문법/actionlint PASS. 독립검토의CDP수집깊이지적을fontSelector분리로수정하고재검토필수수정없음(직접Python21/JS문법PASS). 실제결과는 [한글폰트기록](product-read-linux-korean-fonts-2026-10-26.md)에누적한다. 로컬회고인덱스는업로드제외다.
+
+## 검증된 Linux 조회 코드의 melon-init 통합 (2026-10-26)
+
+- 원격207f603과검증f8eb22b의4커밋/40파일을대조하고별도통합worktree에서직계후손후보를준비했다. 원본21worktree미커밋및root6파일hash를기록했다. 추가제품/금융/계약변경없음.
+- CI는개인melon-init push단일기준으로branch/ref와scope시험만전환한다. 임시/CIbranch추가push없음. Python72/JS문법/actionlintPASS, 독립검토 review_melon_ci_integration 필수수정없음(직접Python72/웹핵심19/diff검사PASS).
+- 원격비강제통합·통합후CI1회·로컬FF보존비교의실제결과와개발경험연결은 [통합기록](product-read-melon-integration-2026-10-26.md)에누적한다. 로컬취업용회고인덱스는공개대상에서제외하고다음금융개발은시작하지않는다.
