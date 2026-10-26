@@ -2,6 +2,13 @@ import ast,importlib.util,json,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 class DirectLinux(unittest.TestCase):
+ def test_read_and_write_bridges_have_separate_fixed_ports_without_changing_read_default(self):
+  import product_read_linux_support as support
+  self.assertEqual(support.Bridge('10.254.1.1','10.254.1.0/28').port,32171)
+  self.assertEqual(support.Bridge('10.254.1.1','10.254.1.0/28',port=32173).port,32173)
+  with self.assertRaises(Exception):support.Bridge('10.254.1.1','10.254.1.0/28',port=12345)
+  driver=(ROOT/'deployment/ProductDirectDriver.java').read_text(encoding='utf8')
+  self.assertIn('http://127.0.0.1:32173',driver);self.assertIn('identity.origin()',driver)
  def test_gradle_source_list_is_explicit_method_call_not_index_access(self):
   s=(ROOT/'deployment/product-direct-ci.gradle').read_text(encoding='utf8')
   self.assertIn("source(['ProductDirectFixture'",s);self.assertNotIn("source ['",s)

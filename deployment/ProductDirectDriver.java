@@ -22,6 +22,10 @@ public final class ProductDirectDriver {
  static void bootstrap()throws Exception{
   Path fixture=Path.of("/fixture"),config=Path.of("/gate-config");ProductReadDriver.bootstrap(fixture,config);
   var p=new Properties();try(var in=Files.newInputStream(config.resolve("application.properties"))){p.load(in);}
+  var original=J.readValue(fixture.resolve("c-identity.json").toFile(),CCustodyIdentity.class);
+  var directIdentity=new CCustodyIdentity(original.chainId(),original.genesisHash(),original.token(),original.controller(),original.rules(),original.vault(),original.relayer(),original.oracle(),original.pauseAdmin(),original.symbolHash(),original.policyHash(),"http://127.0.0.1:32173");
+  need(original.deploymentId().equals(directIdentity.deploymentId()),"ORIGIN_ONLY_IDENTITY");J.writeValue(fixture.resolve("c-identity.json").toFile(),directIdentity);
+  p.setProperty("app.c-futures.origin",directIdentity.origin());p.setProperty("app.websocket.allowed-origin-patterns",directIdentity.origin());
   String run=System.getenv("READ_RUN_ID"),suffix=run.substring(5),owner="ccowner_"+suffix,api="ccapi_"+suffix;
   try(var c=DriverManager.getConnection("jdbc:postgresql://pg:5432/ccpg_"+suffix+"?connectTimeout=3&socketTimeout=8",owner,secret("FULL_READ_OWNER_PASSWORD"));var s=c.createStatement()){
    s.setQueryTimeout(5);for(String name:List.of("c-consent-schema.sql","c-direct-execution-schema.sql")){
@@ -40,7 +44,7 @@ public final class ProductDirectDriver {
  final HttpClient http=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
  final List<Map<String,String>> transactions=new ArrayList<>();final Set<String> sent=new HashSet<>();
  CCustodyIdentity identity;JsonNode meta;String tokenA,tokenB;volatile boolean finished;String position;
- FullAppReadDriver.Reply api(String method,String path,String token,Object body)throws Exception{return ProductReadDriver.http(http,method,path,token,body);}
+ FullAppReadDriver.Reply api(String method,String path,String token,Object body)throws Exception{return FullAppReadDriver.http(http,method,path,token,body,identity.origin());}
  void initialize()throws Exception{
   g.verifySourceMetadata();identity=J.readValue(Path.of("/fixture/c-identity.json").toFile(),CCustodyIdentity.class);meta=J.readTree(Path.of("/fixture/test-chain.json").toFile());
   var keys=J.readTree(Path.of("/keys/wallet-keys.private.json").toFile());for(String role:List.of("userA","userB"))g.keys.put(role,ECKeyPair.create(new BigInteger(keys.path(role).asText(),16)));

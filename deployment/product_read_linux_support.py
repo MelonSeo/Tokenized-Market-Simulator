@@ -60,9 +60,10 @@ def artifact_fixture(root,output):
 
 class Bridge:
  """Opaque localhost bridge to one verified owned container IP; no HTTP parsing or extra JVMs."""
- def __init__(self,address,subnet):
+ def __init__(self,address,subnet,port=32171):
   need(ipaddress.ip_address(address) in ipaddress.ip_network(subnet),'BRIDGE_DESTINATION')
-  self.address=address;self.end=time.monotonic()+110;self.slots=threading.BoundedSemaphore(8);self.sockets=[];self.lock=threading.Lock()
+  need(type(port) is int and port in (32171,32173),'BRIDGE_PORT')
+  self.port=port;self.address=address;self.end=time.monotonic()+110;self.slots=threading.BoundedSemaphore(8);self.sockets=[];self.lock=threading.Lock()
  def start(self):
   owner=self
   class Handler(socketserver.BaseRequestHandler):
@@ -87,7 +88,7 @@ class Bridge:
      if remote:remote.close()
      owner.slots.release()
   class Server(socketserver.ThreadingTCPServer):daemon_threads=False;allow_reuse_address=False;block_on_close=True
-  self.server=Server(('127.0.0.1',32171),Handler);self.thread=threading.Thread(target=self.server.serve_forever);self.thread.start()
+  self.server=Server(('127.0.0.1',self.port),Handler);self.thread=threading.Thread(target=self.server.serve_forever);self.thread.start()
  def close(self):
   self.end=0;self.server.shutdown()
   with self.lock:

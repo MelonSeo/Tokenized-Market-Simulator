@@ -45,3 +45,9 @@
 
 1. commit89a148fdeda206b91bcce7d4495e973c5cd14344, run https://github.com/MelonSeo/Tokenized-Market-Simulator/actions/runs/40338840226 — FAIL. 도구/순수시험/웹225·build PASS후Gradle설정단계에서`FilteredFileTree.getAt(ArrayList)`오류. 새init의`source [list]`를Groovy가source속성인덱스접근으로해석했다. 실제PG/Anvil/읽기Gate/쓰기거래는NOT_RUN. `source([list].collect {...})`의명시메서드호출로최소수정하고회귀를추가했다. 새helper자체javac성공이Gradle DSL구성성공을보장하지않는실제사건이며금융결함과구분한다. 재검토·보안검사후에만2차push한다.
 - 해당최소수정재검토: 발견된필수수정없음. 검토자직접Python7/diff검사PASS, 실제Gradle평가와실환경은2차CI로검증한다.
+
+2. commit70ca540868222dace6e6f70a3a14d5504e564f2f, https://github.com/MelonSeo/Tokenized-Market-Simulator/actions/runs/40339329063 — 기존읽기Gate PASS, 새Fixture/PG/bootstrap/Oracle/제품Spring및시험actor ready까지PASS. 새브라우저연결입구에서OSError로BLOCKED, Chrome결과파일은없어5개UI거래성공은확인되지않음. 실패기록이errno/세부stage를누락해원인을확정할수없다. 동일32171포트의순차read/write브리지재사용은코드상확인된경합위험이나실제errno98을확인한것처럼주장하지않는다.
+- 후속최소실행설정: read기본32171은유지, write는고정32173별도브리지/Origin/WS/actorHTTP/Chromeassert로일관되게분리한다. 임의포트반복이나전역네트워크변경이아니다. Origin은신규시험설정이며제품의정확한Origin검증을완화하지않는다. 기존배포identity의암호학적필드는그대로임을검사한다.
+- 오류관측은BROWSER_BRIDGE/CONFIG/RUN및안전한OSError.errno번호로세분화한다. 새actor 미완료exit1은중단결과이며정상완료로승격하지않는다. 다른컨테이너는모두정상정지했다.
+- 추가정적점검에서시험browser가BigInt를문자열전용decimal코덱에직접전달한호출을발견했다. 문자열로명시변환하는시험입력함수와큰정수회귀를추가했다. 이는2차CI의OSError원인으로소급하지않으며가격범위95~105%/금융계산식은바꾸지않는다. 새CI최대3회중남은1회를검토후사용한다.
+- 해당후속재검토: 발견된필수수정없음. 검토자직접Python8+72/새입력변환1/diffPASS, 구현자전체웹226PASS. 실제bind·5거래·최종자산정합성은3차CI의실제결과로판단한다.

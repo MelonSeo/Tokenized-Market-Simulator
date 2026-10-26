@@ -26,7 +26,7 @@ def sources():
  paths += [ROOT/n for n in ['.github/workflows/product-read-linux.yml','backend/build.gradle','backend/gradle/wrapper/gradle-wrapper.properties','contracts/foundry.toml','tools/websocket-test-client/index.html','tools/websocket-test-client/package.json','tools/websocket-test-client/package-lock.json']]
  paths += [ROOT/'tools/websocket-test-client/scripts'/n for n in ['product-read-browser.mjs','cdp-boundary.mjs','c-live-browser-smoke.mjs','browser-executable.mjs']]
  paths += [ROOT/'tools/websocket-test-client/test/browser-executable.test.mjs']
- paths += [ROOT/p for p in ['deployment/ProductDirectFixture.java','deployment/ProductDirectDriver.java','deployment/ProductDirectGate.java','deployment/CDirectOracleServer.java','deployment/product-direct-ci.gradle','deployment/product-direct-linux.py','deployment/test_product_direct_linux.py','.github/workflows/product-direct-linux.yml','tools/websocket-test-client/scripts/product-direct-browser.mjs']]
+ paths += [ROOT/p for p in ['deployment/ProductDirectFixture.java','deployment/ProductDirectDriver.java','deployment/ProductDirectGate.java','deployment/CDirectOracleServer.java','deployment/product-direct-ci.gradle','deployment/product-direct-linux.py','deployment/test_product_direct_linux.py','.github/workflows/product-direct-linux.yml','tools/websocket-test-client/scripts/product-direct-browser.mjs','tools/websocket-test-client/scripts/product-direct-browser-inputs.mjs','tools/websocket-test-client/test/product-direct-browser-inputs.test.mjs']]
  return {str(p.relative_to(ROOT)):linux.sha(p) for p in sorted(set(paths))}
 def prepare():
  need(sys.platform=='linux','LINUX_ONLY');before=sources()
@@ -129,18 +129,20 @@ def run(path):
    if (live/'walletEvidence/ready.json').exists():break
    need(docker('inspect',run_id+'-wallet','--format','{{.State.Running}}')=='true','WALLET_EXIT');time.sleep(.2)
   else:need(False,'WALLET_READY')
-  observer.sample('HTTP_COMPLETE');stage='BROWSER'
-  bridge=linux.Bridge(app['NetworkSettings']['Networks'][run_id+'-network']['IPAddress'],plan['subnet']);bridge.end=time.monotonic()+175;bridge.start()
+  observer.sample('HTTP_COMPLETE');stage='BROWSER_BRIDGE'
+  bridge=linux.Bridge(app['NetworkSettings']['Networks'][run_id+'-network']['IPAddress'],plan['subnet'],port=32173);bridge.end=time.monotonic()+175;bridge.start()
+  stage='BROWSER_CONFIG'
   browser_config=json.loads((live/'walletEvidence/browser.private.json').read_text());browser_config['walletEndpoint']='http://'+wallet['NetworkSettings']['Networks'][run_id+'-network']['IPAddress']+':8092'
   save(live/'browser.private.json',browser_config)
   chrome=shutil.which('google-chrome') or shutil.which('chromium');need(bool(chrome),'CHROME_MISSING')
   browser_env=environment();browser_env['CHROME_PATH']=chrome
+  stage='BROWSER_RUN'
   r=subprocess.run(['node',str(ROOT/'tools/websocket-test-client/scripts/product-direct-browser.mjs'),str(live/'browser.private.json'),str(live/'browser')],env=browser_env,cwd=ROOT/'tools/websocket-test-client',capture_output=True,timeout=165)
   (live/'browser.private.log').write_bytes(r.stdout+r.stderr);need(r.returncode==0,'BROWSER')
   b=json.loads((live/'browser/result.json').read_text());need(b['status']=='PASS' and len(b['history'])==5 and b['childCleanupComplete'],'BROWSER_RESULT')
   need(docker('wait',run_id+'-wallet',timeout=15)=='0' and (live/'walletEvidence/direct-result.json').is_file(),'WALLET_FINAL')
   observer.sample('BROWSER_COMPLETE');passed=True
- except (Exception,KeyboardInterrupt,SystemExit) as e:failure=str(e) if str(e).startswith('PRODUCT_READ_') else type(e).__name__
+ except (Exception,KeyboardInterrupt,SystemExit) as e:failure=('OS_ERROR_'+str(e.errno)) if isinstance(e,OSError) else str(e) if str(e).startswith('PRODUCT_READ_') else type(e).__name__
  finally:
   if bridge:
    try:bridge.close()

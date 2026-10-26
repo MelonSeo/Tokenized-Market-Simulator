@@ -5,9 +5,10 @@ import {spawn} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {BoundedCdp,pollBounded,fetchJsonBounded} from './cdp-boundary.mjs';
 import {findChrome} from './browser-executable.mjs';
-import {units,decimal} from '../src/c-direct-intent.js';
+import {units} from '../src/c-direct-intent.js';
+import {trialPriceBounds} from './product-direct-browser-inputs.mjs';
 const c=JSON.parse(await readFile(process.argv[2],'utf8')),out=resolve(process.argv[3]);
-assert.equal(c.origin,'http://127.0.0.1:32171');assert.match(c.walletEndpoint,/^http:\/\/10\.254\.\d+\.\d+:8092$/);
+assert.equal(c.origin,'http://127.0.0.1:32173');assert.match(c.walletEndpoint,/^http:\/\/10\.254\.\d+\.\d+:8092$/);
 await mkdir(out);const profile=await mkdtemp(join(out,'profile-')),end=Date.now()+150000;
 let child,cdp,exited=false,spawnFailed=false,passed=false,failure=null,stage='START';const history=[],images=[];
 const budget=n=>Math.min(n,end-Date.now());const poll=fn=>pollBounded(fn,{timeoutMs:budget(15000),intervalMs:100});
@@ -32,8 +33,8 @@ async function trade(action){
  await fill('c-action',action);
  if(action==='CLOSE'){await click('c-position-read');await poll(()=>evaluate("document.getElementById('c-position').textContent.includes('ACTIVE')"));await idle();}
  else{await fill('c-side','LONG');await fill('c-leverage','10');await fill('c-collateral','1000');}
- const market=await evaluate("fetch('/api/markets/mSEC').then(r=>r.json())"),mark=units(String(market.price),8);
- await fill('c-min-price',decimal(mark*95n/100n,8));await fill('c-max-price',decimal(mark*105n/100n,8));
+ const market=await evaluate("fetch('/api/markets/mSEC').then(r=>r.json())"),bounds=trialPriceBounds(market.price);
+ await fill('c-min-price',bounds.minimum);await fill('c-max-price',bounds.maximum);
  await click('c-prepare');await poll(async()=>{const p=await pending();return p?.phase==='DRAFT_READY';});await idle();
  await tick(); // Read-only bounded observation before Report issuance; no refresh after signing.
  stage=action+'_REPORT';
