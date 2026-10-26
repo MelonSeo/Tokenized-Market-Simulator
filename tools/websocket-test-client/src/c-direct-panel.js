@@ -13,6 +13,7 @@ export function createCDirectPanel(client, unauthorized = () => {}, options = {}
   const schedule = options.setInterval ?? globalThis.setInterval;
   const unschedule = options.clearInterval ?? globalThis.clearInterval;
   let reportTimer = null;
+  let confirmed = [];
   const readSerial = { account: 0, position: 0 };
   function beginRead(kind) {
     const serial = ++readSerial[kind], epoch = wallet.epoch;
@@ -25,6 +26,7 @@ export function createCDirectPanel(client, unauthorized = () => {}, options = {}
       if (!active) return;
       if (renderedEpoch !== wallet.epoch) {
         renderedEpoch = wallet.epoch; selected = null; lastResult = null;
+        confirmed = []; $('c-history').replaceChildren();
         for (const id of ['c-account','c-position','c-draft','c-result','c-range']) $(id).replaceChildren();
         $('c-market').textContent = '지갑·네트워크가 변경되면 기존 자산과 시세를 새로 조회하세요.';
       }
@@ -91,7 +93,12 @@ $('c-position-read').onclick=()=>{
 $('c-prepare').onclick=()=>void act(async()=>{const r=request();const d=await wallet.prepare(r);$('c-position-id').value=d.intent.positionId;$('c-draft').replaceChildren(node('h3','고정 사용자 조건 · 아직 거래 승인 전'),fields([['intentId',d.intentId],['positionId',d.intent.positionId],['owner',d.intent.owner],['nonce',d.intent.nonce],['담보',money(d.intent.collateralAfter)],['사용자 유효기간(초)',d.intent.deadline]]),raw(d));$('c-consent').checked=false;say('draft 고정 완료. 새 실행 가격을 확인한 뒤 지갑 거래를 승인하세요.');});
 $('c-price').onclick=()=>void act(async()=>{const e=await wallet.executionPrice();$('c-draft').append(node('h3','이번 실행 Report'),fields([['실행가격',decimal(e.report.priceE8,8)],['수량',decimal(e.report.quantity,18)],['담보',money(e.report.collateralAfter)],['Report 관측초',e.report.observedAt],['Report 만료초',e.report.validUntil],['시세 출처',e.market.provider]]),raw(e));$('c-consent').checked=false;say('실행 가격과 calldata를 확인하세요. Report 30초에 MetaMask 승인과 채굴 시간도 포함됩니다.');});
 $('c-send').onclick=()=>void act(async()=>{if(!$('c-consent').checked)throw new Error('표시된 거래 조건을 먼저 확인하세요.');const r=request(),p=wallet.pending();if(JSON.stringify(r)!==JSON.stringify(p?.request))throw new Error('입력 조건이 고정 draft와 다릅니다. 새 서명 전 draft를 명시적으로 해제하세요.');await wallet.sendDirect();say('owner 직접 거래 제출. 자동 재전송 없이 기존 거래를 조회하세요.');});
-$('c-resolve').onclick=()=>void act(async()=>{const result=await wallet.resolve($('c-manual-hash').value||null);lastResult=result;$('c-result').replaceChildren(fields([['판정',lastResult.status],['txHash',lastResult.txHash],['기준 blockHash',lastResult.blockHash],['검증 범위',lastResult.scope]]),raw(lastResult));say('기존 거래를 조회했습니다. 관측 결과는 아래 검증 범위를 확인하세요.');await refresh();});
+$('c-resolve').onclick=()=>void act(async()=>{const epoch=wallet.epoch;const result=await wallet.resolve($('c-manual-hash').value||null);if(!active||epoch!==wallet.epoch)return;lastResult=result;$('c-result').replaceChildren(fields([['판정',lastResult.status],['txHash',lastResult.txHash],['기준 blockHash',lastResult.blockHash],['검증 범위',lastResult.scope]]),raw(lastResult));
+  if(result.status==='CONFIRMED'&&!confirmed.some(v=>v.txHash===result.txHash)){
+    confirmed=[...confirmed,{kind:result.kind,txHash:result.txHash,blockHash:result.blockHash}].slice(-20);
+    $('c-history').replaceChildren(node('p','이번 세션에서 Receipt를 검증한 거래 (최근 20개 · 전체 감사 아님)'),...confirmed.map(v=>fields([['동작',v.kind],['txHash',v.txHash],['기준 blockHash',v.blockHash]])));
+  }
+say('기존 거래를 조회했습니다. 관측 결과는 아래 검증 범위를 확인하세요.');await refresh();});
 $('c-ack').onclick=()=>void act(async()=>{await wallet.acknowledge();$('c-consent').checked=false;$('c-draft').replaceChildren();say('확인한 기록을 브라우저 대기 목록에서 해제했습니다. 체인·DB 이력은 변경하지 않았습니다.');});
 for(const id of ['c-action','c-side','c-leverage','c-collateral','c-min-price','c-max-price','c-position-id'])$(id).addEventListener('input',range);
 $('c-consent').addEventListener('change',update);
@@ -103,8 +110,8 @@ $('c-consent').addEventListener('change',update);
       if (contextKey === key && active === nextActive && (initializing || wallet.cfg)) return;
       if (reportTimer !== null) { unschedule(reportTimer); reportTimer = null; }
       active = false; user = nextActive ? nextUser : null; contextKey = key;
-      selected = null; lastResult = null; wallet.context(user);
-      for (const id of ['c-identity','c-account','c-position','c-draft','c-result','c-pending','c-range']) $(id).replaceChildren();
+      selected = null; lastResult = null; confirmed = []; wallet.context(user);
+      for (const id of ['c-identity','c-account','c-position','c-draft','c-result','c-pending','c-range','c-history']) $(id).replaceChildren();
       for (const id of ['c-asset-amount','c-collateral','c-min-price','c-max-price','c-position-id','c-manual-hash']) $(id).value = '';
       $('c-consent').checked = false;
       active = nextActive; initializing = active; update();

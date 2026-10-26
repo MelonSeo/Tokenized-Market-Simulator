@@ -2931,3 +2931,10 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 원격207f603과검증f8eb22b의4커밋/40파일을대조하고별도통합worktree에서직계후손후보를준비했다. 원본21worktree미커밋및root6파일hash를기록했다. 추가제품/금융/계약변경없음.
 - CI는개인melon-init push단일기준으로branch/ref와scope시험만전환한다. 임시/CIbranch추가push없음. Python72/JS문법/actionlintPASS, 독립검토 review_melon_ci_integration 필수수정없음(직접Python72/웹핵심19/diff검사PASS).
 - 원격비강제통합·통합후CI1회·로컬FF보존비교의실제결과와개발경험연결은 [통합기록](product-read-melon-integration-2026-10-26.md)에누적한다. 로컬취업용회고인덱스는공개대상에서제외하고다음금융개발은시작하지않는다.
+
+## 통합 웹 owner-direct 격리 쓰기 인수 (2026-10-26)
+
+- 기준83e13ec에서별도feat/c-owner-direct-integration/worktree. 기존wallet/intent/DirectService/Oracle/Receipt/MarginVault를재사용하며제품인증·계약·금융정책변경없음. CONFIRMED세션거래목록만기존C탭에추가한다.
+- 별도Linux PG/Anvil/Oracle/keyless제품Spring/시험EOAactor/실제Chrome버튼경로를준비했다. 기존readGate를먼저별도환경에서수행하고새쓰기Gate는최대3CI범위로검증한다. MetaMask수동인수는별도다.
+- 사전Python6+72/웹224/build/Javahelper4컴파일PASS. 실제발생한UTF8/잘못된enumimport/node_modules미설치와기존lock보안경고의경계를 [직접거래통합기록](product-owner-direct-integration-2026-10-26.md)에기록한다. 실환경결과는아직NOT_RUN이며검토·보안검사후에만개인개발branch에push한다.
+- 독립검토의지연ReceiptUI재노출지적을await후epoch/active검사와3경계회귀로해소했다. 전체웹225PASS, 검토자Python6+72/웹관련36/JS문법PASS, 최종필수수정없음. 신규CI최대3회의실제도달결과와예상장애를구분해기록한다.

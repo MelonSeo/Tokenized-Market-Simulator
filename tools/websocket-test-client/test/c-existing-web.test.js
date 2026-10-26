@@ -82,6 +82,33 @@ function deferred() { let resolve; const promise=new Promise(r=>resolve=r); retu
 const flush=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
 const textTree=e=>[e.textContent,...e.children.map(textTree)].join(' ');
 
+test('a late receipt cannot repopulate result or history after chain, account or logout invalidation',async()=>{
+  for(const change of ['chain','account','logout']){
+    const h=harness({cRequest:async()=>({body:{value:cfg}})});await h.panel.setContext({id:1},'custody');
+    const reply=deferred();h.panel.wallet.resolve=()=>reply.promise;
+    h.elements.get('c-resolve').onclick();await flush();
+    if(change==='chain')h.events.chainChanged();else await h.panel.setContext(change==='account'?{id:2}:null,change==='account'?'custody':'market');
+    reply.resolve({status:'CONFIRMED',txHash:'0x'+'c'.repeat(64),blockHash:'0x'+'d'.repeat(64),kind:'OPEN'});await flush();
+    assert.equal(h.elements.get('c-result').children.length,0,change);assert.equal(h.elements.get('c-history').children.length,0,change);
+  }
+});
+
+test('session receipt history is confirmed-only, deduplicated and cleared on wallet or JWT changes',async()=>{
+  const h=harness({cRequest:async path=>({body:path.endsWith('/config')?{value:cfg}:{value:{walletBalance:'0',free:'0',locked:'0',house:'0',totalUnpaidProfit:'0',allowanceToVault:'0'}}}),market:async()=>({body:{price:'75000'}})});
+  await h.panel.setContext({id:1},'custody');
+  let result={status:'PENDING',txHash:'0x'+'a'.repeat(64)};
+  h.panel.wallet.resolve=async()=>result;
+  h.elements.get('c-resolve').onclick();await flush();assert.equal(h.elements.get('c-history').children.length,0);
+  result={...result,status:'CONFIRMED',blockHash:'0x'+'b'.repeat(64),kind:'APPROVE'};
+  h.elements.get('c-resolve').onclick();await flush();assert.match(textTree(h.elements.get('c-history')),/APPROVE/);
+  const count=h.elements.get('c-history').children.length;
+  h.elements.get('c-resolve').onclick();await flush();assert.equal(h.elements.get('c-history').children.length,count);
+  h.events.chainChanged();assert.equal(h.elements.get('c-history').children.length,0);
+  h.elements.get('c-resolve').onclick();await flush();
+  await h.panel.setContext({id:2},'custody');assert.equal(h.elements.get('c-history').children.length,0);
+  await h.panel.setContext(null,'market');assert.equal(h.elements.get('c-history').children.length,0);
+});
+
 test('read-only C config keeps wallet/account reads but disables every financial control',async()=>{
   const calls=[];
   const h=harness({cRequest:async path=>{calls.push(path);return {body:path.endsWith('/config')?{value:{...cfg,readOnly:'true'}}:{value:{walletBalance:'1000000000000000000',free:'0',locked:'0',house:'0',totalUnpaidProfit:'0',allowanceToVault:'0'}}};},
