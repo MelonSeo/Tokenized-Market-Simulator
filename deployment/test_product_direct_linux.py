@@ -2,6 +2,9 @@ import ast,importlib.util,json,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 class DirectLinux(unittest.TestCase):
+ def test_gradle_source_list_is_explicit_method_call_not_index_access(self):
+  s=(ROOT/'deployment/product-direct-ci.gradle').read_text(encoding='utf8')
+  self.assertIn("source(['ProductDirectFixture'",s);self.assertNotIn("source ['",s)
  def module(self):
   spec=importlib.util.spec_from_file_location('direct_linux',ROOT/'deployment/product-direct-linux.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
  def test_separate_runtime_and_read_unchanged(self):

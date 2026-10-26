@@ -2938,3 +2938,4 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 별도Linux PG/Anvil/Oracle/keyless제품Spring/시험EOAactor/실제Chrome버튼경로를준비했다. 기존readGate를먼저별도환경에서수행하고새쓰기Gate는최대3CI범위로검증한다. MetaMask수동인수는별도다.
 - 사전Python6+72/웹224/build/Javahelper4컴파일PASS. 실제발생한UTF8/잘못된enumimport/node_modules미설치와기존lock보안경고의경계를 [직접거래통합기록](product-owner-direct-integration-2026-10-26.md)에기록한다. 실환경결과는아직NOT_RUN이며검토·보안검사후에만개인개발branch에push한다.
 - 독립검토의지연ReceiptUI재노출지적을await후epoch/active검사와3경계회귀로해소했다. 전체웹225PASS, 검토자Python6+72/웹관련36/JS문법PASS, 최종필수수정없음. 신규CI최대3회의실제도달결과와예상장애를구분해기록한다.
+- CI1/3 run40338840226은Gradle DSL의source목록해석오류로거래전중단. source메서드호출괄호만보완하고Python7/재검토필수수정없음. 금융/키분리/시험조건변경없이2차CI에서실제구성을확인한다.

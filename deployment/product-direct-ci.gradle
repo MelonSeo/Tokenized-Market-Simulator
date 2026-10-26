@@ -4,7 +4,7 @@ allprojects {
         if (p.plugins.hasPlugin('java')) {
             tasks.register('productDirectCiClasses', JavaCompile) {
                 dependsOn tasks.named('productReadCiClasses')
-                source ['ProductDirectFixture', 'ProductDirectDriver', 'ProductDirectGate', 'CDirectOracleServer'].collect { rootProject.file('../deployment/' + it + '.java') }
+                source(['ProductDirectFixture', 'ProductDirectDriver', 'ProductDirectGate', 'CDirectOracleServer'].collect { rootProject.file('../deployment/' + it + '.java') })
                 classpath = sourceSets.main.runtimeClasspath + files(layout.buildDirectory.dir('product-read-ci/helpers'))
                 destinationDirectory = layout.buildDirectory.dir('product-read-ci/helpers')
                 javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(21) }

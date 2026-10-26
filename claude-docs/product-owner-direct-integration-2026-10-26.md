@@ -40,3 +40,8 @@
 - 사용자결정: 개발범위·최대CI3회·기존경제정책·실제사용자승인전중단. Codex판단: 기존직접경로재사용,제품인증을대체하지않는시험프로필,독립actor/CDP시험어댑터,세션CONFIRMED목록최소보완. 기존시연서버재사용/키를Spring에주는우회는채택하지않았다.
 - 독립검토`review_product_direct_integration`: 최초지연Receipt의최종UI재노출경계를발견했다. core의마지막epoch검사후Promise/lock이UI로돌아오는사이계정전환이끼는조건이다. c-resolve의await이후에도epoch/active를재확인하고chain/JWT전환/logout3경계회귀를추가했다. 재검토 **발견된필수수정없음**. 직접Python6+72/관련웹36/JS문법/diffPASS. 구현자전체웹225/신규helper4javacPASS와구분한다. 실제새PG/Anvil/Oracle/Spring/Chrome5거래/MetaMask는아직미검증이다.
 - 첫실패의단계·고정오류코드만남기도록새browser stage와wallet-failure safeCode/causeType을추가했다. 원문서명/JWT/raw/개인키를기록하지않으며검토범위에포함했다.
+
+## CI 실행 장부 (최대 3회)
+
+1. commit89a148fdeda206b91bcce7d4495e973c5cd14344, run https://github.com/MelonSeo/Tokenized-Market-Simulator/actions/runs/40338840226 — FAIL. 도구/순수시험/웹225·build PASS후Gradle설정단계에서`FilteredFileTree.getAt(ArrayList)`오류. 새init의`source [list]`를Groovy가source속성인덱스접근으로해석했다. 실제PG/Anvil/읽기Gate/쓰기거래는NOT_RUN. `source([list].collect {...})`의명시메서드호출로최소수정하고회귀를추가했다. 새helper자체javac성공이Gradle DSL구성성공을보장하지않는실제사건이며금융결함과구분한다. 재검토·보안검사후에만2차push한다.
+- 해당최소수정재검토: 발견된필수수정없음. 검토자직접Python7/diff검사PASS, 실제Gradle평가와실환경은2차CI로검증한다.
