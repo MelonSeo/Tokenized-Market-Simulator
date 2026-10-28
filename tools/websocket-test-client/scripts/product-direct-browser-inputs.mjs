@@ -21,3 +21,17 @@ export function trialLoginState(document){
   submitDisabled:document.getElementById('auth-submit')?.disabled===true,
   logoutVisible:document.getElementById('logout')?.hidden===false};
 }
+
+/** Reduce URLs to fixed categories; never export IDs, queries, hosts or response bodies. */
+export function trialApiKind(url,origin){
+ try{
+  const u=new URL(url);if(u.origin!==origin)return null;
+  if(u.pathname==='/api/auth/login')return 'LOGIN';
+  if(u.pathname==='/api/me')return 'ME';
+  if(u.pathname==='/api/c-futures/config')return 'C_CONFIG';
+  if(u.pathname==='/api/c-futures/account')return 'C_ACCOUNT';
+  if(u.pathname.startsWith('/api/c-futures/wallet'))return 'C_WALLET';
+  if(u.pathname.startsWith('/api/c-futures/direct/intents'))return 'C_INTENT';
+  return u.pathname.startsWith('/api/')?'OTHER_API':null;
+ }catch{return null;}
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {trialPriceBounds,trialLoginReady,trialLoginState} from '../scripts/product-direct-browser-inputs.mjs';
+import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind} from '../scripts/product-direct-browser-inputs.mjs';
 import {runInNewContext} from 'node:vm';
 test('trial browser renders exact BigInt price bounds through the existing string codec',()=>{
  assert.deepEqual(trialPriceBounds('100'),{minimum:'95',maximum:'105'});
@@ -32,4 +32,14 @@ test('login failure snapshot contains only explicit booleans and no entered valu
  assert.deepEqual(row,{documentComplete:true,openHandler:true,submitHandler:true,dialogOpen:true,submitDisabled:false,logoutVisible:false});
  assert(!JSON.stringify(row).includes('DO_NOT_EXPORT'));
  assert(Object.values(row).every(value=>typeof value==='boolean'));
+});
+
+test('trial API observations remove IDs, queries, credentials and external URLs',()=>{
+ const origin='http://127.0.0.1:32173';
+ for(const [path,kind]of [['/api/auth/login','LOGIN'],['/api/me','ME'],['/api/c-futures/config','C_CONFIG'],['/api/c-futures/account','C_ACCOUNT'],['/api/c-futures/wallet/challenges','C_WALLET'],['/api/c-futures/direct/intents/DO_NOT_EXPORT/execution','C_INTENT'],['/api/unknown/DO_NOT_EXPORT','OTHER_API']]){
+  assert.equal(trialApiKind(origin+path+'?password=DO_NOT_EXPORT',origin),kind);
+ }
+ assert.equal(trialApiKind('https://external.invalid/api/me',origin),null);
+ assert.equal(trialApiKind('not a URL',origin),null);
+ assert.equal(trialApiKind(origin+'/assets/index.js',origin),null);
 });
