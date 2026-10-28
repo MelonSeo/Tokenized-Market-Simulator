@@ -1,0 +1,61 @@
+// Additional local manual helper only. Existing read/write CI tasks and workflow unchanged.
+allprojects {
+    afterEvaluate { p ->
+        if (p.plugins.hasPlugin('java')) {
+            def repo = rootProject.projectDir.parentFile
+            def digest = { f -> java.security.MessageDigest.getInstance('SHA-256').digest(f.bytes).encodeHex().toString() }
+            def inventory = { paths ->
+                def entries = [:]
+                paths.each { folder ->
+                    fileTree(new File(repo, folder)).files.sort().each { f ->
+                        entries[repo.toPath().relativize(f.toPath()).toString().replace('\\', '/')] = digest(f)
+                    }
+                }
+                entries
+            }
+            def sources = {
+                def entries = inventory(['backend/src/main', 'tools/websocket-test-client/src'])
+                fileTree(new File(repo, 'deployment')) { include '*.java' }.files.each { f -> entries['deployment/' + f.name] = digest(f) }
+                ['tools/websocket-test-client/index.html', 'tools/websocket-test-client/package.json', 'tools/websocket-test-client/package-lock.json'].each { n -> entries[n] = digest(new File(repo,n)) }
+                entries
+            }
+            tasks.register('productManualBegin') {
+                doLast {
+                    def dest = new File(repo, 'backend/build/product-manual-begin.json')
+                    dest.parentFile.mkdirs()
+                    dest.text = groovy.json.JsonOutput.toJson([source:sources()])
+                }
+            }
+            // This prerequisite runs before both compilation/resource copying and web build.
+            ['compileJava','processResources','productReadCiClasses','productDirectCiClasses'].each { name ->
+                tasks.named(name).configure { dependsOn tasks.named('productManualBegin') }
+            }
+            tasks.register('productManualClasses', JavaCompile) {
+                dependsOn tasks.named('productDirectCiClasses'), tasks.named('productManualBegin')
+                source(rootProject.file('../deployment/ProductManualActor.java'))
+                classpath = sourceSets.main.runtimeClasspath + files(layout.buildDirectory.dir('product-read-ci/helpers'))
+                destinationDirectory = layout.buildDirectory.dir('product-read-ci/helpers')
+                javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(21) }
+                options.release = 21
+                options.encoding = 'UTF-8'
+                options.compilerArgs += ['-parameters', '-proc:none']
+            }
+            def webRoot = rootProject.file('../tools/websocket-test-client')
+            tasks.register('productManualWeb', Exec) {
+                dependsOn tasks.named('productManualBegin')
+                workingDir webRoot
+                commandLine(System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm', 'run', 'build')
+            }
+            tasks.register('productManualBuildStamp') {
+                dependsOn tasks.named('productManualClasses'), tasks.named('productReadCiRuntime'), tasks.named('productManualWeb')
+                doLast {
+                    def src = sources()
+                    def before = new groovy.json.JsonSlurper().parse(new File(repo,'backend/build/product-manual-begin.json')).source
+                    if (before != src) throw new GradleException('MANUAL_SOURCE_CHANGED_DURING_BUILD')
+                    def outputs = inventory(['backend/build/classes/java/main', 'backend/build/resources/main', 'backend/build/product-read-ci/helpers', 'backend/build/product-read-ci/jars', 'tools/websocket-test-client/dist'])
+                    new File(repo, 'backend/build/product-manual-build.json').text = groovy.json.JsonOutput.toJson([source:src, outputs:outputs])
+                }
+            }
+        }
+    }
+}

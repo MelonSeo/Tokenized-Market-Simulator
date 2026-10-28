@@ -2940,3 +2940,15 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 독립검토의지연ReceiptUI재노출지적을await후epoch/active검사와3경계회귀로해소했다. 전체웹225PASS, 검토자Python6+72/웹관련36/JS문법PASS, 최종필수수정없음. 신규CI최대3회의실제도달결과와예상장애를구분해기록한다.
 - CI1/3 run40338840226은Gradle DSL의source목록해석오류로거래전중단. source메서드호출괄호만보완하고Python7/재검토필수수정없음. 금융/키분리/시험조건변경없이2차CI에서실제구성을확인한다.
 - CI2/3 run40339329063: readGate PASS/new쓰기서버ready후BROWSER입구OSError(BLOCKED). errno미기록으로근본원인미확정, 새write고정32173/strictOrigin일관분리와안전errno관측, 시험BigInt→문자열코덱보완. Python8+72/웹226/재검토필수수정없음. 실제5거래는최종3차CI로확인하며실패시추가실행하지않는다.
+
+## 통합 웹 C owner-direct 실제 MetaMask 인수 및 로컬 통합 — 2026-10-28
+
+- 기존 read-only Linux Gate와 시험 EOA 직접 거래 CI를 유지하고, 실제 사용자 확장 MetaMask에서 approve/deposit/OPEN/CLOSE/withdraw를 직접 승인했다. 다섯 canonical Receipt, 불변 실행 metadata와 실제 calldata/이벤트, 승인 범위/기한/정수 손익, CLOSED와 전액 free 인출 및 빈 pending을 읽기 전용으로 대조했다. 사용자 지갑/tx/배포 identity/DB/snapshot/인증 정보는 로컬 runtime에만 보존한다.
+- 수동 런처는 공개 주소만 받으며 사용자 서명 도구를 실행하지 않는다. keyless Spring과 별도 Oracle, 새 소유 자원/loopback/1920MiB·2GiB Guard를 유지한다. 신규 빈 Anvil 볼륨만 UID1000으로 초기화하고 RPC의 컨테이너 내부/네트워크/호스트 경계를 구분했다. internal network의 loopback 접근 장애는 수동용 소유 bridge로 한정해 해결했으며 전역/읽기 CI 네트워크 정책은 변경하지 않았다.
+- 사용자 승인으로 수동 App/Oracle/감독 프로세스만 STOP 전용으로 운영하고 기존 CI 수명·Report30/Intent120/시장5 정책은 유지했다. 실제 snapshot/같은 체인 복구와 기존 사용자 자산 보존을 검증했다. 복원 시각 오차는 별도 명시적 유지보수·proof/이력 보존으로 다뤘고 ACTIVE 담보 상태에 no-active 보정 도구를 재사용하지 않았다. 장시간/모든 Anvil 환경의 근본 해결을 주장하지 않는다.
+- CLOSE draft 상태가 탭 상단에만 있어 사용자가 반응을 확인하지 못했다. 버튼 인접 진행/오류와 비활성 이유를 추가하고 계정 전환 후 늦은 응답 차단을 유지했다. 가격 입력 오류는 요청 전 차단되며 CLOSE에서도 허용 가격 입력이 필요하다. runtime 정적 게시 검증의 CRLF 정규화 오탐은 바이트/SHA 검증으로 분리했고 최초 실패 증거를 보존했다.
+- MetaMask Activity 실패 표시와 같은 tx의 온체인 성공이 공존했다. 실제 다섯 Receipt/type/필수 필드/정규 hex/canonical 및 최종 자산을 별도 재조회했다. provider 전송은 한 번이며 Activity 상태를 변경하지 않는다. 근본 원인은 미확정이고 추측 수정하지 않았다. 자산 정합성 훼손 증거는 없지만 사용자가 재전송할 위험은 남아 pending 보존·기존 거래 조회를 유지한다.
+- 인증 조사는 고정5분의 수동 환경 JWT·메모리전용 보관·새로고침 재로그인과 거래별 로그아웃을 구분했다. 이번에 인증 만료 정책을 바꾸지 않았다. 로컬 인수는 Synthetic3초/Long/owner-direct 범위이며 relayer·전체감사·자동청산·AI·공개 배포 완료가 아니다.
+- 최종 검증/독립 검토/로컬 병합 결과는 `product-direct-final-acceptance-2026-10-28.md`에 기록한다. 원격 Push와 추가 사용자 거래는 하지 않는다. 로컬 취업 회고 인덱스는 비공개 유지한다.
+- 통합 전 회귀는 웹231, Python manual/clock56/read72/direct8, 관련 Java75 모두 PASS/FAIL0/SKIP0. 웹빌드와 실제 compiled helper self-test PASS. PATH의 비21 JDK와 수동 self-test 호출의 필수 transport flags 누락은 검증 프로세스의 실행 인자만 바로잡았으며 제품/검증 정책은 유지했다. 실제 전체 Linux Gate 재실행은 하지 않았고 기존 CI와 이번 회귀·실제 사용자 인수 범위를 분리했다.
+- 최종 독립 검토는 실제 index13파일과 기존3커밋에서 필수수정없음. 검토자 직접 Python56+8/웹41 PASS, 별도 MetaMask 조사자의 실제RPC5거래/현재자산/direct25 PASS와 구분한다. Gitleaks8.24.2는후보25파일832KB에서탐지0, 현재사용자/배포식별자와로컬설치경로/비공개파일0이나절대보증은아니다. 상세기록과runtime은커밋하지않고로컬병합전보존한다.

@@ -37,6 +37,55 @@ function harness(client) {
 }
 const cfg={custody:'C_ERC20_VAULT_CANONICAL_ASSETS',chainId:'31337',genesisHash:'0x'+'1'.repeat(64),deploymentId:'2'.repeat(64),
   token:'0x'+'1'.repeat(40),vault:'0x'+'2'.repeat(40),controller:'0x'+'3'.repeat(40),relayer:'0x'+'4'.repeat(40)};
+
+function fillOpen(h) {
+  for(const [id,value] of Object.entries({'c-action':'OPEN','c-side':'LONG','c-leverage':'2','c-collateral':'1000','c-min-price':'75000','c-max-price':'75500'}))h.elements.get(id).value=value;
+}
+
+test('draft input failure is visible beside the button as well as at the page top, without a POST',async()=>{
+  const calls=[];const h=harness({cRequest:async path=>{calls.push(path);return {body:{value:cfg}};}});
+  await h.panel.setContext({id:1},'custody');fillOpen(h);h.elements.get('c-min-price').value='';
+  await h.elements.get('c-prepare').onclick();
+  assert.match(h.elements.get('c-action-message').textContent,/소수점/);
+  assert.equal(h.elements.get('c-action-message').textContent,h.elements.get('c-message').textContent);
+  assert.equal(calls.length,1);assert.ok(!calls.some(p=>p.includes('/direct/')));
+});
+
+test('draft click shows progress immediately, then the unchanged blocking reason beside the button',async()=>{
+  const h=harness({cRequest:async()=>({body:{value:cfg}})});await h.panel.setContext({id:1},'custody');fillOpen(h);
+  let fail;h.panel.wallet.prepare=()=>new Promise((resolve,reject)=>{fail=reject;});
+  const pending=h.elements.get('c-prepare').onclick();
+  assert.match(h.elements.get('c-action-message').textContent,/draft 요청 준비 중/);
+  fail(new Error('이전 거래를 먼저 조회하세요. 자동 재주문하지 않습니다.'));await pending;
+  assert.match(h.elements.get('c-action-message').textContent,/이전 거래를 먼저 조회/);
+  assert.equal(h.elements.get('c-action-message').textContent,h.elements.get('c-message').textContent);
+});
+
+test('disabled draft controls explain config, busy and read-only reasons without unlocking them',async()=>{
+  const h=harness({cRequest:async()=>({body:{value:cfg}})});await h.panel.setContext({id:1},'custody');
+  assert.match(h.elements.get('c-control-state').textContent,/버튼 사용 가능/);
+  h.panel.wallet.busy=true;h.panel.wallet.changed();
+  assert.equal(h.elements.get('c-prepare').disabled,true);assert.match(h.elements.get('c-control-state').textContent,/처리 중/);
+  h.panel.wallet.busy=false;h.panel.wallet.cfg=null;h.panel.wallet.changed();
+  assert.equal(h.elements.get('c-prepare').disabled,true);assert.match(h.elements.get('c-control-state').textContent,/설정 확인 전/);
+  h.panel.wallet.cfg={...cfg,readOnly:'true'};h.panel.wallet.changed();
+  assert.equal(h.elements.get('c-prepare').disabled,true);assert.match(h.elements.get('c-control-state').textContent,/조회 전용/);
+});
+
+test('late draft failure after account switch or logout cannot expose the previous feedback',async()=>{
+  const h=harness({cRequest:async()=>({body:{value:cfg}})});await h.panel.setContext({id:1},'custody');fillOpen(h);
+  let fail;h.panel.wallet.prepare=()=>new Promise((resolve,reject)=>{fail=reject;});
+  const pending=h.elements.get('c-prepare').onclick();await h.panel.setContext(null,'market');
+  fail(new Error('previous account message'));await pending;
+  assert.equal(h.elements.get('c-action-message').textContent,'');assert.equal(h.elements.get('c-control-state').textContent,'');
+});
+
+test('inline action feedback is placed between draft controls and draft output with a live status role',()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.ok(html.indexOf('id="c-prepare"')<html.indexOf('id="c-action-message"'));
+  assert.ok(html.indexOf('id="c-action-message"')<html.indexOf('id="c-draft"'));
+  assert.match(html,/<p id="c-action-message"[^>]*role="status"[^>]*aria-live="polite"/);
+});
 test('unsupported C server disables controls without signing or fake balances',async()=>{
   const h=harness({cRequest:async()=>{throw {status:404};}});
   await h.panel.setContext({id:1},'custody');

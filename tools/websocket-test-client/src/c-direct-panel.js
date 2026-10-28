@@ -35,9 +35,9 @@ export function createCDirectPanel(client, unauthorized = () => {}, options = {}
     } });
 function fields(rows){const dl=document.createElement('dl');for(const [a,b]of rows)dl.append(node('dt',a),node('dd',String(b??'—')));return dl;}
 function raw(value){const d=document.createElement('details');d.append(node('summary','정확한 원본 값 / calldata'),node('pre',JSON.stringify(value,null,2)));return d;}
-function say(text){if(active)$('c-message').textContent=text;}
+function say(text){if(active){$('c-message').textContent=text;$('c-action-message').textContent=text;}}
 function money(n){try{return decimal(n,18)+' cMKRW';}catch{return '미확인';}}
-function update(){if(!active||!document.getElementById('c-connect'))return;for(const id of ['c-connect','c-link','c-refresh','c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-position-read','c-resolve','c-ack'])$(id).disabled=wallet.busy||!user||!wallet.cfg;try{const p=user&&wallet.cfg?wallet.pending():null;$('c-pending').replaceChildren(p?fields([['기존 단계',p.phase],['동작',p.kind??p.request?.action],['intentId',p.intentId],['txHash',p.txHash]]):node('p','이 브라우저에 기록된 미확정 C 거래 없음'));}catch(e){say(e.message);}if(wallet.cfg)$('c-identity').replaceChildren(fields([['로그인',user?.loginId??user?.id??user?.userId],['MetaMask',wallet.owner??'연결 전'],['chainId',wallet.cfg.chainId],['genesis',wallet.cfg.genesisHash],['controller',wallet.cfg.controller],['Vault',wallet.cfg.vault],['이 서버의 C 기능',wallet.cfg.readOnly==='true'?'조회·지갑 소유 증명 전용':'직접 거래 경로 설정됨']]));reportCountdown();if(wallet.cfg?.readOnly==='true')for(const id of ['c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-resolve'])$(id).disabled=true;}
+function update(){if(!active||!document.getElementById('c-connect'))return;for(const id of ['c-connect','c-link','c-refresh','c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-position-read','c-resolve','c-ack'])$(id).disabled=wallet.busy||!user||!wallet.cfg;$('c-control-state').textContent=!user?'같은 TMS 계정으로 로그인해야 합니다.':wallet.busy?'지갑·서버 요청 처리 중입니다. 중복으로 누르지 마세요.':!wallet.cfg?'C 서버 설정 확인 전에는 버튼을 사용할 수 없습니다.':wallet.cfg.readOnly==='true'?'현재 서버는 조회 전용이므로 거래 버튼을 사용할 수 없습니다.':'버튼 사용 가능 · 요청 진행과 실패 이유는 바로 아래에 표시됩니다.';try{const p=user&&wallet.cfg?wallet.pending():null;$('c-pending').replaceChildren(p?fields([['기존 단계',p.phase],['동작',p.kind??p.request?.action],['intentId',p.intentId],['txHash',p.txHash]]):node('p','이 브라우저에 기록된 미확정 C 거래 없음'));}catch(e){say(e.message);}if(wallet.cfg)$('c-identity').replaceChildren(fields([['로그인',user?.loginId??user?.id??user?.userId],['MetaMask',wallet.owner??'연결 전'],['chainId',wallet.cfg.chainId],['genesis',wallet.cfg.genesisHash],['controller',wallet.cfg.controller],['Vault',wallet.cfg.vault],['이 서버의 C 기능',wallet.cfg.readOnly==='true'?'조회·지갑 소유 증명 전용':'직접 거래 경로 설정됨']]));reportCountdown();if(wallet.cfg?.readOnly==='true')for(const id of ['c-approve','c-deposit','c-withdraw','c-prepare','c-price','c-send','c-resolve'])$(id).disabled=true;}
 function reportCountdown() {
   if (!active) return;
   $('c-send').disabled = true;
@@ -58,7 +58,7 @@ function reportCountdown() {
     say(error.message);
   }
 }
-async function act(task){const epoch=wallet.epoch;try{await task();}catch(e){if(epoch!==wallet.epoch||!active)return;say(e.code===4001?'사용자가 지갑 승인을 거절했습니다. 자동 재서명하지 않습니다.':e.message||'요청 실패');if(e.status===401){unauthorized();}}finally{update();}}
+async function act(task,progress){const epoch=wallet.epoch;try{if(progress)say(progress);await task();}catch(e){if(epoch!==wallet.epoch||!active)return;say(e.code===4001?'사용자가 지갑 승인을 거절했습니다. 자동 재서명하지 않습니다.':e.message||'요청 실패');if(e.status===401){unauthorized();}}finally{update();}}
 async function refresh(current = beginRead('account')) {
   try {
     const [a, m] = await Promise.all([api.get('/api/c-futures/account'), api.market()]);
@@ -90,7 +90,7 @@ $('c-position-read').onclick=()=>{
     } catch(error) { if(current())throw error; }
   });
 };
-$('c-prepare').onclick=()=>void act(async()=>{const r=request();const d=await wallet.prepare(r);$('c-position-id').value=d.intent.positionId;$('c-draft').replaceChildren(node('h3','고정 사용자 조건 · 아직 거래 승인 전'),fields([['intentId',d.intentId],['positionId',d.intent.positionId],['owner',d.intent.owner],['nonce',d.intent.nonce],['담보',money(d.intent.collateralAfter)],['사용자 유효기간(초)',d.intent.deadline]]),raw(d));$('c-consent').checked=false;say('draft 고정 완료. 새 실행 가격을 확인한 뒤 지갑 거래를 승인하세요.');});
+$('c-prepare').onclick=()=>act(async()=>{const r=request();const d=await wallet.prepare(r);$('c-position-id').value=d.intent.positionId;$('c-draft').replaceChildren(node('h3','고정 사용자 조건 · 아직 거래 승인 전'),fields([['intentId',d.intentId],['positionId',d.intent.positionId],['owner',d.intent.owner],['nonce',d.intent.nonce],['담보',money(d.intent.collateralAfter)],['사용자 유효기간(초)',d.intent.deadline]]),raw(d));$('c-consent').checked=false;say('draft 고정 완료. 새 실행 가격을 확인한 뒤 지갑 거래를 승인하세요.');},'draft 요청 준비 중입니다. 로그인·지갑·이전 거래 기록을 확인합니다.');
 $('c-price').onclick=()=>void act(async()=>{const e=await wallet.executionPrice();$('c-draft').append(node('h3','이번 실행 Report'),fields([['실행가격',decimal(e.report.priceE8,8)],['수량',decimal(e.report.quantity,18)],['담보',money(e.report.collateralAfter)],['Report 관측초',e.report.observedAt],['Report 만료초',e.report.validUntil],['시세 출처',e.market.provider]]),raw(e));$('c-consent').checked=false;say('실행 가격과 calldata를 확인하세요. Report 30초에 MetaMask 승인과 채굴 시간도 포함됩니다.');});
 $('c-send').onclick=()=>void act(async()=>{if(!$('c-consent').checked)throw new Error('표시된 거래 조건을 먼저 확인하세요.');const r=request(),p=wallet.pending();if(JSON.stringify(r)!==JSON.stringify(p?.request))throw new Error('입력 조건이 고정 draft와 다릅니다. 새 서명 전 draft를 명시적으로 해제하세요.');await wallet.sendDirect();say('owner 직접 거래 제출. 자동 재전송 없이 기존 거래를 조회하세요.');});
 $('c-resolve').onclick=()=>void act(async()=>{const epoch=wallet.epoch;const result=await wallet.resolve($('c-manual-hash').value||null);if(!active||epoch!==wallet.epoch)return;lastResult=result;$('c-result').replaceChildren(fields([['판정',lastResult.status],['txHash',lastResult.txHash],['기준 blockHash',lastResult.blockHash],['검증 범위',lastResult.scope]]),raw(lastResult));
@@ -112,6 +112,7 @@ $('c-consent').addEventListener('change',update);
       active = false; user = nextActive ? nextUser : null; contextKey = key;
       selected = null; lastResult = null; confirmed = []; wallet.context(user);
       for (const id of ['c-identity','c-account','c-position','c-draft','c-result','c-pending','c-range','c-history']) $(id).replaceChildren();
+      for (const id of ['c-action-message','c-control-state']) $(id).textContent = '';
       for (const id of ['c-asset-amount','c-collateral','c-min-price','c-max-price','c-position-id','c-manual-hash']) $(id).value = '';
       $('c-consent').checked = false;
       active = nextActive; initializing = active; update();

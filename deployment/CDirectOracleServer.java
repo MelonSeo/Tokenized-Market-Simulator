@@ -21,6 +21,11 @@ public final class CDirectOracleServer {
     private static final CEip712Verifier CRYPTO=new CEip712Verifier();
     static void check(boolean ok,String code){if(!ok)throw new IllegalArgumentException("C_DIRECT_ORACLE_"+code);}
     static long sessionSeconds(String value){long seconds=Long.parseLong(value);check(seconds>=30&&seconds<=3600,"LIFETIME");return seconds;}
+    static boolean manualStopOnly(String[] args){
+        if(args.length==6)return false; // Existing CI remains bounded by its unchanged numeric argument.
+        check(args.length==7&&args[5].equals("--manual-stop-only")
+            &&args[6].matches("ready(?:-[0-9a-f]{16})?\\.json"),"MANUAL_ARGS");return true;
+    }
     public static void main(String[] args)throws Exception{
         if(args.length==1&&args[0].equals("--self-test")){
             String target="0x"+"1".repeat(40);BigInteger chain=BigInteger.valueOf(31337);
@@ -30,9 +35,12 @@ public final class CDirectOracleServer {
             for(String invalid:List.of("0","29","3601","-1")){
                 try{sessionSeconds(invalid);throw new AssertionError("C_ORACLE_UNBOUNDED_SESSION");}catch(IllegalArgumentException expected){}
             }
+            check(!manualStopOnly(new String[]{"i","k","t","c","e","360"}),"BOUNDED_CI");
+            check(manualStopOnly(new String[]{"i","k","t","c","e","--manual-stop-only","ready.json"}),"STOP_ONLY");
+            try{manualStopOnly(new String[]{"i","k","t","c","e","--manual-stop-only","../ready.json"});throw new AssertionError();}catch(IllegalArgumentException expected){}
             System.out.println("C_DIRECT_ORACLE_COMPILED_NO_SOCKET_SELF_TEST_PASS");return;
         }
-        check(args.length==6,"ARGS");
+        boolean stopOnly=manualStopOnly(args);
         CCustodyIdentity id=JSON.readValue(Files.readAllBytes(Path.of(args[0])),CCustodyIdentity.class);
         String key=Files.readString(Path.of(args[1])).trim(),token=Files.readString(Path.of(args[2])).trim();
         check(key.matches("[0-9a-f]{64}")&&token.matches("[0-9a-f]{64}"),"PRIVATE_CONFIG");
@@ -41,8 +49,8 @@ public final class CDirectOracleServer {
         check(("0x"+Keys.getAddress(pair)).equals(id.oracle()),"FIXED_SIGNER");
         Path control=Path.of(args[3]),evidence=Path.of(args[4]);
         check(Files.isDirectory(control)&&Files.isDirectory(evidence),"OWNED_DIRECTORIES");
-        long seconds=sessionSeconds(args[5]);
-        long until=System.nanoTime()+Duration.ofSeconds(seconds).toNanos();
+        long seconds=stopOnly?0:sessionSeconds(args[5]);
+        long until=stopOnly?0:System.nanoTime()+Duration.ofSeconds(seconds).toNanos();
         var workers=Executors.newFixedThreadPool(2);
         HttpServer server=HttpServer.create(new InetSocketAddress("0.0.0.0",8091),8);server.setExecutor(workers);
         server.createContext("/sign",exchange->{
@@ -76,8 +84,8 @@ public final class CDirectOracleServer {
             }catch(Exception ignored){try{respond(exchange,503,Map.of("code","C_ORACLE_STOP_NO_RETRY"));}catch(Exception closed){exchange.close();}}
         });
         try{
-            server.start();Files.writeString(evidence.resolve("ready.json"),JSON.writeValueAsString(Map.of("deploymentId",id.deploymentId(),"oracle",id.oracle(),"sessionSeconds",seconds,"scope","INTERNAL_FIXED_REPORT_SIGNER_NOT_USER_OR_RELAYER")),StandardOpenOption.CREATE_NEW);
-            while(!Files.exists(control.resolve("STOP"))&&System.nanoTime()<until)Thread.sleep(100);
+            server.start();Files.writeString(evidence.resolve(stopOnly?args[6]:"ready.json"),JSON.writeValueAsString(Map.of("deploymentId",id.deploymentId(),"oracle",id.oracle(),"sessionSeconds",seconds,"stopOnly",stopOnly,"scope","INTERNAL_FIXED_REPORT_SIGNER_NOT_USER_OR_RELAYER")),StandardOpenOption.CREATE_NEW);
+            while(!Files.exists(control.resolve("STOP"))&&(stopOnly||System.nanoTime()<until))Thread.sleep(100);
         }finally{server.stop(1);workers.shutdownNow();}
     }
     static void validate(CCustodyIdentity id,Report r,Instant now){
