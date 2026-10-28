@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {BoundedCdp,pollBounded,fetchJsonBounded} from './cdp-boundary.mjs';
 import {findChrome} from './browser-executable.mjs';
 import {units} from '../src/c-direct-intent.js';
-import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind,trialErrorCode} from './product-direct-browser-inputs.mjs';
+import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind,trialErrorCode,trialAccountAtOrAfter} from './product-direct-browser-inputs.mjs';
 import {isAuthenticationFailure} from '../src/recovery.js';
 const c=JSON.parse(await readFile(process.argv[2],'utf8')),out=resolve(process.argv[3]);
 assert.equal(c.origin,'http://127.0.0.1:32173');assert.match(c.walletEndpoint,/^http:\/\/10\.254\.\d+\.\d+:8092$/);
@@ -29,6 +29,8 @@ async function confirm(kind){
  await poll(async()=>{const p=await pending();return p?.phase==='SUBMITTED';});
  await click('c-resolve');await poll(()=>evaluate("document.getElementById('c-result').textContent.includes('CONFIRMED')"));await idle();
  const p=await pending();assert.equal(p.phase,'RECEIPT_OBSERVED');assert.equal(p.result.status,'CONFIRMED');assert.equal(p.result.completeCoverage,false);
+ // CONFIRMED and wallet.busy=false do not mean refresh() has rendered the mined account state.
+ await poll(()=>evaluate(`(${trialAccountAtOrAfter.toString()})(document,${JSON.stringify(p.result.blockNumber)})`));
  history.push({kind,txHash:p.txHash,blockHash:p.result.blockHash,scope:p.result.scope});await click('c-ack');await idle();assert.equal(await pending(),null);
 }
 async function tick(){const first=await evaluate("fetch('/api/markets/mSEC').then(r=>r.json())");await poll(async()=>{const next=await evaluate("fetch('/api/markets/mSEC').then(r=>r.json())");return next.observedAt!==first.observedAt;});}

@@ -40,3 +40,12 @@ export function trialErrorCode(body){
  const codes=['AUTHENTICATION_REQUIRED','INVALID_TOKEN','C_AUTHENTICATION_REQUIRED','C_DIRECT_AUTHENTICATION_REQUIRED','C_DIRECT_PRICE_CHANGED','C_DIRECT_MARKET_UNAVAILABLE','C_REPORT_CANDIDATE_PRESTATE_EXPIRED'];
  return codes.includes(body?.code)?body.code:'OTHER_CODE';
 }
+
+/** Receipt rendering precedes the panel's asynchronous account refresh. */
+export function trialAccountAtOrAfter(document,receiptBlock){
+ const decimal=value=>typeof value==='string'&&/^(0|[1-9][0-9]*)$/.test(value);
+ if(!decimal(receiptBlock)||document.querySelectorAll('#c-account strong').length!==6)return false;
+ const label=Array.from(document.querySelectorAll('#c-account dt')).find(e=>e.textContent==='조회 기준 블록');
+ const rendered=label?.nextElementSibling?.textContent;
+ return decimal(rendered)&&BigInt(rendered)>=BigInt(receiptBlock);
+}

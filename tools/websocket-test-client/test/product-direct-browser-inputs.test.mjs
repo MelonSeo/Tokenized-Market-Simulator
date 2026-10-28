@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind,trialErrorCode} from '../scripts/product-direct-browser-inputs.mjs';
+import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind,trialErrorCode,trialAccountAtOrAfter} from '../scripts/product-direct-browser-inputs.mjs';
 import {runInNewContext} from 'node:vm';
 test('trial browser renders exact BigInt price bounds through the existing string codec',()=>{
  assert.deepEqual(trialPriceBounds('100'),{minimum:'95',maximum:'105'});
@@ -48,4 +48,22 @@ test('error observations expose only fixed codes, not arbitrary body content',()
  assert.equal(trialErrorCode({code:'AUTHENTICATION_REQUIRED',accessToken:'DO_NOT_EXPORT'}),'AUTHENTICATION_REQUIRED');
  assert.equal(trialErrorCode({code:'INVALID_TOKEN'}),'INVALID_TOKEN');
  for(const body of [{code:'DO_NOT_EXPORT'},null,{message:'DO_NOT_EXPORT'},'DO_NOT_EXPORT'])assert.equal(trialErrorCode(body),'OTHER_CODE');
+});
+
+test('receipt confirmation cannot reuse an account rendering from before the mined transaction',()=>{
+ let block='19',count=6;
+ const label={textContent:'조회 기준 블록',get nextElementSibling(){return {textContent:block};}};
+ const document={querySelectorAll:selector=>selector==='#c-account strong'?Array(count):[label]};
+ assert.equal(trialAccountAtOrAfter(document,'20'),false);
+ block='20';assert.equal(trialAccountAtOrAfter(document,'20'),true);
+ block='21';assert.equal(trialAccountAtOrAfter(document,'20'),true);
+ block='9007199254740993';assert.equal(trialAccountAtOrAfter(document,'9007199254740994'),false);
+ block='9007199254740994';assert.equal(trialAccountAtOrAfter(document,'9007199254740994'),true);
+ for(const invalid of [undefined,'—','0x14','20.0','-1']){
+  assert.equal(trialAccountAtOrAfter(document,invalid),false);
+  block=invalid;assert.equal(trialAccountAtOrAfter(document,'20'),false);
+ }
+ block='20';count=0;assert.equal(trialAccountAtOrAfter(document,'20'),false);
+ assert.equal(trialAccountAtOrAfter({querySelectorAll:s=>s==='#c-account strong'?Array(6):[]},'20'),false);
+ count=6;assert.equal(runInNewContext(`(${trialAccountAtOrAfter.toString()})(document,'20')`,{document}),true);
 });
