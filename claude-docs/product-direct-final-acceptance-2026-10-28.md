@@ -94,6 +94,10 @@ python deployment/product-manual.py stop <session-path>
 - 현재 웹 프로덕션 빌드 PASS(107 modules). 서버의 복사된 실행 bundle은 건드리지 않았다. 금융 계약·제품 Java·JWT/Oracle 정책의 새 수정은 없다.
 - 실제 index와 들어오는 기존 커밋의 25파일·약832KB를 Gitleaks 8.24.2 및 식별자/금지파일 검사로 확인했다. 탐지0, 현재 사용자 지갑/실거래/배포 식별자0, 설치 절대경로0, 비공개 파일0. 절대적인 무유출 보장은 아니다.
 - 최종 독립 검토: **발견된 필수 수정 없음**. 실제 index13파일과 기존3커밋, source/자원/소유권/금융·인증·TTL·pending 경계를 대조했고 검토자가 Python manual/clock56+direct8 및 웹41을 직접 PASS했다. MetaMask 별도 독립 조사는 실제5Receipt/현재자산과 direct25회귀를 확인했으나 근본원인은 미확정이다. 검토자는 Java75/전체웹231 또는 사용자서명을 직접 실행한 것으로 표시하지 않았다.
-- 로컬 커밋과 병합 후 결과는 완료 후 기록한다. 새 실환경 Gate나 추가 거래는 실행하지 않았다.
+- 로컬 통합 완료: 선별 13파일을 `e90b5865f620400edad2db03570b9c84933a48ed`로 커밋하고, `melon-init`의 `83e13ec4997de44a782132d08de666045b658902`에서 해당 커밋까지 **fast-forward** 병합했다. 기존 owner-direct 3커밋도 이력 그대로 포함되며 force/reset/stash 없이 처리했다.
+- 병합된 `melon-init`에서 Python manual/clock56 + read72 + direct8 = **136 PASS**, 웹 **231 PASS**, 관련 Java **75 PASS**, 웹 build 및 실제 manual/Oracle compiled self-test **PASS**를 다시 확인했다. FAIL/SKIP 0. 단일 worker·제한 힙·오프라인 의존성으로 순차 실행했으며 서버를 재시작하지 않았다.
+- 23개 worktree와 기존 미커밋 파일 **443개**의 내용 해시가 유지됐다. HEAD 변경은 승인된 feature와 melon-init 두 브랜치뿐이다. 루트의 기존 미커밋 운영 파일6개, 상세 사용자 로그와 회고는 섞어 커밋하지 않았다.
+- 병합 후 실제 인수 서버의 PG/Anvil/Oracle/App 실행, 동일 최종 자산·nonce, 5개의 원래 canonical Receipt 및 빈 pending을 읽기 전용 재확인했다. 비공개 증거는 기존 lifecycle에 별도 기록했고 원본 거래·snapshot을 덮어쓰지 않았다.
+- 새 실환경 Gate/추가 사용자 거래/원격 Push/Actions 실행/재배포는 하지 않았다. 이 문서의 후속 결과 기록은 동작에 영향 없는 별도 로컬 문서 커밋이다.
 - 원래 read/direct CI의 판정 기준과 workflow는 완화하지 않는다. 이번 작업은 로컬 검증·병합이며 CI 재실행 또는 원격 Push는 하지 않는다.
 - 로컬 상세 인수 보고서·회고·runtime은 커밋하지 않는다. `implementation-log.md`에는 익명화된 통합 기록만 선별 반영한다.

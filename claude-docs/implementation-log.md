@@ -2952,3 +2952,10 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 최종 검증/독립 검토/로컬 병합 결과는 `product-direct-final-acceptance-2026-10-28.md`에 기록한다. 원격 Push와 추가 사용자 거래는 하지 않는다. 로컬 취업 회고 인덱스는 비공개 유지한다.
 - 통합 전 회귀는 웹231, Python manual/clock56/read72/direct8, 관련 Java75 모두 PASS/FAIL0/SKIP0. 웹빌드와 실제 compiled helper self-test PASS. PATH의 비21 JDK와 수동 self-test 호출의 필수 transport flags 누락은 검증 프로세스의 실행 인자만 바로잡았으며 제품/검증 정책은 유지했다. 실제 전체 Linux Gate 재실행은 하지 않았고 기존 CI와 이번 회귀·실제 사용자 인수 범위를 분리했다.
 - 최종 독립 검토는 실제 index13파일과 기존3커밋에서 필수수정없음. 검토자 직접 Python56+8/웹41 PASS, 별도 MetaMask 조사자의 실제RPC5거래/현재자산/direct25 PASS와 구분한다. Gitleaks8.24.2는후보25파일832KB에서탐지0, 현재사용자/배포식별자와로컬설치경로/비공개파일0이나절대보증은아니다. 상세기록과runtime은커밋하지않고로컬병합전보존한다.
+
+### melon-init 로컬 통합 및 병합 후 재검증 완료 — 2026-10-28
+
+- 소스 통합 커밋 `e90b5865f620400edad2db03570b9c84933a48ed`를 기준 `83e13ec4997de44a782132d08de666045b658902`에서 fast-forward 병합했다. 기존 직접 거래 통합3커밋의 이력을 유지했고 원격 Push/force/reset/stash/다른 브랜치 변경은 하지 않았다.
+- 병합 후 동일 소스에서 Python136(manual/clock56/read72/direct8), 웹231, 관련Java75 PASS/FAIL0/SKIP0. 웹 프로덕션 빌드와 실제 compiled manual/Oracle self-test도 PASS. 실제 전체 Linux CI 재실행, 신규 PG/Anvil Gate 또는 추가 사용자 거래를 실행한 것으로 확대하지 않는다.
+- 기존23 worktree/미커밋443파일의 바이트 해시를 전후 대조해 모두 보존했다. HEAD 변경은 승인된feature/melon-init뿐이다. 상세 사용자 지갑·거래·운영 로그는 로컬 작업 파일/ignored runtime에 보존했고 index에는 익명 요약만 선별했다. 루트 사용자운영6파일도 유지했다.
+- 병합 후 기존 인수 서버4역할 정상 실행, 최종자산/nonce와 기존5canonicalReceipt/빈pending 일치를 실제 읽기 확인했다. 재시작·재전송·새배포·초기화 없음. MetaMask실패표시 rootcause미확정과 실제거래정합성은 구분한다. 공개 최종 결과는 `product-direct-final-acceptance-2026-10-28.md`, 상세증거와 회고인덱스는 비공개 runtime에 남긴다.
