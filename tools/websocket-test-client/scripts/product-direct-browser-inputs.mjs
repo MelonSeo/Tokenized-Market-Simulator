@@ -35,3 +35,8 @@ export function trialApiKind(url,origin){
   return u.pathname.startsWith('/api/')?'OTHER_API':null;
  }catch{return null;}
 }
+
+export function trialErrorCode(body){
+ const codes=['AUTHENTICATION_REQUIRED','INVALID_TOKEN','C_AUTHENTICATION_REQUIRED','C_DIRECT_AUTHENTICATION_REQUIRED','C_DIRECT_PRICE_CHANGED','C_DIRECT_MARKET_UNAVAILABLE','C_REPORT_CANDIDATE_PRESTATE_EXPIRED'];
+ return codes.includes(body?.code)?body.code:'OTHER_CODE';
+}

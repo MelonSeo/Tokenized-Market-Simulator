@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {BoundedCdp,pollBounded,fetchJsonBounded} from './cdp-boundary.mjs';
 import {findChrome} from './browser-executable.mjs';
 import {units} from '../src/c-direct-intent.js';
-import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind} from './product-direct-browser-inputs.mjs';
+import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind,trialErrorCode} from './product-direct-browser-inputs.mjs';
 import {isAuthenticationFailure} from '../src/recovery.js';
 const c=JSON.parse(await readFile(process.argv[2],'utf8')),out=resolve(process.argv[3]);
 assert.equal(c.origin,'http://127.0.0.1:32173');assert.match(c.walletEndpoint,/^http:\/\/10\.254\.\d+\.\d+:8092$/);
@@ -14,6 +14,7 @@ await mkdir(out);const profile=await mkdtemp(join(out,'profile-')),end=Date.now(
 let child,cdp,exited=false,spawnFailed=false,passed=false,failure=null,stage='START';const history=[],images=[];
 let runtimeError=false,loginState=null;const loginHttp=[];
 let mainNavigations=0,stompError=false,stompAuthError=false,lastCommand=null,failureCommand=null;const apiStatus=[];
+const diagnosticTasks=[];
 const budget=n=>Math.min(n,end-Date.now());const poll=fn=>pollBounded(fn,{timeoutMs:budget(15000),intervalMs:100});
 const command=(m,p={})=>{lastCommand=m;return cdp.command(m,p,budget(8000));};
 const evaluate=async expression=>{const r=await command('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});assert(!r.exceptionDetails,'UI evaluation');return r.result.value;};
@@ -54,7 +55,8 @@ try{
   if(m.method==='Runtime.exceptionThrown')runtimeError=true;
   if(m.method==='Page.frameNavigated'&&!m.params.frame.parentId)mainNavigations++;
   if(m.method==='Network.webSocketFrameReceived'){const body=m.params.response?.payloadData;if(typeof body==='string'&&body.startsWith('ERROR\n')){stompError=true;stompAuthError=stompAuthError||isAuthenticationFailure({body});}}
-  if(m.method==='Network.responseReceived'){try{const r=m.params.response,kind=trialApiKind(r.url,c.origin);if(kind&&Number.isInteger(r.status)&&r.status>=100&&r.status<=599){if(apiStatus.length===64)apiStatus.shift();apiStatus.push({kind,status:r.status});if(kind==='LOGIN'&&loginHttp.length<16)loginHttp.push(r.status);}}catch{}}
+  if(m.method==='Network.responseReceived'){try{const r=m.params.response,kind=trialApiKind(r.url,c.origin);if(kind&&Number.isInteger(r.status)&&r.status>=100&&r.status<=599){if(apiStatus.length===64)apiStatus.shift();const row={kind,status:r.status};apiStatus.push(row);if(kind==='LOGIN'&&loginHttp.length<16)loginHttp.push(r.status);
+   if(kind==='C_INTENT'&&r.status>=400&&diagnosticTasks.length<16)diagnosticTasks.push(cdp.command('Network.getResponseBody',{requestId:m.params.requestId},budget(1000)).then(result=>{try{row.code=!result.base64Encoded&&result.body.length<=4096?trialErrorCode(JSON.parse(result.body)):'OTHER_CODE';}catch{row.code='OTHER_CODE';}}).catch(()=>{row.code='UNAVAILABLE';}));}}catch{}}
   if(m.method!=='Runtime.bindingCalled'||m.params.name!=='__trialWallet')return;
   void(async()=>{const request=JSON.parse(m.params.payload);let value,error;try{value=await wallet('/rpc',request.call);}catch{error='TRIAL_WALLET_STOP_NO_RETRY';}await evaluate(`window.__trialReply(${JSON.stringify(request.id)},${JSON.stringify(value??null)},${JSON.stringify(error??null)})`);})().catch(()=>{failure='WALLET_BRIDGE';});
  });
@@ -70,5 +72,5 @@ try{
  await click('c-position-read');await poll(()=>evaluate("document.getElementById('c-position').textContent.includes('CLOSED')"));await idle();await shot('02-final-account','#c-account');await shot('03-closed','#c-position');
  assert.equal(history.length,5);assert.equal(await evaluate("document.querySelectorAll('#c-history dl').length"),5);await shot('04-verified-history','#c-history');assert(!failure);await wallet('/finish',{});passed=true;
 }catch(e){failure=e.code??e.name??'DIRECT_BROWSER_FAILED';failureCommand=lastCommand;}
-finally{if(cdp){try{loginState=await evaluate(`(${trialLoginState.toString()})(document)`);}catch{}await cdp.close();}if(child&&!exited&&!spawnFailed){child.kill();try{await pollBounded(()=>exited,{timeoutMs:3000});}catch{passed=false;failure='OWNED_CHROME_EXIT';}}
+finally{if(cdp){await Promise.allSettled(diagnosticTasks);try{loginState=await evaluate(`(${trialLoginState.toString()})(document)`);}catch{}await cdp.close();}if(child&&!exited&&!spawnFailed){child.kill();try{await pollBounded(()=>exited,{timeoutMs:3000});}catch{passed=false;failure='OWNED_CHROME_EXIT';}}
  await writeFile(join(out,'result.json'),JSON.stringify({status:passed?'PASS':'BLOCKED',failure,stage,history,images,loginState,loginHttp,apiStatus,mainNavigations,stompError,stompAuthError,failureCommand,runtimeError,trialEoa:true,realMetaMask:false,childCleanupComplete:!child||exited||spawnFailed},null,2),{flag:'wx'});if(!passed)process.exitCode=1;}

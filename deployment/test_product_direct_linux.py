@@ -34,6 +34,14 @@ class DirectLinux(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d);live=p/'live';live.mkdir();(live/'result.json').write_text('{"status":"PASS"}');(live/'keys.private.json').write_text('SECRET')
    m.safe_artifacts(live,p/'public',['SECRET']);self.assertFalse((p/'public/keys.private.json').exists())
+ def test_execution_failure_artifact_contains_only_safe_metadata(self):
+  m=self.module()
+  with tempfile.TemporaryDirectory() as d:
+   p=Path(d);live=p/'live';(live/'appEvidence').mkdir(parents=True)
+   data={'statusAtFilter':200,'bearerHeaderPresent':True,'causeTypes':['java.lang.IllegalArgumentException'],'rulesReportTimeRejected':True}
+   (live/'appEvidence/execution-failure.json').write_text(json.dumps(data));(live/'appEvidence/raw.private.log').write_text('SECRET')
+   m.safe_artifacts(live,p/'public',['SECRET']);self.assertEqual(json.loads((p/'public/appEvidence/execution-failure.json').read_text()),data)
+   self.assertFalse((p/'public/appEvidence/raw.private.log').exists())
  def test_workflow_runs_read_before_write_on_personal_integration_branches(self):
   w=(ROOT/'.github/workflows/product-direct-linux.yml').read_text()
   self.assertIn('branches: [melon-init, feat/c-owner-direct-integration]',w);self.assertIn("github.repository == 'MelonSeo/Tokenized-Market-Simulator'",w)

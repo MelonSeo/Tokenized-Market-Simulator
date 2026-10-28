@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind} from '../scripts/product-direct-browser-inputs.mjs';
+import {trialPriceBounds,trialLoginReady,trialLoginState,trialApiKind,trialErrorCode} from '../scripts/product-direct-browser-inputs.mjs';
 import {runInNewContext} from 'node:vm';
 test('trial browser renders exact BigInt price bounds through the existing string codec',()=>{
  assert.deepEqual(trialPriceBounds('100'),{minimum:'95',maximum:'105'});
@@ -42,4 +42,10 @@ test('trial API observations remove IDs, queries, credentials and external URLs'
  assert.equal(trialApiKind('https://external.invalid/api/me',origin),null);
  assert.equal(trialApiKind('not a URL',origin),null);
  assert.equal(trialApiKind(origin+'/assets/index.js',origin),null);
+});
+
+test('error observations expose only fixed codes, not arbitrary body content',()=>{
+ assert.equal(trialErrorCode({code:'AUTHENTICATION_REQUIRED',accessToken:'DO_NOT_EXPORT'}),'AUTHENTICATION_REQUIRED');
+ assert.equal(trialErrorCode({code:'INVALID_TOKEN'}),'INVALID_TOKEN');
+ for(const body of [{code:'DO_NOT_EXPORT'},null,{message:'DO_NOT_EXPORT'},'DO_NOT_EXPORT'])assert.equal(trialErrorCode(body),'OTHER_CODE');
 });

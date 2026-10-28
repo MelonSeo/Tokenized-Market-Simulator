@@ -167,7 +167,7 @@ def run(path):
 def safe_artifacts(live,destination,secrets):
  """Explicit public allowlist, never recursively upload runtime or browser profiles."""
  destination.mkdir(exist_ok=False)
- allowed=['result.json','fixture-public/test-chain.json','walletEvidence/direct-result.json','walletEvidence/wallet-failure.json','browser/result.json','browser/01-open.png','browser/02-final-account.png','browser/03-closed.png','browser/04-verified-history.png']
+ allowed=['result.json','fixture-public/test-chain.json','appEvidence/execution-failure.json','walletEvidence/direct-result.json','walletEvidence/wallet-failure.json','browser/result.json','browser/01-open.png','browser/02-final-account.png','browser/03-closed.png','browser/04-verified-history.png']
  forbidden=re.compile(rb'-----BEGIN [A-Z ]*PRIVATE KEY-----|Bearer [A-Za-z0-9_.-]+|gh[pousr]_[A-Za-z0-9_]+')
  manifest={}
  for name in allowed:
