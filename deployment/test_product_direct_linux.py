@@ -34,11 +34,17 @@ class DirectLinux(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d);live=p/'live';live.mkdir();(live/'result.json').write_text('{"status":"PASS"}');(live/'keys.private.json').write_text('SECRET')
    m.safe_artifacts(live,p/'public',['SECRET']);self.assertFalse((p/'public/keys.private.json').exists())
- def test_workflow_runs_read_before_write_and_is_development_only(self):
+ def test_workflow_runs_read_before_write_on_personal_integration_branches(self):
   w=(ROOT/'.github/workflows/product-direct-linux.yml').read_text()
-  self.assertIn('branches: [feat/c-owner-direct-integration]',w);self.assertIn("github.repository == 'MelonSeo/Tokenized-Market-Simulator'",w)
+  self.assertIn('branches: [melon-init, feat/c-owner-direct-integration]',w);self.assertIn("github.repository == 'MelonSeo/Tokenized-Market-Simulator'",w)
   self.assertLess(w.index('product-read-linux.py run'),w.index('product-direct-linux.py run'))
   self.assertIn('contents: read',w);self.assertIn('productDirectCiClasses',w);self.assertNotIn('secrets.',w)
+ def test_workflow_job_matches_trigger_without_widening_repository_or_cleanup(self):
+  w=(ROOT/'.github/workflows/product-direct-linux.yml').read_text()
+  self.assertIn("if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && (github.ref == 'refs/heads/melon-init' || github.ref == 'refs/heads/feat/c-owner-direct-integration')",w)
+  self.assertNotIn('pull_request_target',w);self.assertNotIn('workflow_dispatch',w)
+  for required in ['timeout-minutes: 30','cancel-in-progress: false','retention-days: 1','python3 -B deployment/product-read-linux.py cleanup','python3 -B deployment/product-direct-linux.py cleanup']:
+   self.assertIn(required,w)
  def test_trial_wallet_separation_and_bounded_flow(self):
   s=(ROOT/'deployment/product-direct-linux.py').read_text(encoding='utf8');b=(ROOT/'tools/websocket-test-client/scripts/product-direct-browser.mjs').read_text(encoding='utf8')
   self.assertIn('DIRECT_WALLET_TOKEN',s);self.assertIn("mount(live/'keys','/keys')",s)

@@ -2959,3 +2959,10 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 병합 후 동일 소스에서 Python136(manual/clock56/read72/direct8), 웹231, 관련Java75 PASS/FAIL0/SKIP0. 웹 프로덕션 빌드와 실제 compiled manual/Oracle self-test도 PASS. 실제 전체 Linux CI 재실행, 신규 PG/Anvil Gate 또는 추가 사용자 거래를 실행한 것으로 확대하지 않는다.
 - 기존23 worktree/미커밋443파일의 바이트 해시를 전후 대조해 모두 보존했다. HEAD 변경은 승인된feature/melon-init뿐이다. 상세 사용자 지갑·거래·운영 로그는 로컬 작업 파일/ignored runtime에 보존했고 index에는 익명 요약만 선별했다. 루트 사용자운영6파일도 유지했다.
 - 병합 후 기존 인수 서버4역할 정상 실행, 최종자산/nonce와 기존5canonicalReceipt/빈pending 일치를 실제 읽기 확인했다. 재시작·재전송·새배포·초기화 없음. MetaMask실패표시 rootcause미확정과 실제거래정합성은 구분한다. 공개 최종 결과는 `product-direct-final-acceptance-2026-10-28.md`, 상세증거와 회고인덱스는 비공개 runtime에 남긴다.
+
+### 개인 melon-init Push와 최종 Linux 조회/직접거래 CI 연결 — 2026-10-28 진행 중
+
+- 사용자 승인에 따라 personal/melon-init을 fetch했다. 원격83e13ec와 로컬4ffc0f4는0/5로 fast-forward 가능하며 Organization 원격은 변경하지 않는다. 기존23 worktree/미커밋을 별도 로컬 inventory로 보존했다.
+- read workflow는이미melon-init이지만owner-direct는feature만허용해통합후검증이누락되는것을확인했다. owner-direct push목록과repository/job조건에만melon-init을추가하고기존feature조건/최소token권한/실행한도/검증단계/정제Artifact/소유자원cleanup을유지했다. 두workflow에서기존read검증이중복되지만owner-direct내read검증을삭제해범위를줄이지않았다.
+- 기존scope회귀를승인된두branch의정확한allowlist로갱신하고job/trigger/저장소제한/cleanup/timeout유지회귀를추가했다. 제품금융/인증/계약/Fixture조건/사용자자산변경없음. 테스트·독립검토·보안검사후별도commit/personal에만push하고동일SHA의두Linux실행결과를확인한다.
+- 독립 검토 결과필수수정없음. 구현자/검토자각각direct9/read72회귀와YAML/권한/조건검사PASS. 원격에올라갈기존5커밋전체패치와새수정약271.54KB를Gitleaks8.24.2로검사해탐지0, 현재사용자지갑/실거래/배포식별자·비공개파일·로컬설치절대경로0이었다. 절대적인무유출보장은아니다. 실제CI는이후최종SHA에서판정한다.

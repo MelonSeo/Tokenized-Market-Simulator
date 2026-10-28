@@ -1,7 +1,7 @@
 name: Linux owner-direct integration gate
 on:
   push:
-    branches: [feat/c-owner-direct-integration]
+    branches: [melon-init, feat/c-owner-direct-integration]
 permissions:
   contents: read
 concurrency:
@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   read-gate:
-    if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && github.ref == 'refs/heads/feat/c-owner-direct-integration'
+    if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && (github.ref == 'refs/heads/melon-init' || github.ref == 'refs/heads/feat/c-owner-direct-integration')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
