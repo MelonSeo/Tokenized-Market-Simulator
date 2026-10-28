@@ -44,6 +44,18 @@ public class CReportCandidateBuilderTest {
         CReportCandidateBuilder builder(){return new CReportCandidateBuilder(configured(),i->read.apply(i),new MarketPriceService(provider),time,"mSEC");}
     }
     static String code(Runnable r){return assertThrows(CCustodyFailure.class,r::run).code();}
+    @Test void freshRpcObservationCannotMakeAStoppedBlockCurrentForANewMarketTick(){
+        var f=new Fixture();var i=change(open(),"issuedAt",BigInteger.valueOf(NOW.minusSeconds(10).getEpochSecond()));
+        i=change(i,"deadline",BigInteger.valueOf(NOW.plusSeconds(100).getEpochSecond()));
+        f.read=v->{var original=observation(v,NOW);return new Observation<>(original.deploymentId(),
+            new Point("100",hash(100),hash(99),Long.toString(NOW.minusSeconds(3).getEpochSecond())),NOW,original.value());};
+        var fixed=i;var error=assertThrows(com.pricetrack.exchange.custody.proof.CRulesTransitionVerifier.Rejected.class,()->f.builder().build(fixed));
+        assertEquals("C_RULES_REPORT_TIME",error.getMessage());
+        // Normal advancing blocks may be up to two seconds behind the new observation; no bound is relaxed.
+        f.read=v->{var original=observation(v,NOW);return new Observation<>(original.deploymentId(),
+            new Point("101",hash(101),hash(100),Long.toString(NOW.minusSeconds(2).getEpochSecond())),NOW,original.value());};
+        assertEquals(BigInteger.valueOf(NOW.getEpochSecond()),f.builder().build(fixed).report().observedAt());
+    }
     @Test void openIsExactUnsignedCandidateWithSeparatePriceDomain()throws Exception{
         var f=new Fixture();var i=open();var c=f.builder().build(i);var r=c.report();assertEquals(BigInteger.valueOf(100),r.quantity());assertEquals(E8.multiply(BigInteger.valueOf(100)),r.priceE8());assertEquals(r.priceE8(),r.entryPriceE8());
         assertEquals(i.operationId(),r.operationId());assertEquals(i.positionId(),r.positionId());assertEquals(i.accountRef(),r.accountRef());assertEquals(i.symbolHash(),r.symbolHash());assertEquals(i.policyHash(),r.policyHash());assertEquals(i.collateralAfter(),r.collateralAfter());assertEquals(i.expectedVersion(),r.expectedVersion());assertEquals(i.expectedCallEpoch(),r.expectedCallEpoch());assertEquals(i.side(),r.side());assertEquals(i.leverage(),r.leverage());

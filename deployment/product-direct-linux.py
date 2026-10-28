@@ -19,6 +19,11 @@ def execute(args,timeout=30,**options):return subprocess.run(list(map(str,args))
 def command(args,timeout=30):
  r=execute(args,timeout);need(r.returncode==0,'COMMAND_FAILED');return r.stdout.decode('utf8').strip()
 def docker(*args,timeout=30):return command(['docker',*args],timeout)
+def anvil_parameters():
+ # Normal wall-time interval mining keeps idle latest headers current for new market observations.
+ # Test chain only: no timestamp override, forced mining RPC, or product Report/Intent policy change.
+ return ['--host','0.0.0.0','--port','8545','--accounts','0','--chain-id','31337','--block-time','1','--silent']
+
 def sources():
  paths=[p for folder in ['backend/src/main','contracts/src','tools/websocket-test-client/src'] for p in (ROOT/folder).rglob('*') if p.is_file()]
  paths += [ROOT/'deployment'/(name+'.java') for name in HELPERS]
@@ -26,6 +31,7 @@ def sources():
  paths += [ROOT/n for n in ['.github/workflows/product-read-linux.yml','backend/build.gradle','backend/gradle/wrapper/gradle-wrapper.properties','contracts/foundry.toml','tools/websocket-test-client/index.html','tools/websocket-test-client/package.json','tools/websocket-test-client/package-lock.json']]
  paths += [ROOT/'tools/websocket-test-client/scripts'/n for n in ['product-read-browser.mjs','cdp-boundary.mjs','c-live-browser-smoke.mjs','browser-executable.mjs']]
  paths += [ROOT/'tools/websocket-test-client/test/browser-executable.test.mjs']
+ paths += [ROOT/'backend/src/test/java/com/pricetrack/exchange/custody/authorization/CReportCandidateBuilderTest.java']
  paths += [ROOT/p for p in ['deployment/ProductDirectFixture.java','deployment/ProductDirectDriver.java','deployment/ProductDirectGate.java','deployment/CDirectOracleServer.java','deployment/product-direct-ci.gradle','deployment/product-direct-linux.py','deployment/test_product_direct_linux.py','.github/workflows/product-direct-linux.yml','tools/websocket-test-client/scripts/product-direct-browser.mjs','tools/websocket-test-client/scripts/product-direct-browser-inputs.mjs','tools/websocket-test-client/test/product-direct-browser-inputs.test.mjs']]
  return {str(p.relative_to(ROOT)):linux.sha(p) for p in sorted(set(paths))}
 def prepare():
@@ -91,7 +97,7 @@ def run(path):
    if execute(['docker','exec',run_id+'-pg','pg_isready','-h','127.0.0.1','-U',owner,'-d',db],5).returncode==0:break
    time.sleep(.5)
   else:need(False,'PG_READY')
-  stage='ANVIL';launch('anvil',images['anvil'],['--memory=192m','--read-only','--cap-drop=ALL','--entrypoint','/usr/local/bin/anvil'],['--host','0.0.0.0','--port','8545','--accounts','0','--chain-id','31337','--silent'])
+  stage='ANVIL';launch('anvil',images['anvil'],['--memory=192m','--read-only','--cap-drop=ALL','--entrypoint','/usr/local/bin/anvil'],anvil_parameters())
   deadline=time.monotonic()+15
   while time.monotonic()<deadline:
    ready=execute(['docker','exec',run_id+'-anvil','/usr/local/bin/cast','chain-id','--rpc-url','http://127.0.0.1:8545'],3)

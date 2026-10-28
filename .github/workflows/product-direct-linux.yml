@@ -55,7 +55,7 @@ jobs:
           npm ci --ignore-scripts --prefix tools/websocket-test-client
           npm test --prefix tools/websocket-test-client
           npm run build --prefix tools/websocket-test-client
-          bash backend/gradlew -p backend -I "$PWD/deployment/product-read-ci.gradle" -I "$PWD/deployment/product-direct-ci.gradle" --no-daemon --max-workers=1 productReadCiClasses productReadCiRuntime productDirectCiClasses test --tests '*CCustodyControllerTest' --tests '*CCustodyRpcReaderTest' --tests '*CCustodyIdentityTest' --tests '*CWalletLinkStoreTest' --tests '*CWalletProofServiceTest' --tests '*StaticWebSecurityTest' --tests 'com.pricetrack.exchange.custody.direct.*Test'
+          bash backend/gradlew -p backend -I "$PWD/deployment/product-read-ci.gradle" -I "$PWD/deployment/product-direct-ci.gradle" --no-daemon --max-workers=1 productReadCiClasses productReadCiRuntime productDirectCiClasses test --tests '*CCustodyControllerTest' --tests '*CCustodyRpcReaderTest' --tests '*CCustodyIdentityTest' --tests '*CWalletLinkStoreTest' --tests '*CWalletProofServiceTest' --tests '*StaticWebSecurityTest' --tests 'com.pricetrack.exchange.custody.direct.*Test' --tests '*CReportCandidateBuilderTest'
       - name: Fetch locked Solidity dependencies and images
         shell: bash
         run: |
