@@ -10,6 +10,19 @@ spec=importlib.util.spec_from_file_location('phase_a',Path(__file__).with_name('
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
 
 class PhaseAGuardTest(unittest.TestCase):
+    def test_clock_window_excludes_preparation_and_evidence_but_keeps_two_second_bound(self):
+        now=[100.0]
+        def environment(_):now[0]+=3;return {'SAFE':'same'}
+        def query(*args,**kwargs):
+            now[0]+=.2
+            return __import__('types').SimpleNamespace(returncode=0,stdout=b'103.1',stderr=b'')
+        def evidence(*args):now[0]+=2
+        with patch.object(a,'clean_env',side_effect=environment),patch.object(a.subprocess,'run',side_effect=query),patch.object(a.time,'time',side_effect=lambda:now[0]),patch.object(a,'private',side_effect=evidence):
+            result=a.measure_clock(Path('new'),{'name':'owned','database':'test','runId':'new'})
+        self.assertEqual(result['hostEpochBefore'],103);self.assertAlmostEqual(result['hostEpochAfter'],103.2)
+        a.require_clock_alignment(result)
+        result['dbMinusHostSeconds']=2
+        with self.assertRaisesRegex(RuntimeError,'BLOCKED_CLOCK_SKEW'):a.require_clock_alignment(result)
     def test_worker_isolation_keeps_full_selection_and_clean_environment(self):
         counts={'tests':3,'failures':0,'errors':0,'skipped':1,'passed':2}
         with tempfile.TemporaryDirectory() as folder,patch.object(a,'execute') as execute,patch.object(a,'clean_env',return_value={'SAFE':'same'}),patch.object(a,'aggregate',return_value=counts):
@@ -81,6 +94,7 @@ class PhaseAGuardTest(unittest.TestCase):
                 self.assertNotIn(key,env)
             self.assertEqual(env['AI_PHASE8_LIVE_EVALUATION'],'false')
             self.assertEqual(env['AI_TOOL_POSTGRES_TESTS'],'false')
+            self.assertNotIn('AI_INDEX_COPY_RUN',env)  # .+ matches a literal "false" path; absence is the actual OFF state.
             self.assertEqual(env['SPRING_CONFIG_IMPORT'],'')
             self.assertIn('-Dhttps.proxyPort=1',env['JAVA_TOOL_OPTIONS'])
             self.assertIn('-Djava.net.preferIPv4Stack=true',env['JAVA_TOOL_OPTIONS'])

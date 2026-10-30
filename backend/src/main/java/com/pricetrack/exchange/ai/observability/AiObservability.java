@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AiObservability {
     private static final Logger log=LoggerFactory.getLogger(AiObservability.class);
-    private static final Set<String> STAGES=Set.of("AGENT","RAG","RETRIEVAL","LLM","EMBEDDING","TOOL");
-    private static final Set<String> NAMES=Set.of("UNKNOWN","answer","search","index","call","KNOWLEDGE","STATE","MIXED","CLARIFY","UNSUPPORTED","ERROR",
+    private static final Set<String> STAGES=Set.of("AGENT","RAG","RETRIEVAL","LLM","EMBEDDING","TOOL","VALIDATION");
+    private static final Set<String> NAMES=Set.of("UNKNOWN","answer","search","index","call","evidence","approval","KNOWLEDGE","STATE","MIXED","CLARIFY","UNSUPPORTED","ERROR",
         "getOrder","getQuote","getBlockchainTransaction","getReceiptSummary","getMarketStatus","getCurrentReferencePrice","getPortfolio","listAbnormalOrders");
     private static final Set<String> CODES=Set.of("OK","ANSWERED","PARTIAL","UNSUPPORTED","NEEDS_CLARIFICATION","INSUFFICIENT_EVIDENCE","LIVE_DATA_REQUIRED","AI_BUSY","AGENT_BUSY","AGENT_TIMEOUT",
         "SYNTHESIS_UNAVAILABLE","PLAN_UNAVAILABLE","RAG_UNAVAILABLE","KNOWLEDGE_APPROVAL_UNVERIFIED","AGENT_CONTEXT_LIMIT","INVALID_AGENT_EVIDENCE","INVALID_AGENT_PLAN","RESOURCE_NOT_FOUND",

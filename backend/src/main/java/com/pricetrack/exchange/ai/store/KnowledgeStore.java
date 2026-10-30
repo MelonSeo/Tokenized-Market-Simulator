@@ -10,6 +10,9 @@ public interface KnowledgeStore {
     Map<String, float[]> cached(String model);
     void publish(KnowledgeCorpus corpus, Map<String, float[]> embeddings, String model);
     List<KnowledgeHit> search(String fingerprint, float[] query, int topK, double minimumSimilarity);
+    /** Empty is safe for older stores; implementations must role/domain filter BEFORE exact ranking. */
+    default List<KnowledgeHit> searchIdentifiers(String fingerprint,float[] query,List<String> identifiers,
+            UserRole role,Set<String> domains,Duration timeout){return List.of();}
     /** Existing implementations are ADMIN-only unless they explicitly implement SQL role filtering. */
     default List<KnowledgeHit> searchForRole(String fingerprint, float[] query, int topK,
             double minimumSimilarity, UserRole role, Duration timeout) {

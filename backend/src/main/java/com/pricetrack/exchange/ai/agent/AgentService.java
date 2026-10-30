@@ -32,7 +32,7 @@ public final class AgentService implements AutoCloseable {
     // Retained until the actual worker exits, including a timed-out non-cooperative call.
     private final java.util.concurrent.atomic.AtomicBoolean automaticRunning=new java.util.concurrent.atomic.AtomicBoolean();
     public AgentService(AgentProperties p,Supplier<AgentModelProvider> model,Supplier<AuthorizedKnowledgeRetrieval> retrieval,
-                        ToolDispatcher tools,ObjectMapper json){this(p,model,retrieval,tools,json,Duration.ofSeconds(40));}
+                        ToolDispatcher tools,ObjectMapper json){this(p,model,retrieval,tools,json,Duration.ofSeconds(p.totalSeconds()));}
     public AgentService(AgentProperties p,Supplier<AgentModelProvider> model,Supplier<AuthorizedKnowledgeRetrieval> retrieval,
                         ToolDispatcher tools,ObjectMapper json,Duration budget){
         this(p,model,retrieval,tools,json,budget,new SkillProperties(false),new SkillRegistry(json));
@@ -49,6 +49,8 @@ public final class AgentService implements AutoCloseable {
     public AgentResponse answer(AuthenticatedUser principal,byte[] input){
         return answer(principal,input,false);
     }
+    /** Preserve automatic diagnosis's original 40s budget below its existing 90s DB claim lease. */
+    long requestBudgetNanos(boolean automatic){return automatic?Math.min(totalBudget.toNanos(),TimeUnit.SECONDS.toNanos(40)):totalBudget.toNanos();}
     /** Server-only fixed procedure. HTTP cannot supply an origin or an automatic execution plan. */
     public AgentResponse answerAutomatic(AuthenticatedUser principal,long orderId){
         if(principal==null || principal.role()!=com.pricetrack.exchange.user.UserRole.ADMIN || orderId<=0)
@@ -65,7 +67,7 @@ public final class AgentService implements AutoCloseable {
             AgentRequest request=AgentRequest.parse(json,input);
             var provider=model.get();
             if(provider==null)throw new AgentFailure("AGENT_CONFIGURATION_UNAVAILABLE",503);
-            run=new Run(runId,principal,request,provider,start,start+totalBudget.toNanos());
+            run=new Run(runId,principal,request,provider,start,start+requestBudgetNanos(automatic));
             if(automatic){
                 if(!automaticRunning.compareAndSet(false,true))throw new RejectedExecutionException();
                 final Run captured=run;
@@ -130,8 +132,9 @@ public final class AgentService implements AutoCloseable {
                 Plan plan;
                 try{
                     if(skill!=null)plan=new Plan(Route.MIXED,skill.target()==Subject.NONE?Subject.PRICE:skill.target(),Usage.none(),skill.id());
-                    else {modelCalls++;plan=skills.enabled()?provider.planWithSkills(request.modelQuestion(),request.targetKind(),registry.eligible(user.role(),request.targetKind()),remaining(5))
-                            :provider.plan(request.modelQuestion(),request.targetKind(),remaining(5));addUsage(plan==null?null:plan.usage());}
+                    else if(properties.deterministicState()&&(plan=DeterministicStateRoute.select(request))!=null) { /* same ownership preflight and subject/role checks below */ }
+                    else {modelCalls++;plan=skills.enabled()?provider.planWithSkills(request.modelQuestion(),request.targetKind(),registry.eligible(user.role(),request.targetKind()),remaining(properties.planningSeconds()))
+                            :provider.plan(request.modelQuestion(),request.targetKind(),remaining(properties.planningSeconds()));addUsage(plan==null?null:plan.usage());}
                 }
                 catch(Exception e){return degraded("PLAN_UNAVAILABLE");}
                 if(plan==null || plan.route()==null || plan.subject()==null)throw new AgentFailure("INVALID_AGENT_PLAN",503);
@@ -155,7 +158,7 @@ public final class AgentService implements AutoCloseable {
                 if(skill!=null){
                     skillRunner=new SkillRunner(skill,new SkillRunner.RunContext(){
                         public AgentResponse.ToolEvidence call(String name,Map<String,Object> args){return Run.this.call(name,args);}
-                        public void checkpoint(){remaining(40);}
+                        public void checkpoint(){remaining(Integer.MAX_VALUE);}
                         public void uncertainty(String code){uncertainties.add(code);}
                     });
                     skillRunner.execute(request);
@@ -166,14 +169,14 @@ public final class AgentService implements AutoCloseable {
                     long retrievalStart=System.nanoTime();
                     try{
                         var retriever=retrieval.get();if(retriever==null)throw new AgentFailure("RAG_UNAVAILABLE",503);
-                        var found=skill==null?retriever.search(user,retrievalQuestion(plan),remaining(5))
-                                :retriever.searchScoped(user,retrievalQuestion(plan),remaining(5),skill.domains());knowledge=found.hits();index=found.indexVersion();
+                        var found=skill==null?retriever.search(user,retrievalQuestion(plan),remaining(properties.retrievalSeconds()))
+                                :retriever.searchScoped(user,retrievalQuestion(plan),remaining(properties.retrievalSeconds()),skill.domains());knowledge=found.hits();index=found.indexVersion();
                         if(skillRunner!=null)skillRunner.trace("RETRIEVE_POLICY","EXECUTED","RAG",knowledge.stream().map(KnowledgeHit::id).toList(),knowledge.isEmpty()?"NO_EVIDENCE":"SUCCESS",TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-retrievalStart));
                     }catch(Exception e){uncertainties.add("RAG_UNAVAILABLE");traceOnce("RETRIEVE_POLICY","UNAVAILABLE","RAG",List.of(),"RAG_UNAVAILABLE",retrievalStart);}
                 }
                 if(plan.route()==Route.STATE){
                     if(!hasFacts())return degraded("TOOL_UNAVAILABLE");
-                    return response(uncertainties.isEmpty()?"ANSWERED":"PARTIAL","조회 시점의 사실은 toolEvidence에 표시했습니다.",List.of(),List.of());
+                    return response(uncertainties.isEmpty()?"ANSWERED":"PARTIAL",StateExplanation.explain(List.copyOf(evidence.values())),List.of(),List.of());
                 }
                 if(knowledge.isEmpty()){
                     uncertainties.add("KNOWLEDGE_EVIDENCE_MISSING");
@@ -189,10 +192,19 @@ public final class AgentService implements AutoCloseable {
                 if(json.writeValueAsBytes(modelInput).length>24_576)return degraded("AGENT_CONTEXT_LIMIT");
                 long synthesisStart=System.nanoTime();
                 try{
-                    modelCalls++;var generated=provider.synthesize(request.modelQuestion(),plan.route(),modelInput,remaining(10));
-                    addUsage(generated==null?null:generated.usage());AgentEvidence.validate(generated,plan.route(),modelInput);
+                    modelCalls++;var generated=provider.synthesize(request.modelQuestion(),plan.route(),modelInput,remaining(properties.synthesisSeconds()));
+                    addUsage(generated==null?null:generated.usage());
+                    long validationStart=System.nanoTime();boolean valid=false;
+                    try{AgentEvidence.validate(generated,plan.route(),modelInput);valid=true;}
+                    finally{if(observation!=null)observation.record("VALIDATION","evidence",id,validationStart,valid,valid?"OK":"INVALID_AGENT_EVIDENCE",0,null,null);}
                     traceOnce("SUMMARIZE","EXECUTED","MODEL","ANSWERED".equals(generated.status())?generated.citationIds():List.of(),"ANSWERED".equals(generated.status())?"VALIDATED":"NO_EVIDENCE",synthesisStart);
-                    if(!"ANSWERED".equals(generated.status()))return response("INSUFFICIENT_EVIDENCE","확보된 근거로 답변을 확정하지 못했습니다.",List.of(),List.of());
+                    if(!"ANSWERED".equals(generated.status())){
+                        if(hasFacts()){
+                            uncertainties.add("MODEL_EVIDENCE_INSUFFICIENT");
+                            return response("PARTIAL",StateExplanation.explain(List.copyOf(evidence.values()))+"\n질문한 결론은 확보된 근거만으로 확정할 수 없습니다.",List.of(),List.of());
+                        }
+                        return response("INSUFFICIENT_EVIDENCE","확보된 근거로 답변을 확정하지 못했습니다.",List.of(),List.of());
+                    }
                     modelUncertainties=List.copyOf(generated.uncertainties());
                     return response(uncertainties.isEmpty() && modelUncertainties.isEmpty()?"ANSWERED":"PARTIAL",generated.interpretation(),generated.citationIds(),generated.recommendedNextCheck());
                 }catch(Exception e){traceOnce("SUMMARIZE","UNAVAILABLE","MODEL",List.of(),"SYNTHESIS_UNAVAILABLE",synthesisStart);return degraded("SYNTHESIS_UNAVAILABLE");}
@@ -306,22 +318,23 @@ public final class AgentService implements AutoCloseable {
         }
         AgentResponse.Metrics metrics(){return new AgentResponse.Metrics(toolCalls,retrievalCalls,modelCalls,inputTokens,outputTokens,TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-start));}
         AgentResponse response(String status,String answer,List<String> citations,List<String> next){
-            remaining(40);
+            remaining(Integer.MAX_VALUE);
             if(skill!=null)registry.verify(skill);
             if(skillRunner!=null && skillRunner.result().trace().stream().noneMatch(t -> t.stepId().equals("SUMMARIZE")))
                 skillRunner.trace("SUMMARIZE","SKIPPED","MODEL",List.of(),"EVIDENCE_UNAVAILABLE",0);
             // Every output path, including provider-failure PARTIAL, revalidates approval before exposing documents.
+            long approvalStart=System.nanoTime();boolean approved=false;
             if(!knowledge.isEmpty())try{
                 var retriever=retrieval.get();if(retriever==null)throw new AgentFailure("RAG_UNAVAILABLE",503);
-                retriever.verify(index);
+                retriever.verify(index);approved=true;
             }catch(Exception e){
                 knowledge=List.of();index=null;modelUncertainties=List.of();uncertainties.add("KNOWLEDGE_APPROVAL_UNVERIFIED");
                 if(skillRunner!=null)skillRunner.discardPolicy();
                 if(!hasFacts())return failure(id,"KNOWLEDGE_APPROVAL_UNVERIFIED",503,this);
                 status="PARTIAL";answer="현재 조회 사실만 제공합니다. 문서 승인 상태를 확인하지 못해 정책 근거는 제외했습니다.";
                 citations=List.of();next=List.of();
-            }
-            remaining(40);
+            }finally{if(observation!=null)observation.record("VALIDATION","approval",id,approvalStart,approved,approved?"OK":"KNOWLEDGE_APPROVAL_UNVERIFIED",0,null,null);}
+            remaining(Integer.MAX_VALUE);
             var safeUncertainties=new LinkedHashSet<>(uncertainties);safeUncertainties.addAll(modelUncertainties);
             return new AgentResponse(id,status,route,answer,index,knowledge,List.copyOf(evidence.values()),List.copyOf(citations),
                     List.copyOf(safeUncertainties),List.copyOf(next),

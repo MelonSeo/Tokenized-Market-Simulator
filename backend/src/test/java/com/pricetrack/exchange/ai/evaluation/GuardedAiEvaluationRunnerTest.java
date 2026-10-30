@@ -131,4 +131,30 @@ class GuardedAiEvaluationRunnerTest {
             assertThat(runner.summary().path("embedding_calls").asInt()).isEqualTo(1);
         }
     }
+    @Test void transportTimeoutDoesNotCloseApprovalPoolNeededByFallbackAndFinalCloseDoes()throws Exception {
+        Path run=prepare("slow");
+        var pool=org.mockito.Mockito.mock(com.pricetrack.exchange.ai.store.PgKnowledgeStore.class);
+        org.mockito.Mockito.when(pool.active(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+        var runner=start(run);
+        try {
+            var field=GuardedAiEvaluationRunner.class.getDeclaredField("verifiedStore");field.setAccessible(true);field.set(runner,pool);
+            String fingerprint=runner.identity().path("corpusHash").asText();
+            assertThatThrownBy(()->runner.provider().embed(List.of("x"),Duration.ofMillis(200))).hasMessage("AI_EVALUATION_TRANSPORT_UNCERTAIN");
+            runner.retrieval().verify(fingerprint);
+            org.mockito.Mockito.verify(pool,org.mockito.Mockito.never()).close();
+            org.mockito.Mockito.when(pool.active(fingerprint)).thenReturn(false);
+            assertThatThrownBy(()->runner.retrieval().verify(fingerprint)).hasMessage("AI_APPROVAL_MISMATCH");
+            assertThatThrownBy(()->runner.provider().embed(List.of("x"))).hasMessage("AI_EVALUATION_STOPPED");
+        } finally {runner.close();runner.close();}
+        org.mockito.Mockito.verify(pool,org.mockito.Mockito.times(1)).close();
+    }
+    @Test void expirationAfterFlushCannotLeaveUnreadFrameForNextDispatch()throws Exception {
+        Path run=prepare("success");
+        try(var runner=start(run)){
+            runner.afterFrameFlushed=()->{try{Thread.sleep(80);}catch(InterruptedException e){Thread.currentThread().interrupt();}};
+            assertThatThrownBy(()->runner.provider().embed(List.of("x"),Duration.ofMillis(30))).hasMessage("AI_PROVIDER_UNAVAILABLE");
+            assertThat(Files.exists(run.resolve("STOP"))).isTrue();
+            assertThatThrownBy(()->runner.provider().embed(List.of("next"))).hasMessage("AI_EVALUATION_STOPPED");
+        }
+    }
 }

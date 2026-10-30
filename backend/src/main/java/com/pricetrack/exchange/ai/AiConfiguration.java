@@ -12,8 +12,11 @@ import org.springframework.context.annotation.*;
 @ConditionalOnProperty(name="app.ai.enabled",havingValue="true")
 public class AiConfiguration {
     @Bean com.pricetrack.exchange.ai.retrieval.AuthorizedKnowledgeRetrieval authorizedKnowledgeRetrieval(AiProperties p,
-            KnowledgeLoader loader,PgKnowledgeStore store,OpenAiProvider provider,com.pricetrack.exchange.ai.observability.AiObservability observation){
-        return new com.pricetrack.exchange.ai.retrieval.AuthorizedKnowledgeRetrieval(p,loader,store,provider).observe(observation);
+            KnowledgeLoader loader,PgKnowledgeStore store,OpenAiProvider provider,com.pricetrack.exchange.ai.observability.AiObservability observation,
+            @org.springframework.beans.factory.annotation.Value("${app.ai.query-vector-cache:true}") boolean cacheEnabled){
+        com.pricetrack.exchange.ai.provider.EmbeddingProvider embedding=provider;
+        if(cacheEnabled){var cache=new com.pricetrack.exchange.ai.provider.QueryVectorCache(provider,p.embeddingModel(),()->loader.load().fingerprint());cache.enabled(true);embedding=cache;}
+        return new com.pricetrack.exchange.ai.retrieval.AuthorizedKnowledgeRetrieval(p,loader,store,embedding).observe(observation);
     }
     @Bean com.pricetrack.exchange.ai.agent.AgentModelProvider agentModelProvider(OpenAiProvider provider,ObjectMapper json){
         return new com.pricetrack.exchange.ai.agent.OpenAiAgentProvider(provider,json);

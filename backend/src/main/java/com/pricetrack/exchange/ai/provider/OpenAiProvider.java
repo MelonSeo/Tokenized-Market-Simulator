@@ -115,12 +115,15 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
         }catch(RuntimeException ignored){/* Preserve the original provider result/failure. */}}
     }
     private JsonNode postInternal(String path, Object body, Duration timeout) {
+        var deadline=new CallDeadline(timeout);
         if(evaluationTransport!=null) {
             if(timeout.isNegative()||timeout.isZero()||Thread.currentThread().isInterrupted())throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
             try{
                 var frozen=json.<com.fasterxml.jackson.databind.node.ObjectNode>valueToTree(body);
                 if("responses".equals(path))frozen.put("service_tier","default");
-                return evaluationTransport.post(path,json.writeValueAsBytes(frozen),timeout);
+                byte[] raw=json.writeValueAsBytes(frozen);
+                var result=evaluationTransport.post(path,raw,deadline.remaining());
+                deadline.remaining();return result;
             }
             catch(AiFailure e){throw e;}catch(Exception e){throw new AiFailure("AI_EVALUATION_TRANSPORT_FAILED");}
         }
@@ -132,14 +135,14 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
             if (!"https".equals(uri.getScheme()) && !Set.of("127.0.0.1", "localhost").contains(uri.getHost()))
                 throw new AiFailure("AI_PROVIDER_CONFIG_INVALID");
             if (timeout.isNegative() || timeout.isZero() || Thread.currentThread().isInterrupted()) throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
-            HttpRequest request = HttpRequest.newBuilder(uri).timeout(timeout)
+            HttpRequest request = HttpRequest.newBuilder(uri).timeout(deadline.remaining())
                     .header("Authorization", "Bearer " + properties.apiKey()).header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body))).build();
             var pending = http.sendAsync(request, ignored -> new BoundedBodySubscriber());
             HttpResponse<byte[]> response;
             try {
                 // HttpRequest timeout alone must not be assumed to bound slow response-body delivery.
-                response = pending.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
+                response = pending.get(deadline.remaining().toNanos(), TimeUnit.NANOSECONDS);
             } catch (TimeoutException | InterruptedException e) {
                 pending.cancel(true);
                 if (e instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -149,7 +152,7 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
                 if (response.statusCode() < 200 || response.statusCode() >= 300) throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
                 byte[] bytes = response.body();
                 if (bytes.length > 2_000_000) throw new AiFailure("AI_PROVIDER_RESPONSE_INVALID");
-                return json.readTree(bytes);
+                var result=json.readTree(bytes);deadline.remaining();return result;
             }
         } catch (AiFailure e) { throw e; }
         catch (Exception e) { throw new AiFailure("AI_PROVIDER_UNAVAILABLE"); }
@@ -158,10 +161,11 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
     /** Structured plan/synthesis only. Does not expose API credentials or register executable tools. */
     public record Structured(JsonNode output, long inputTokens, long outputTokens) {}
     public Structured structured(String name, Object schema, String instructions, Object input, int maxOutput, Duration timeout) {
+        var deadline=new CallDeadline(timeout);
         try {
             JsonNode response=post("responses",Map.of("model",properties.chatModel(),"store",false,
                     "instructions",instructions,"input",json.writeValueAsString(input),"reasoning",Map.of("effort","none"),
-                    "max_output_tokens",maxOutput,"text",Map.of("format",Map.of("type","json_schema","name",name,"strict",true,"schema",schema))),timeout);
+                    "max_output_tokens",maxOutput,"text",Map.of("format",Map.of("type","json_schema","name",name,"strict",true,"schema",schema))),deadline.remaining());
             if(!"completed".equals(response.path("status").asText()))throw new AiFailure("AI_PROVIDER_RESPONSE_INVALID");
             StringBuilder text=new StringBuilder();
             for(var item:response.path("output"))for(var part:item.path("content"))
@@ -170,6 +174,7 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
                     .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
             JsonNode parsed=strict.readTree(text.toString());
             if(parsed==null || !parsed.isObject())throw new AiFailure("AI_PROVIDER_RESPONSE_INVALID");
+            deadline.remaining();
             return new Structured(parsed,Math.max(0,response.path("usage").path("input_tokens").asLong()),
                     Math.max(0,response.path("usage").path("output_tokens").asLong()));
         }catch(AiFailure e){throw e;}catch(Exception e){throw new AiFailure("AI_PROVIDER_RESPONSE_INVALID");}

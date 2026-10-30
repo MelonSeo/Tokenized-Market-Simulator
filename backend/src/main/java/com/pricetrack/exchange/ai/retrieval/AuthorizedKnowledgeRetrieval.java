@@ -80,7 +80,11 @@ public class AuthorizedKnowledgeRetrieval {
                 ? store.search(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity())
                 : store.searchForRole(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),remaining(end)));
         var hits=step(Stage.FILTER_RESULTS,end,budget,()->{
-        var selected=EvidenceSelector.select(candidates,p.topK(),2);
+        var ranked=new java.util.ArrayList<KnowledgeHit>();
+        var identifiers=IdentifierQuery.terms(question);
+        if(!identifiers.isEmpty())ranked.addAll(store.searchIdentifiers(corpus.fingerprint(),vector,identifiers,principal.role(),domains,remaining(end)));
+        ranked.addAll(candidates);
+        var selected=EvidenceSelector.select(ranked,p.topK(),2);
         // Defense in depth; primary protection is SQL before top-K.
         if (principal.role() == UserRole.USER && selected.stream().anyMatch(h -> !"USER".equals(h.role())))
             throw new AiFailure("AI_ROLE_FILTER_INVALID");

@@ -133,6 +133,11 @@ def live_sender(folder, meta, approval_path):
     except Exception:
         raise GuardError("PAID_APPROVAL_REQUIRED") from None
 
+    return _https_sender(folder, permit, key)
+
+
+def _https_sender(folder, permit, key):
+    """Shared bounded HTTPS transport; caller must already verify its permit."""
     def send(path, raw, timeout):
         if time.time() >= permit["expiresAt"] or (folder / "STOP").exists():
             raise GuardError("RUN_STOPPED")
@@ -147,12 +152,19 @@ def live_sender(folder, meta, approval_path):
         try:
             record("STARTED")
             connection = http.client.HTTPSConnection("api.openai.com", 443, timeout=timeout)
+            def remaining():
+                left=deadline-time.monotonic()
+                if left<=0:raise TimeoutError()
+                if connection.sock:connection.sock.settimeout(left)
+                return left
             phase = "REQUEST_CALL_BEGIN"
             record("STARTED")
+            connection.timeout=remaining()
             connection.request("POST", "/v1/" + path, body=raw,
                                headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
             phase = "REQUEST_CALL_RETURNED"
             record("OK")
+            remaining()
             response = connection.getresponse()
             phase, status = "RESPONSE_HEADERS", response.status
             record("OK")
@@ -322,7 +334,12 @@ def main():
             prepare(args.run_dir, args.db_port, fixture=args.fixture, mode=args.evaluation_mode)
             print("PREPARED_OFFLINE")
         else:
-            broker(args.run_dir, live=args.live, approval=args.approval)
+            meta = _decode((Path(args.run_dir) / 'run.json').read_bytes())
+            if meta.get('purpose') == 'LATEST_AI_QUALITY_20261030':
+                from ai_latest_evaluation_broker import broker as latest_broker
+                latest_broker(args.run_dir, live=args.live, approval=args.approval)
+            else:
+                broker(args.run_dir, live=args.live, approval=args.approval)
     except Exception as error:
         code = str(error) if isinstance(error, GuardError) else "BROKER_FAILURE"
         print(json.dumps({"ok": False, "code": code if re.fullmatch(r"[A-Z_]{1,60}", code) else "BROKER_FAILURE"}))

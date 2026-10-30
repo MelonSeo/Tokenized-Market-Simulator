@@ -58,6 +58,50 @@ class AgentServiceTest {
         assertThat(result.status()).isEqualTo("ANSWERED");assertThat(result.toolEvidence().getFirst().data().path("marketStatus").asText()).isEqualTo("CLOSED");
         assertThat(result.metrics().toolCalls()).isEqualTo(1);verifyNoInteractions(retrieval);verify(model,never()).synthesize(any(),any(),any(),any());
     }
+    @Test void automaticBudgetRetainsLeaseHeadroomAndStricterOverrides(){
+        assertThat(service.requestBudgetNanos(false)).isEqualTo(TimeUnit.SECONDS.toNanos(90));
+        assertThat(service.requestBudgetNanos(true)).isEqualTo(TimeUnit.SECONDS.toNanos(40));
+        try(var strict=new AgentService(new AgentProperties(true),()->model,()->retrieval,tools,json,Duration.ofMillis(120))){
+            assertThat(strict.requestBudgetNanos(true)).isEqualTo(TimeUnit.MILLISECONDS.toNanos(120));
+            assertThat(strict.requestBudgetNanos(false)).isEqualTo(TimeUnit.MILLISECONDS.toNanos(120));
+        }
+    }
+    @Test void insufficientModelKeepsValidatedFactsWithoutTrustingUnvalidatedDraft(){
+        plan(Route.MIXED,Subject.MARKET);
+        when(model.synthesize(anyString(),any(),any(),any())).thenReturn(new Generated("INSUFFICIENT_EVIDENCE","UNVALIDATED SECRET 추측",
+            List.of("unknown"),List.of(),List.of("untrusted reason"),List.of(),Usage.none()));
+        var result=call("{\"question\":\"지금 실제 거래 가능 여부를 설명해주세요\"}");
+        assertThat(result.status()).isEqualTo("PARTIAL");assertThat(result.answer()).contains("CLOSED","확정할 수 없습니다").doesNotContain("UNVALIDATED","SECRET");
+        assertThat(result.uncertainties()).contains("MODEL_EVIDENCE_INSUFFICIENT").doesNotContain("untrusted reason");
+        assertThat(result.citationIds()).isEmpty();assertThat(result.toolEvidence()).hasSize(1);verify(retrieval).verify("index-1");
+    }
+    @Test void insufficientKnowledgeWithoutFactsIsStillInsufficient(){
+        plan(Route.KNOWLEDGE,Subject.NONE);
+        when(model.synthesize(anyString(),any(),any(),any())).thenReturn(new Generated("INSUFFICIENT_EVIDENCE","UNVALIDATED",List.of(),List.of(),List.of(),List.of(),Usage.none()));
+        var result=call("{\"question\":\"근거 없는 리워드 조건은?\"}");assertThat(result.status()).isEqualTo("INSUFFICIENT_EVIDENCE");assertThat(result.toolEvidence()).isEmpty();
+    }
+    @Test void optimizedStateKeepsOwnershipAndAdminBoundaryWithoutCallingModel()throws Exception {
+        try(var optimized=new AgentService(new AgentProperties(true,15,30,15,90,true),()->model,()->retrieval,tools,json)){
+            var r=optimized.answer(user,"{\"question\":\"내 주문의 현재 상태만 조회해 주세요.\",\"target\":{\"orderId\":153}}".getBytes(StandardCharsets.UTF_8));
+            assertThat(r.status()).isEqualTo("ANSWERED");assertThat(r.answer()).contains("PENDING_ONCHAIN");assertThat(r.metrics().modelCalls()).isZero();
+            var denied=optimized.answer(user,"{\"question\":\"REVIEW_REQUIRED 이상 주문 목록을 조회해 주세요.\"}".getBytes(StandardCharsets.UTF_8));
+            assertThat(denied.httpStatus()).isEqualTo(403);verifyNoInteractions(model,retrieval);
+            when(tools.invokeForAgent(any(),eq("getOrder"),any(),any(),any())).thenReturn(ToolResult.failure("getOrder","RESOURCE_NOT_FOUND"));
+            var foreign=optimized.answer(user,"{\"question\":\"내 주문의 현재 상태만 조회해 주세요.\",\"target\":{\"orderId\":153}}".getBytes(StandardCharsets.UTF_8));
+            assertThat(foreign.httpStatus()).isEqualTo(404);verifyNoInteractions(model,retrieval);
+        }
+    }
+    @Test void configuredStageBudgetsReachDependenciesAndRemainFinite(){
+        plan(Route.MIXED,Subject.ORDER);
+        try(var configured=new AgentService(new AgentProperties(true,15,30,15,90,false),()->model,()->retrieval,tools,json)){
+            var result=configured.answer(user,"{\"question\":\"왜 대기?\",\"target\":{\"orderId\":153}}".getBytes(StandardCharsets.UTF_8));
+            assertThat(result.status()).isEqualTo("ANSWERED");
+            var planBudget=org.mockito.ArgumentCaptor.forClass(Duration.class);verify(model).plan(any(),any(),planBudget.capture());
+            var synthBudget=org.mockito.ArgumentCaptor.forClass(Duration.class);verify(model).synthesize(any(),any(),any(),synthBudget.capture());
+            assertThat(planBudget.getValue()).isGreaterThan(Duration.ofSeconds(10)).isLessThanOrEqualTo(Duration.ofSeconds(15));
+            assertThat(synthBudget.getValue()).isGreaterThan(Duration.ofSeconds(15)).isLessThanOrEqualTo(Duration.ofSeconds(30));
+        }
+    }
     @Test void mixedCombinesServerFactsAndPolicyAndReusesPreflight(){
         plan(Route.MIXED,Subject.ORDER);
         var result=call("{\"question\":\"내 주문이 왜 대기 중인가?\",\"target\":{\"orderId\":153}}");
@@ -215,6 +259,15 @@ class AgentServiceTest {
             assertThat(result.status()).isEqualTo("PARTIAL");assertThat(result.uncertainties()).contains("PRICE_STALE");
         }
         verifyNoInteractions(retrieval);verify(model,never()).synthesize(any(),any(),any(),any());
+    }
+    @Test void providerDeadlineKeepsValidatedPolicyInFallbackButNeverInventsAnswer(){
+        plan(Route.MIXED,Subject.ORDER);
+        when(model.synthesize(any(),any(),any(),any())).thenThrow(new com.pricetrack.exchange.ai.AiFailure("AI_PROVIDER_DEADLINE_OBSERVED"));
+        var result=call("{\"question\":\"왜 대기?\",\"target\":{\"orderId\":153}}");
+        assertThat(result.status()).isEqualTo("PARTIAL");assertThat(result.knowledgeSources()).containsExactly(policy);
+        assertThat(result.uncertainties()).contains("SYNTHESIS_UNAVAILABLE").doesNotContain("KNOWLEDGE_APPROVAL_UNVERIFIED");
+        assertThat(result.citationIds()).isEmpty();assertThat(result.toolEvidence()).isNotEmpty();
+        verify(retrieval).verify("index-1");
     }
     @Test void invalidPlanAndOutputFailureKeepObservedCountersAndUsage(){
         when(model.plan(any(),any(),any())).thenReturn(new Plan(null,Subject.NONE,new Usage(42,5)));

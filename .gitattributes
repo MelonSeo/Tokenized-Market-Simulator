@@ -1,2 +1,5 @@
 # Bind-mounted Linux entrypoints must not acquire CRLF on Windows checkouts.
 deployment/*.sh text eol=lf
+
+# Frozen AI evaluation bytes must keep their approved SHA on Windows checkouts.
+backend/src/test/resources/ai/novel-*.json text eol=lf

@@ -33,6 +33,19 @@ LEGACY_POLICY_V3 = MappingProxyType({
 # Never rewrite old identities/ledgers to v4. Their exact v3 policy is read-only.
 POLICY = {**LEGACY_POLICY_V3, "version": "futures-ai-eval-v4", "input_tokens": 400000}
 
+# Separate user-approved study (2026-10-30). Legacy defaults/ledgers stay v4.
+LATEST_POLICY = MappingProxyType({**POLICY, "version": "latest-ai-quality-v1",
+    "llm_calls": 96, "embedding_calls": 200, "input_tokens": 1200000,
+    "output_tokens": 153600, "embedding_tokens": 400000, "cap_nusd": 5000000000})
+
+# New approval changes only cumulative input reservations; never rewrite v1 ledgers.
+LATEST_POLICY_V2 = MappingProxyType({**LATEST_POLICY,"version":"latest-ai-quality-v2","input_tokens":1500000})
+
+# Separate approval, not an extension/carry/reset of the exhausted latest study.
+NOVEL_POLICY = MappingProxyType({**LATEST_POLICY_V2,"version":"novel30-quality-v1",
+    "llm_calls":56,"embedding_calls":80,"input_tokens":1835008,
+    "output_tokens":89600,"embedding_tokens":160000,"cap_nusd":5700000000})
+
 
 def _canonical(value):
     return json.dumps(value, ensure_ascii=False, allow_nan=False,
@@ -114,7 +127,7 @@ class EvaluationGuard:
     do not derive it from existing AI_* environment variables or mere key presence.
     """
     def __init__(self, ledger, *, run_id, source_hash, corpus_hash, create=False,
-                 execution_approved=False, context_hash="0" * 64, carry=None, validate_lineage=None, local_limits=None):
+                 execution_approved=False, context_hash="0" * 64, carry=None, validate_lineage=None, local_limits=None, policy=None):
         if (not re.fullmatch(r"[a-zA-Z0-9_-]{1,80}", run_id)
                 or any(not re.fullmatch(r"[0-9a-f]{64}", h) for h in (source_hash, corpus_hash, context_hash))
                 or type(execution_approved) is not bool):
@@ -123,7 +136,9 @@ class EvaluationGuard:
         if self.path.is_symlink():
             raise GuardError("INVALID_LEDGER")
         self.approved = execution_approved
-        self.policy = MappingProxyType(dict(POLICY))
+        if policy is not None and _canonical(dict(policy)) not in (_canonical(dict(LATEST_POLICY)),_canonical(dict(LATEST_POLICY_V2)),_canonical(dict(NOVEL_POLICY))):
+            raise GuardError("UNAPPROVED_POLICY")
+        self.policy = MappingProxyType(dict(POLICY if policy is None else policy))
         self.carry = dict(carry or {})
         self.validate_lineage = validate_lineage
         self.local_limits = dict(local_limits) if local_limits is not None else None

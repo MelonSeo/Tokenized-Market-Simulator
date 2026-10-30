@@ -119,6 +119,10 @@ class ToolIntegrationTest {
         var data = call(alice, "getOrder", orderArgs(), 200).path("data");
         assertThat(new BigDecimal(data.path("expectedOutputAmount").asText())).isEqualByComparingTo("0.999");
         assertThat(new BigDecimal(data.path("trade").path("price").asText())).isEqualByComparingTo("75000");
+        // F1: keep input-inclusive quote amount and fee as distinct source facts, not input+fee.
+        assertThat(new BigDecimal(data.path("inputAmount").asText())).isEqualByComparingTo("75000");
+        assertThat(new BigDecimal(data.path("trade").path("quoteAmount").asText())).isEqualByComparingTo("75000");
+        assertThat(new BigDecimal(data.path("trade").path("fee").asText())).isEqualByComparingTo("75");
         assertThat(data.toString()).doesNotContain(ToolFixtures.HASH);
     }
     @Test void storedConsumedQuoteDoesNotBecomeExpiredOnRead() throws Exception {

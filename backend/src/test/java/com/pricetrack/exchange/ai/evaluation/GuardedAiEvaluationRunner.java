@@ -5,6 +5,7 @@ import com.pricetrack.exchange.ai.*;
 import com.pricetrack.exchange.ai.agent.OpenAiAgentProvider;
 import com.pricetrack.exchange.ai.knowledge.KnowledgeLoader;
 import com.pricetrack.exchange.ai.provider.OpenAiProvider;
+import com.pricetrack.exchange.ai.provider.CallDeadline;
 import com.pricetrack.exchange.ai.retrieval.AuthorizedKnowledgeRetrieval;
 import com.pricetrack.exchange.ai.store.PgKnowledgeStore;
 import com.pricetrack.exchange.auth.AuthenticatedUser;
@@ -29,7 +30,11 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
     private final OpenAiProvider provider;
     private final Mode mode;
     private PgKnowledgeStore verifiedStore;
+    private com.pricetrack.exchange.ai.provider.QueryVectorCache queryVectors;
+    public void queryVectorCache(boolean enabled){if(queryVectors==null)throw new AiFailure("AI_EVALUATION_INDEX_NOT_READY");queryVectors.enabled(enabled);}
+    public void clearQueryVectorCache(){if(queryVectors==null)throw new AiFailure("AI_EVALUATION_INDEX_NOT_READY");queryVectors.clear();}
     private volatile boolean closed;
+    Runnable afterFrameFlushed=()->{}; // deterministic test seam; never configured by runtime input
 
     public GuardedAiEvaluationRunner(Path repo, Path run, Path python, Mode mode, Path approval, ObjectMapper json) throws Exception {
         this(repo,run,python,mode,approval,json,null,null);
@@ -100,22 +105,34 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
         if(raw.length>100000 || timeout.isNegative()||timeout.isZero()||timeout.toMillis()>60000)
             throw new AiFailure("AI_EVALUATION_INPUT_LIMIT");
         long started=System.nanoTime();
+        var deadline=new CallDeadline(timeout);
+        boolean sent=false,consumed=false;
         try {
             EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.FRAME_SEND_BEGIN,EvaluationStageTrace.Code.OK,started,timeout);
-            send(Map.of("id",id,"path",path,"body",Base64.getEncoder().encodeToString(raw),"timeoutMs",Math.max(1,timeout.toMillis())));
+            var frame=new LinkedHashMap<String,Object>();
+            frame.put("id",id);frame.put("path",path);frame.put("body",Base64.getEncoder().encodeToString(raw));
+            long remainingMs=Math.max(1,deadline.remaining().toMillis());frame.put("timeoutMs",remainingMs);
+            if(meta.path("deadlineProtocol").asInt()==2)frame.put("deadlineEpochMs",System.currentTimeMillis()+remainingMs);
+            sent=true;send(frame);
             EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.FRAME_FLUSHED,EvaluationStageTrace.Code.OK,started,timeout);
-            var response=receive(timeout);
+            afterFrameFlushed.run();
+            var response=receive(deadline.remaining());
+            consumed=true;
+            if(meta.path("deadlineProtocol").asInt()==2&&!response.path("requestId").asText().equals(id))throw new IOException();
             EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.BROKER_REPLIED,EvaluationStageTrace.Code.OK,started,timeout);
             if(!response.path("ok").asBoolean()){
                 EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.GUARD_REJECTED,EvaluationStageTrace.Code.GUARD_REJECTED,started,timeout);
+                if(response.path("observed").asBoolean()&&response.path("code").asText().equals("DEADLINE_EXCEEDED_OBSERVED"))
+                    throw new AiFailure("AI_PROVIDER_DEADLINE_OBSERVED");
                 throw new AiFailure("AI_EVALUATION_GUARD_REJECTED");
             }
             byte[] bytes=Base64.getDecoder().decode(response.path("body").asText());
             if(bytes.length>2000000)throw new IOException();
             var result=json.readTree(bytes);
+            deadline.remaining();
             EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.RESPONSE_DECODED,EvaluationStageTrace.Code.OK,started,timeout);
             return result;
-        } catch(AiFailure failure){throw failure;}
+        } catch(AiFailure failure){if(sent&&!consumed)halt();throw failure;}
         catch(Exception failure){
             EvaluationStageTrace.transport(run,id,EvaluationStageTrace.Phase.ABORTED,
                 failure instanceof TimeoutException?EvaluationStageTrace.Code.BROKER_REPLY_TIMEOUT:
@@ -145,16 +162,22 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
         halt();
     }
     private void halt(){
-        try{Files.writeString(run.resolve("STOP"),"STOPPED",StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);}catch(IOException ignored){}
-        close();
+        try{Files.writeString(run.resolve("STOP"),"STOPPED",StandardOpenOption.CREATE_NEW);}catch(IOException ignored){}
+        stopTransport();
     }
-    @Override public synchronized void close(){
+    private synchronized void stopTransport(){
         if(closed)return;closed=true;
         try{broker.getOutputStream().close();}catch(IOException ignored){}
-        try{if(!broker.waitFor(2,TimeUnit.SECONDS))broker.destroyForcibly();}
-        catch(InterruptedException failure){Thread.currentThread().interrupt();broker.destroyForcibly();}
         reader.shutdownNow();
-        if(verifiedStore!=null)verifiedStore.close();
+        // Billing observations may finish, but never extend the caller's deadline for cleanup.
+        var cleanup=new Thread(()->{
+            try{if(!broker.waitFor(2,TimeUnit.SECONDS))broker.destroyForcibly();}
+            catch(InterruptedException failure){Thread.currentThread().interrupt();broker.destroyForcibly();}
+        },"evaluation-broker-cleanup");cleanup.setDaemon(true);cleanup.start();
+    }
+    @Override public synchronized void close(){
+        stopTransport();
+        if(verifiedStore!=null){verifiedStore.close();verifiedStore=null;}
     }
 
     /** Verify new DB ownership *before* creating schema or contacting provider. */
@@ -179,6 +202,7 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
                 EvaluationIndexLease.verifyReady(connection,meta,corpus.documents().size(),corpus.chunks().size(),state.equals("PREPARED"));
             }
             verifiedStore=store;
+            queryVectors=new com.pricetrack.exchange.ai.provider.QueryVectorCache(provider,properties.embeddingModel(),()->meta.path("corpusHash").asText());
         }catch(Exception failure){store.close();throw failure;}
     }
     private java.sql.Connection db(AiProperties p)throws java.sql.SQLException{
@@ -188,7 +212,7 @@ public final class GuardedAiEvaluationRunner implements AutoCloseable {
     }
     public AuthorizedKnowledgeRetrieval retrieval(){
         if(verifiedStore==null)throw new AiFailure("AI_EVALUATION_INDEX_NOT_READY");
-        return new AuthorizedKnowledgeRetrieval(properties,new KnowledgeLoader(properties,json),verifiedStore,provider)
+        return new AuthorizedKnowledgeRetrieval(properties,new KnowledgeLoader(properties,json),verifiedStore,queryVectors)
             .diagnose(step->EvaluationStageTrace.retrieval(run,step));
     }
 }

@@ -53,4 +53,13 @@ class AuthorizedKnowledgeRetrievalTest {
         verify(store,never()).searchForRole(any(),any(),anyInt(),anyDouble(),any(),any());
         assertThatThrownBy(() -> retrieval.searchScoped(user,"규칙",Duration.ofSeconds(5),Set.of())).hasMessage("AI_DOMAIN_FILTER_INVALID");
     }
+    @Test void selectiveIdentifierPreservesScoreAndRoleBeforeRanking(){
+        var hit=new KnowledgeHit("h","public.md","t","h","1","USER","MinimumOutputNotMet",.12);
+        when(store.searchForRole(any(),any(),anyInt(),anyDouble(),any(),any())).thenReturn(List.of());
+        when(store.searchIdentifiers(any(),any(),any(),any(),isNull(),any())).thenReturn(List.of(hit));
+        assertThat(retrieval.search(user,"MinimumOutputNotMet",Duration.ofSeconds(5)).hits()).containsExactly(hit);
+        verify(store).searchIdentifiers(eq("index"),any(),eq(List.of("MinimumOutputNotMet")),eq(UserRole.USER),isNull(),any());
+        when(store.searchIdentifiers(any(),any(),any(),any(),isNull(),any())).thenReturn(List.of(new KnowledgeHit("bad","secret.md","t","h","1","ADMIN","secret",.9)));
+        assertThatThrownBy(()->retrieval.search(user,"MinimumOutputNotMet",Duration.ofSeconds(5))).hasMessage("AI_ROLE_FILTER_INVALID");
+    }
 }

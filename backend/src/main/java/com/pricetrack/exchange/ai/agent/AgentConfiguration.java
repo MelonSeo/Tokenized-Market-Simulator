@@ -11,6 +11,6 @@ public class AgentConfiguration {
     @Bean(destroyMethod="close") AgentService agentService(AgentProperties properties,ObjectProvider<AgentModelProvider> model,
             ObjectProvider<AuthorizedKnowledgeRetrieval> retrieval,ToolDispatcher tools,ObjectMapper json,
             com.pricetrack.exchange.ai.skill.SkillProperties skills,com.pricetrack.exchange.ai.skill.SkillRegistry registry,com.pricetrack.exchange.ai.observability.AiObservability observation){
-        return new AgentService(properties,model::getIfAvailable,retrieval::getIfAvailable,tools,json,java.time.Duration.ofSeconds(40),skills,registry).observe(observation);
+        return new AgentService(properties,model::getIfAvailable,retrieval::getIfAvailable,tools,json,java.time.Duration.ofSeconds(properties.totalSeconds()),skills,registry).observe(observation);
     }
 }

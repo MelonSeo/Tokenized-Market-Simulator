@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "dataset": "novel-30-v1.json",
+  "datasetSha256": "c59ab1a74b90676059e8b933197907e942521a2db5b0dbe0dbd32ce1c5b6e034",
+  "historySha256": "520087d168aef320c0a87d25acba3b0294f4f5e00435f385c20f7803ff824802",
+  "historicalQuestions": 56,
+  "phase": "BEFORE_ANY_NEW_PROVIDER_CALL",
+  "newProviderApproval": false
+}

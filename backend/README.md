@@ -44,7 +44,7 @@ AI Phase 7 자동 진단은 승인 범위의 구현·검증·별도 검토 및 �
 4. AI_AUTO_DIAGNOSIS_ENABLED=true로 바꾸고 서버를 재시작하면 기존 REVIEW_REQUIRED도 제한된 backlog로 감지합니다. 5초/50건/queue100/day20/7일은 초기 안전값이며 설정으로 조정합니다. 하루 quota는 UTC 기준이며 BUSY 실행0 거절은 반환합니다.
 5. `GET /api/ai/diagnoses`와 `GET /api/ai/diagnoses/{id}`는 ADMIN 전용입니다. 웹 테스트 클라이언트 ADMIN 패널에서 수동 주문 Skill과 자동 이력·상세·trace를 확인합니다. 재진단/자동 복구 endpoint는 없습니다.
 
-자동 run은 기존 Agent의 worker2/40초/Tool4/검색1 예산을 공유하며 프로세스당 최대1개입니다. QUEUED 저장은 실행 queue와 다릅니다. 취소에 응하지 않는 실제 run은 종료까지 자동 gate를 점유하고 수동 슬롯을 보존합니다. AI DB claim lease는90초이며 불명확/만료 실행은 자동 재호출하지 않습니다. 초기 admission BUSY는 실행0 조건에서만10초 간격 최대3회입니다. 결과 JSON은7일 후 제거하되 dedup marker를 유지합니다. 활성화해도 진단 실패가 거래 정산 호출에 전파되지 않습니다. polling 사이에 사라진 상태 전환의 무손실 보장은 없습니다.
+자동 run은 Agent의 worker2/Tool4/검색1 예산을 공유하며 프로세스당 최대1개입니다. 수동 Agent 기본 전체90초(계획15/생성30/검색15)와 달리 자동 진단은 min(전체 설정,기존40초)로 AI DB claim lease90초의 여유를 보존합니다. QUEUED 저장은 실행 queue와 다릅니다. 취소에 응하지 않는 실제 run은 종료까지 자동 gate를 점유하고 수동 슬롯을 보존합니다. AI DB claim lease는90초이며 불명확/만료 실행은 자동 재호출하지 않습니다. 초기 admission BUSY는 실행0 조건에서만10초 간격 최대3회입니다. 결과 JSON은7일 후 제거하되 dedup marker를 유지합니다. 활성화해도 진단 실패가 거래 정산 호출에 전파되지 않습니다. polling 사이에 사라진 상태 전환의 무손실 보장은 없습니다.
 
 현재 자동 진단 이력/평가 데이터는 RAG 지식이나 대화 기억으로 ingest하지 않습니다. 저장된 출처의 승인 hash/version을 확인할 수 없으면 정책 해석·인용을 숨기고 관측 자료만 보여줍니다. 이번 작업은 실제 `.env`를 자동 변경하지 않습니다.
 

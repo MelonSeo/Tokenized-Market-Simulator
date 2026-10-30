@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dataset": "novel-30-v2.json",
+  "datasetSha256": "8666064a7f9be316204bcdb6045e59a7e99f95676dd0eafafa86605abe9aaa40",
+  "historySha256": "520087d168aef320c0a87d25acba3b0294f4f5e00435f385c20f7803ff824802",
+  "historicalQuestions": 56,
+  "phase": "PRE_PROVIDER_REVIEW_CORRECTION_NO_RESPONSE_SEEN",
+  "supersedesWithoutRewriting": "novel-30-v1.lock.json",
+  "newProviderApproval": false
+}

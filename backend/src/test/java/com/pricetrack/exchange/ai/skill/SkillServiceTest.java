@@ -208,10 +208,15 @@ class SkillServiceTest {
         assertThat(result.metrics().toolCalls()).isEqualTo(1);assertThat(result.metrics().modelCalls()).isZero();verifyNoInteractions(model,retrieval);
     }
     @Test void insufficientGeneratedAnswerNeverLeaksUnvalidatedCitationIntoTrace()throws Exception{
-        doReturn(new Generated("INSUFFICIENT_EVIDENCE","확인 불가",List.of("PRIVATE_TARGET_ID"),List.of(),List.of(),List.of(),Usage.none()))
+        doReturn(new Generated("INSUFFICIENT_EVIDENCE","UNVALIDATED_MODEL_TEXT",List.of("PRIVATE_TARGET_ID"),List.of(),List.of(),List.of("UNVALIDATED_NEXT_CHECK"),Usage.none()))
             .when(model).synthesize(any(),any(),any(),any());
-        var result=execute(user,"signed-quote-diagnosis");assertThat(result.status()).isEqualTo("INSUFFICIENT_EVIDENCE");
-        assertThat(json.writeValueAsString(result.skill())).doesNotContain("PRIVATE_TARGET_ID");
+        var result=execute(user,"signed-quote-diagnosis");
+        // The previously adopted safe fallback keeps authorized Tool facts, not the unvalidated draft.
+        assertThat(result.status()).isEqualTo("PARTIAL");
+        assertThat(result.uncertainties()).contains("MODEL_EVIDENCE_INSUFFICIENT");
+        assertThat(result.answer()).contains("CONSUMED","확정할 수 없습니다");
+        assertThat(result.citationIds()).isEmpty();assertThat(result.recommendedNextCheck()).isEmpty();
+        assertThat(json.writeValueAsString(result)).doesNotContain("PRIVATE_TARGET_ID","UNVALIDATED_MODEL_TEXT","UNVALIDATED_NEXT_CHECK");
         assertThat(result.skill().trace()).filteredOn(t -> t.stepId().equals("SUMMARIZE")).allSatisfy(t -> assertThat(t.evidenceRefs()).isEmpty());
     }
 }

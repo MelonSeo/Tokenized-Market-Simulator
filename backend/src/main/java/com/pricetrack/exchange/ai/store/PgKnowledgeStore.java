@@ -117,6 +117,27 @@ public class PgKnowledgeStore implements KnowledgeStore, AutoCloseable {
             s.execute();
         }
     }
+    @Override public List<KnowledgeHit> searchIdentifiers(String fingerprint,float[] query,List<String> identifiers,
+            UserRole role,Set<String> domains,Duration timeout){
+        if(role==null||identifiers==null||identifiers.isEmpty()||identifiers.size()>2||identifiers.stream().anyMatch(x->!x.matches("[A-Za-z][A-Za-z0-9_]{2,79}")))
+            throw new AiFailure("AI_IDENTIFIER_QUERY_INVALID");
+        if(domains!=null&&(domains.isEmpty()||domains.size()>4||!Set.of("trading","settlement","operations","support","market").containsAll(domains)))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
+        if(timeout.isNegative()||timeout.isZero()||Thread.currentThread().isInterrupted())throw new AiFailure("AI_QUERY_TIMEOUT");
+        String roles=role==UserRole.ADMIN?"d.minimum_role in ('USER','ADMIN')":"d.minimum_role='USER'";
+        String sql="""
+            select ch.id,d.path,d.title,ch.heading,d.version,d.minimum_role,ch.content,1-(ch.embedding <=> ?::vector) score
+            from ai.chunks ch join ai.documents d on d.index_id=ch.index_id and d.path=ch.path join ai.indexes i on i.id=ch.index_id
+            where i.active and i.id=? and %s and ch.content ~ ? order by score desc,ch.id limit 40
+            """.formatted(roles+(domains==null?"":" and d.domain=any (?::text[])"));
+        try(var c=pool.getConnection();var s=c.prepareStatement(sql)){
+            s.setQueryTimeout((int)Math.max(1,Math.min(5,(timeout.toMillis()+999)/1000)));
+            s.setString(1,vector(query));s.setString(2,fingerprint);int n=3;
+            if(domains!=null)s.setArray(n++,c.createArrayOf("text",domains.toArray(String[]::new)));
+            s.setString(n,"\\m("+String.join("|",identifiers)+")\\M");
+            var result=new ArrayList<KnowledgeHit>();try(var r=s.executeQuery()){while(r.next())result.add(new KnowledgeHit(r.getString(1),r.getString(2),r.getString(3),r.getString(4),r.getString(5),r.getString(6),r.getString(7),r.getDouble(8)));}
+            return List.copyOf(result);
+        }catch(SQLException failure){throw new AiFailure("AI_DATABASE_UNAVAILABLE");}
+    }
     public static String vector(float[] v) {
         if (v == null || v.length != AiProperties.DIMENSIONS) throw new AiFailure("AI_VECTOR_INVALID");
         StringJoiner out = new StringJoiner(",", "[", "]");

@@ -18,7 +18,7 @@
 
 ## 안전값·보존
 
-초기5초/50행/queue100/UTC일20/결과7일. Agent40초·worker2·자동실제run1·Tool4/검색1/모델2, Tool worker4·5초. claim lease90초. 실행 전 BUSY0만10초 간격최대3회/quota반환, 불명확 실행과 lease 만료는 재호출하지 않는다.
+초기5초/50행/queue100/UTC일20/결과7일. 수동 Agent 기본90초(계획15/생성30/검색15), 자동 진단은 min(Agent 전체 설정,40초)·worker2·자동실제run1·Tool4/검색1/모델2, Tool worker4·5초. claim lease90초와 자동40초의 여유는 유지한다. 실행 전 BUSY0만10초 간격최대3회/quota반환, 불명확 실행과 lease 만료는 재호출하지 않는다. 단순 STATE 폐쇄 문법은 기본 모델 계획을 생략하지만 소유권·Tool 권한을 그대로 검사한다. `app.ai.agent.deterministic-state=false` 및 각 `app.ai.agent.*-seconds`로 명시적 이전 설정을 사용할 수 있다. Agent query vector cache는 실제 비교 후 기본ON이며 `app.ai.query-vector-cache=false`로 끈다. model+corpus+question/TTL5분/LRU64이고 Tool 사실/검색 결과는 캐시하지 않는다. 역할/domain·활성 index·승인 검사는 매 요청 수행한다. Basic RAG/ingest 경로 및 AI enabled 기본false는 유지한다.
 
 종료 결과/actor/tx_hash/claim metadata는 TTL로 제거하고 fingerprint/namespace/대상/종료 상태 marker는 보존한다. 과거 TTL 없는 terminal 행은 purge에서 완료/감지 시각으로 보정한다. dedup marker를 삭제하거나 같은 원장의 namespace를 바꾸면 기존 사건 재실행 위험이 있으므로 임의 삭제하지 않는다. 별도 재진단/복구 endpoint는 없다.
 

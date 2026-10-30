@@ -68,7 +68,7 @@ class LineageTest(unittest.TestCase):
     def test_different_process_reopens_same_cumulative_budget(self):
         f,m=self.child();self.guard(f,m).dispatch('responses',llm(),fake,request_id=str(uuid.uuid4()))
         code="from pathlib import Path; import json,sys,hashlib; from ai_evaluation_guard import EvaluationGuard,_canonical; from ai_evaluation_lineage import verify; f=Path(sys.argv[1]); m=json.loads((f/'run.json').read_text()); r=Path(sys.argv[2]); g=EvaluationGuard(f/'budget.sqlite',run_id=m['runId'],source_hash=m['sourceHash'],corpus_hash=m['corpusHash'],context_hash=hashlib.sha256(_canonical(m)).hexdigest(),carry=verify(f,m,r),validate_lineage=lambda:verify(f,m,r)); print(g.summary()['llm_calls'])"
-        result=subprocess.run([sys.executable,'-B','-S','-c',code,str(f),str(self.registry)],capture_output=True,timeout=10)
+        result=subprocess.run([sys.executable,'-B','-S','-c',code,str(f),str(self.registry)],capture_output=True,timeout=10,cwd=Path(__file__).resolve().parent)
         self.assertEqual(result.returncode,0);self.assertEqual(result.stdout.strip(),b'6')
     def test_broker_uses_cumulative_guard_at_transmission_boundary(self):
         import ai_evaluation_broker as b

@@ -1,0 +1,13 @@
+# Fresh source-only test compiler. Never imports a deleted historical tools tag.
+FROM ghcr.io/foundry-rs/foundry@sha256:0c00cb0bda1ab1b91c9a6bf60f4c76c09c1a8870824b6d4718afbabacf6f9a17
+USER root
+WORKDIR /contracts
+COPY contracts/src ./src
+COPY contracts/lib ./lib
+COPY contracts/script/DeployPublic.s.sol ./script/DeployPublic.s.sol
+COPY contracts/script/DeployFuturesFixture.s.sol ./script/DeployFuturesFixture.s.sol
+COPY deployment/foundry.toml ./foundry.toml
+COPY deployment/init-chain.sh /init-chain.sh
+COPY deployment/init-futures-fixture.sh /init-futures-fixture.sh
+RUN sed -i 's/\r$//' /init-chain.sh /init-futures-fixture.sh && chmod 755 /init-chain.sh /init-futures-fixture.sh && forge build -j 1
+ENTRYPOINT ["/bin/sh", "/init-chain.sh"]

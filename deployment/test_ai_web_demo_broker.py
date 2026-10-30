@@ -83,7 +83,7 @@ class WebBrokerTest(unittest.TestCase):
         import subprocess,sys
         with tempfile.TemporaryDirectory() as d:
             code="from types import SimpleNamespace;from ai_web_demo_broker import arm_deadline;import time,sys;arm_deadline(sys.argv[1],SimpleNamespace(approved=True),.05);time.sleep(4)"
-            r=subprocess.run([sys.executable,'-B','-S','-c',code,d],capture_output=True,timeout=3)
+            r=subprocess.run([sys.executable,'-B','-S','-c',code,d],capture_output=True,timeout=3,cwd=Path(__file__).resolve().parent)
             self.assertEqual(r.returncode,124);self.assertEqual((Path(d)/'STOP').read_text().strip(),'WEB_DEADLINE')
 
 if __name__=='__main__':unittest.main()

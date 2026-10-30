@@ -16,7 +16,7 @@ public final class PhaseAFixture {
         if(!session.getParent().equals(runtime)||!session.getFileName().toString().matches("phase-a-\\d{14}-[0-9a-f]{8}"))
             throw new IllegalStateException("Phase A session required");
         Path run=Path.of(Objects.requireNonNull(gateRun)).toRealPath();
-        if(!run.getParent().equals(session.resolve("fixtures"))||!run.getFileName().toString().matches("(reserve|audit|faucet|conditional|google|google-migration|sellall|futures-ledger|futures-db-only|futures-chain|futures-auto|futures-restart|futures-api|futures-requests|futures-audit|futures-confirmed|futures-browser|futures-ai|futures-ai-web)-[0-9a-f]{8}"))
+        if(!run.getParent().equals(session.resolve("fixtures"))||!run.getFileName().toString().matches("(reserve|audit|faucet|conditional|google|google-migration|sellall|futures-ledger|futures-db-only|futures-chain|futures-auto|futures-restart|futures-api|futures-requests|futures-audit|futures-confirmed|futures-browser|futures-ai|futures-ai-web|futures-ai-latest)-[0-9a-f]{8}"))
             throw new IllegalStateException("New Phase A child fixture required");
         var meta=new ObjectMapper().readTree(run.resolve("run.json").toFile());
         String id=run.getFileName().toString();
@@ -35,12 +35,20 @@ public final class PhaseAFixture {
             ||!p.getProperty("spring.config.import","MISSING").isEmpty()
             ||!p.getProperty("app.price.provider","").equals("simulated"))throw new IllegalStateException("Unsafe fixture configuration");
         boolean webStage1=id.startsWith("futures-ai-web-")&&"true".equals(System.getenv("FUTURES_WEB_AI_STAGE1"));
+        boolean latest=id.startsWith("futures-ai-latest-")&&"true".equals(System.getenv("AI_LATEST_ACCEPTANCE_TESTS"));
+        if(latest){
+            Path study=Path.of(Objects.requireNonNull(System.getenv("AI_LATEST_STUDY_RUN"))).toRealPath();
+            if(!study.equals(session.resolve("latest-study"))||!new ObjectMapper().readTree(study.resolve("run.json").toFile())
+                .path("purpose").asText().equals("LATEST_AI_QUALITY_20261030"))throw new IllegalStateException("Latest study identity required");
+        }
         for(String flag:List.of("app.ai.enabled","app.ai.tools.enabled","app.ai.agent.enabled","app.ai.skills.enabled","app.ai.diagnosis.enabled")) {
-            boolean offlineRead=webStage1&&Set.of("app.ai.tools.enabled","app.ai.agent.enabled","app.ai.skills.enabled").contains(flag);
+            boolean offlineRead=(webStage1||latest)&&Set.of("app.ai.tools.enabled","app.ai.agent.enabled","app.ai.skills.enabled").contains(flag);
             if(!p.getProperty(flag,"").equals(offlineRead?"true":"false"))throw new IllegalStateException("AI isolation flags invalid");
         }
         if(webStage1 && (!p.getProperty("app.ai.web-stage1","").equals("true")||!p.getProperty("app.ai.api-key","MISSING").isEmpty()
             ||!p.getProperty("app.ai.api-base","").equals("guarded:stdio/")))throw new IllegalStateException("NO_PAID_WEB_TRANSPORT_REQUIRED");
+        if(latest&&(!p.getProperty("app.ai.api-key","MISSING").isEmpty()||!p.getProperty("app.ai.api-base","").equals("guarded:stdio/")))
+            throw new IllegalStateException("Latest guarded keyless transport required");
         if(!p.getProperty("app.price.toss.base-url","").equals("http://127.0.0.1:1"))throw new IllegalStateException("External provider not isolated");
         // Non-mutating marker query; wrong identity cannot reach schema initialization.
         try(var c=DriverManager.getConnection(p.getProperty("spring.datasource.url"),p.getProperty("spring.datasource.username"),p.getProperty("spring.datasource.password"));
