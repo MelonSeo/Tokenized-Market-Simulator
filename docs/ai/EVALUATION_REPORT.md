@@ -14,6 +14,15 @@
 
 사전 기준과 활성화/비용 제안은 [READINESS_PLAN_2026-10-31.md](READINESS_PLAN_2026-10-31.md)의 후속 절 및 `pilot-acceptance-v1.json`에 기록했다. 새 모델 평가 제안 US$15/LLM80/Embedding60은 **승인 아님**이다. 실제 검증 결과·독립 검토·CI SHA는 완료 시 이 절에 추기한다. 소표본 controlled provider 성능을 실제 모델 SLA로 보고하지 않는다.
 
+### 후속 Linux 실행에서 확인한 결함과 경계
+
+1. `fcb008d`: C-read41194933278 PASS, readiness41194933216은 한글 조사에 붙은 `getCAccount와`를 찾지 못했다. Unicode word 경계 대신 허용 ASCII 식별자 경계를 사용하고 role/domain/active 필터는 유지했다. corpus와 기존 질문은 바꾸지 않았다.
+2. `df19727`: C-read41197700535 PASS, readiness41197700658은 SQL 검색과 실제 Chrome/JWT/Tool/RAG/Skill/로그아웃·전환까지 통과했지만 정상 응답 warmup에서 실패했다. 이를 웹 전체 성공이나 실제 모델 인수로 바꾸지 않는다.
+3. `4f98c88`: C-read41198657066 PASS, readiness41198657083은 기존 smoke16의 HTTP200 assertion에서 간헐 실패했다(382중346PASS/1FAIL/35SKIP). 같은 제품 소스가 앞선 실행에서는 통과했고 별도 JVM 순수250회 및 후속25회는 PASS해 원인은 아직 미확정이다. 정답 기준을 낮추거나 재현되지 않은 원인을 확정하지 않았다.
+4. `5dc269d`: C-read41199541761 PASS, 회귀382중347PASS/35SKIP/0FAIL, Python209PASS. 독립 HTTP에서는 STATE/200/PARTIAL/PRICE_STALE 및 getPortfolio SUCCESS가 관측됐다. 공통 테스트가 Synthetic 초기 지연·갱신60000ms를 사용해 Chrome 진행 후 제품의5초 신선도를 넘은 것이 확인됐다. Agent의 유보는 정상이며 시험에만 제품 기본1초 갱신을 적용하고 실제 tick 증가와 Chrome 후 상태를 검사하도록 수정했다. 기존5초 신선도와90초 deadline은 보존한다.
+
+과거 실패, 소유 PG 정상 제거 결과와 정제 산출물을 각각 보존했다. 새 비용 원장의 불완전 usage를 UNKNOWN으로 유지하는 관측 보완도 별도 검토했다. 독립 검토를 실제 PG 실행이나 유료 사용량 검증으로 표시하지 않는다. 최신 재실행 결과는 아래 후속 기록으로 구분한다.
+
 ## 2026-10-31 최종 main 무과금 통합·운영 특성 평가
 
 **서비스 준비도 PARTIAL / 이번 통제 HTTP·DB 시험 PASS / 유료 재인수·Linux Actions 실행 NOT_RUN.** 기능을 추가하거나 기존 품질 한계를 완료로 바꾸지 않았다. 개인 원격 main 기준은 `9abf3dbc30701032d5cdd6b9346b1111e2c3d686`이며 별도 `ci/ai-unpaid-readiness-20261031` worktree에서만 시험/CI/문서를 보완했다. Commit·Push·main 변경·배포·유료 호출·금융 거래는 없다.

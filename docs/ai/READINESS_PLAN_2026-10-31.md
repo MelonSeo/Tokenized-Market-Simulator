@@ -17,6 +17,8 @@
 
 `ai-unpaid-readiness.yml`은 Java21/Node22, 해시 검사, 무과금 회귀, 새 tmpfs PostgreSQL+pgvector, 실제 HTTP/JWT/Tool/RAG, controlled provider, 별도 Chrome 프로필의 웹 조작을 실행한다. `AI_PILOT_BROWSER=true python deployment/ai-readiness.py run`이 실행 경로다(웹 빌드 선행, 기동 전 RAM1920MiB/디스크2GiB). 합성 벡터·통제된 생성 결과를 실제 의미 검색/모델 품질로 표현하지 않는다. UI는 실제 Agent HTTP를 호출하며 브라우저 응답 가로채기를 사용하지 않는다. 공개 artifact는 numeric-only metrics와 전체 시험 성공 후 고정 allowlist의 **시험 계정** AI 화면 PNG2개/해시만 포함한다. 프로필·로그·암호·JWT·실사용자 자료는 제외한다. PNG 해시/종류 검사가 화면 의미의 무유출 증명은 아니며 최종 시각 대조가 필요하다.
 
+정상 부하 fixture는 제품 기본과 동일한 Synthetic 초기 지연/갱신1000ms를 명시한다. 공통 단위 시험의60000ms를 상속하면5초 신선도를 넘겨 적절하게 PARTIAL이 되므로 정상 부하 fixture로 사용하지 않는다. 실제 observedAt 증가를6초 내 확인하고 Chrome 후 SIMULATED를 검사한다. 이6초는 시험 준비 상한이며 제품 freshness/deadline 완화가 아니다. 앞선 회귀 실패가 있더라도 웹·현재 시험 class 컴파일이 확인되면 독립 HTTP 시험은 진행하되 전체 job의 FAIL은 유지한다.
+
 `ai-c-read-linux.yml`은 새 Anvil/격리 PostgreSQL과 기존 결정적 C fixture를 재사용한다. 별도 `ProductAiCReadGate/Driver`로 C STATE Tool/Agent, owner 차단과 실제 웹을 검증한다. 기존 read-only Gate의 기본 기능 OFF와 판정은 변경하지 않는다. 이 프로필은 실제 사용자 MetaMask 승인도 C 정책 생성 품질 인수도 아니다.
 
 실사용 외부 호출은 기본 OFF다. 관리자만 운영자가 구성한 `app.ai.budget.approval`, `total-nusd`, `daily-nusd`, `llm-calls`, `embedding-calls`, `actor-daily-requests`, `actor-minute-requests`를 `POST /api/ai/provider-budget/initialize`로 최초 바인딩할 수 있다(1 nanoUSD=$0.000000001). 요청 본문으로 상한을 바꾸지 못한다. 같은 DB의 다른 approval/정책으로 누적 초기화할 수 없다. 이 단계에서는 외부 키를 구성하거나 실제 비용 예산을 초기화하지 않는다. 무과금 시험은 독립 DB의 명시적인 `UNPAID_TEST_NOT_APPROVAL` 정책만 사용한다.

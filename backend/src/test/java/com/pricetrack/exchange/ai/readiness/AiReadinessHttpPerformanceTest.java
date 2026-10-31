@@ -46,6 +46,7 @@ import org.springframework.test.util.ReflectionTestUtils;
     "server.address=127.0.0.1","spring.config.import=","spring.datasource.url=jdbc:h2:mem:ai_readiness;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.hikari.maximum-pool-size=4","app.ai.enabled=true","app.ai.agent.enabled=true","app.ai.tools.enabled=true",
     "app.ai.skills.enabled=true","app.ai.diagnosis.enabled=false","app.ai.api-key=","app.blockchain.enabled=false",
+    "app.price.provider=simulated","app.price.update-interval-ms=1000","app.price.initial-delay-ms=1000",
     "app.blockchain.price-report.enabled=false","app.admin.password=","logging.level.com.pricetrack.exchange.ai.agent=ERROR"})
 class AiReadinessHttpPerformanceTest {
     static final Properties CONFIG=new Properties();
@@ -59,6 +60,7 @@ class AiReadinessHttpPerformanceTest {
     @Autowired OrderRepository orders;@Autowired PriceQuoteRepository quotes;@Autowired PasswordEncoder encoder;
     @Autowired JdbcTemplate tradeDb;@Autowired AgentService agent;@Autowired ToolDispatcher tools;
     @Autowired PgKnowledgeStore store;@Autowired KnowledgeLoader loader;@Autowired AiProperties ai;
+    @Autowired com.pricetrack.exchange.market.MarketPriceService market;
     @LocalServerPort int port;
     @MockBean OpenAiProvider provider;@MockBean ReceiptReader receipts;
     final AtomicInteger embeddingCalls=new AtomicInteger(),modelCalls=new AtomicInteger(),entered=new AtomicInteger(),privacyViolations=new AtomicInteger();
@@ -162,6 +164,11 @@ class AiReadinessHttpPerformanceTest {
         }
     }
     static String safeCode(String code){return code!=null&&code.matches("[A-Z_]{1,80}")?code:"UNAVAILABLE";}
+    void requireRecurringSyntheticTick()throws Exception{
+        Instant before=market.current().observedAt();long end=System.nanoTime()+TimeUnit.SECONDS.toNanos(6);
+        while(System.nanoTime()<end){var now=market.current();if(now.observedAt().isAfter(before)&&now.priceStatus()==com.pricetrack.exchange.market.model.PriceStatus.SIMULATED)return;Thread.sleep(25);}
+        throw new IllegalStateException("OWN_SYNTHETIC_NOT_TICKING");
+    }
     List<Reply> batch(String workload,int c)throws Exception{
         var latch=new CountDownLatch(1);var futures=new ArrayList<Future<Reply>>();
         for(int n=0;n<c;n++)futures.add(clients.submit(()->{latch.await();return call(workload);}));
@@ -303,7 +310,9 @@ class AiReadinessHttpPerformanceTest {
             assertThat(store.searchIdentifiers(corpus.fingerprint(),vector(),List.of("getCAccount"),UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isNotEmpty();
             assertThat(store.searchIdentifiers(corpus.fingerprint(),vector(),List.of("getCPosition"),UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isNotEmpty();
             for(String prefixOrSuffix:List.of("getCAccountExtra","XgetCAccount"))assertThat(store.searchIdentifiers(corpus.fingerprint(),vector(),List.of(prefixOrSuffix),UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isEmpty();
-            security();browser();var os=(com.sun.management.OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();cpuBefore=os.getProcessCpuTime();long start=System.nanoTime();
+            requireRecurringSyntheticTick();security();var verifiedSecurity=new LinkedHashMap<String,Object>((Map<String,Object>)result.get("security"));verifiedSecurity.put("syntheticRecurringTick",true);result.put("security",verifiedSecurity);browser();
+            assertThat(market.current().priceStatus()).isEqualTo(com.pricetrack.exchange.market.model.PriceStatus.SIMULATED);
+            var os=(com.sun.management.OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();cpuBefore=os.getProcessCpuTime();long start=System.nanoTime();
             sampler=Executors.newSingleThreadScheduledExecutor();sampler.scheduleAtFixedRate(this::sample,0,25,TimeUnit.MILLISECONDS);
             var loads=new ArrayList<Object>();result.put("load",loads);
             for(String workload:List.of("STATE","KNOWLEDGE","MIXED")){for(int w=0;w<plan.path("warmupPerWorkload").asInt();w++)assertNormal(workload,call(workload));
