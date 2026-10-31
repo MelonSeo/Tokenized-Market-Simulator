@@ -3248,3 +3248,15 @@ Stage 공개후보67파일의 제한 패턴 검사에서는 비밀 키/JWT/비�
 이후 Windows Gradle은 daemon listen에서 동일 native 오류로 시작하지 못했다. 현재 Gradle 산출 testRuntimeClasspath만 읽어 `javac`로 변경 시험을 컴파일하고 소유한 별도 JVM의 순수25개를1회 다시 PASS했다. 전체 Gradle/실환경 성공으로 확대하지 않는다. Python16 및 YAML parse도 PASS했다. CI를 재시도하기 전에 이 관측/실행조건 diff의 독립 재검토를 수행한다.
 
 관측/실행조건 첫 재검토: 필수 수정 없음. 검토자는 Python16/YAML/실패를 유지하는 workflow 조건을 직접 대조했다. listener 실제 실행과 원인 확정은 후속 CI에서 확인한다. 모든 과거 실패를 유지하고 승인된 CI branch 외에는 Push하지 않는다.
+
+## PRICE_STALE의 확인된 시험 설정 원인
+
+5dc269d/readiness41199541716의 회귀는 PASS했으나 실제 HTTP warmup은 STATE/200/PARTIAL/PRICE_STALE, getPortfolio SUCCESS로 실패했다. C-read41199541761은 PASS다. 새 진단으로 Tool 실패나 권한 문제가 아님을 확인했다. `backend/src/test/resources/application.yml`은 일반 단위 시험을 조용하게 유지하려고 Synthetic 초기 지연/갱신을60000ms로 설정하지만 실제 공급자의 신선도는5초다. 기존 즉시 시험은 시작 tick 직후 끝났지만 Chrome 단계가 추가되면 첫 주기적 tick 전5초를 넘어간다. 따라서 Agent의 PARTIAL은 올바른 안전 판정이며 약화하지 않는다.
+
+readiness 시험에 한정해 제품 기본값인 simulated/1000ms 갱신/1000ms 초기 지연을 명시한다. 실제 observedAt 증가를 최대6초 내 확인하고 Chrome 후 SIMULATED 상태도 검사한다. 공통 테스트 설정·제품 시세 엔진·5초 신선도·90초 Agent 기준은 변경하지 않는다. 정상 상태 fixture와 장애 시험을 구분하기 위한 수정이며 과거 실패를 삭제하지 않는다. 간헐 smoke 실패의 원인까지 이 설정으로 해결됐다고 주장하지 않는다.
+
+## 비용 사용량 관측의 별도 마감 보완
+
+자체 소스 대조에서 새 서버 예산 원장은 LLM usage에 output_tokens가 없을 때0으로 관측 완료 표시할 수 있음을 발견했다. 실제 과금 사건이 아니라 미활성 소스 결함이며 보수 예약액은 원래 환불하지 않아 상한 계산을 낮추지는 않는다. 누락·타입 불일치·long 범위 초과는 UNKNOWN/원래 예약 유지, 정상 LLM 두 토큰 또는 정상 Embedding prompt_tokens만 해당 kind에 기록하도록 수정했다. 기존 PostgreSQL 시험에서 같은 예약에 누락/잘못된 kind/범위 초과 사용량을 전달해 UNKNOWN/null 유지 후 정상 관측을 검사한다. 기존 과거 SQLite 원장이나 불명1건은 열거나 수정하지 않는다. 이 좁은 비용 관측 수정은 별도 독립 검토 후 게시한다.
+
+시세 fixture의 런타임 진단 최종2차 검토와 별도 비용 관측 검토는 모두 필수 수정 없음이다. 검토자의 소스 대조와 구현자의 직접 javac/Python16/순수26 PASS를 구분하며, 두 수정의 실제 PG/Chrome/부하 재검증은 다음 Linux 실행 결과로 남긴다. 시세 갱신을 확인하지 않고 성공 처리하거나 UNKNOWN을 실제0토큰으로 보고하지 않는다.

@@ -62,7 +62,10 @@ class AiProviderBudgetPostgresTest {
         byte[] emb=json.writeValueAsBytes(Map.of("model","text-embedding-3-small","input",List.of("test")));
         String req=UUID.randomUUID().toString();
         try(var b=new PgProviderBudget(ai,limits,clock)){
-            b.initialize();String observed=ProviderAccess.call(1,req,()->b.reserve("responses",llm));b.observed(observed,json.readTree("{\"input_tokens\":10,\"output_tokens\":3}"));
+            b.initialize();String observed=ProviderAccess.call(1,req,()->b.reserve("responses",llm));
+            for(String invalidUsage:List.of("{\"input_tokens\":10}","{\"prompt_tokens\":10}","{\"input_tokens\":18446744073709551616,\"output_tokens\":3}"))b.observed(observed,json.readTree(invalidUsage));
+            try(var c=DriverManager.getConnection(ai.jdbcUrl(),ai.dbUser(),ai.dbPassword());var s=c.prepareStatement("select state,input_tokens,output_tokens from ai_provider_budget.reservation where id=?::uuid")){s.setString(1,observed);try(var r=s.executeQuery()){r.next();assertThat(r.getString(1)).isEqualTo("UNKNOWN");assertThat(r.getObject(2)).isNull();assertThat(r.getObject(3)).isNull();}}
+            b.observed(observed,json.readTree("{\"input_tokens\":10,\"output_tokens\":3}"));
             ProviderAccess.call(1,req,()->b.reserve("responses",llm)); // UNKNOWN: full reservation retained
             ProviderAccess.call(1,UUID.randomUUID().toString(),()->b.reserve("embeddings",emb));
             assertThatThrownBy(()->ProviderAccess.call(1,UUID.randomUUID().toString(),()->b.reserve("embeddings",emb))).hasMessage("AI_ACCOUNT_RATE_LIMIT");

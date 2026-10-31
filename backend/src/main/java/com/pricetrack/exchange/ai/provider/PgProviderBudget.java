@@ -83,9 +83,10 @@ public final class PgProviderBudget implements ProviderBudget,AutoCloseable {
     @Override public void observed(String id,JsonNode usage){
         if(usage==null)return;
         JsonNode in=usage.has("input_tokens")?usage.get("input_tokens"):usage.get("prompt_tokens"),out=usage.get("output_tokens");
-        if(in==null||!in.isIntegralNumber()||in.asLong()<0||out!=null&&(!out.isIntegralNumber()||out.asLong()<0))return;
-        try(var c=pool.getConnection();var s=c.prepareStatement("update ai_provider_budget.reservation set state='OBSERVED',input_tokens=?,output_tokens=? where id=?::uuid and state='UNKNOWN'")){
-            s.setLong(1,in.asLong());s.setLong(2,out==null?0:out.asLong());s.setString(3,id);s.executeUpdate();
+        boolean embedding=!usage.has("input_tokens")&&usage.has("prompt_tokens");
+        if(in==null||!in.isIntegralNumber()||!in.canConvertToLong()||in.asLong()<0||!embedding&&out==null||out!=null&&(!out.isIntegralNumber()||!out.canConvertToLong()||out.asLong()<0||embedding&&out.asLong()!=0))return;
+        try(var c=pool.getConnection();var s=c.prepareStatement("update ai_provider_budget.reservation set state='OBSERVED',input_tokens=?,output_tokens=? where id=?::uuid and state='UNKNOWN' and kind=?")){
+            s.setLong(1,in.asLong());s.setLong(2,out==null?0:out.asLong());s.setString(3,id);s.setString(4,embedding?"EMBEDDING":"LLM");s.executeUpdate();
         }catch(Exception ignored){/* Reservation remains UNKNOWN, fully charged; never replay/refund. */}
     }
     @Override public void close(){pool.close();}
