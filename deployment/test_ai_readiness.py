@@ -107,6 +107,9 @@ class ReadinessTests(unittest.TestCase):
         self.assertIn('contents: read',workflow)
         self.assertIn("steps.public_evidence.outcome == 'success'",workflow)
         self.assertNotIn('secrets.',workflow)
+        self.assertNotIn('continue-on-error',workflow)
+        self.assertIn("!cancelled() && steps.web.outcome == 'success' && hashFiles('backend/build/classes/java/test/com/pricetrack/exchange/ai/readiness/AiReadinessHttpPerformanceTest.class') != ''",workflow)
+        self.assertIn("!cancelled() && steps.database.outcome == 'success'",workflow)
         for line in workflow.splitlines():
             if 'uses:' in line:self.assertRegex(line,r'@[a-f0-9]{40}$')
 

@@ -4,5 +4,13 @@ allprojects {
         maxHeapSize = '384m'
         maxParallelForks = 1
         forkEvery = 0
+        afterTest { descriptor, result ->
+            result.exceptions.each { failure ->
+                (failure.message ?: '').findAll(/SAFE_SMOKE_Q[0-9]+_CODE_[A-Z_]+_ROUTE_[A-Z_]+_HTTP_[0-9]{3}/).each { marker -> logger.lifecycle(marker) }
+            }
+        }
+        afterSuite { descriptor, result ->
+            if (descriptor.parent == null) logger.lifecycle("UNPAID_JUNIT_TOTAL=${result.testCount} PASS=${result.successfulTestCount} FAIL=${result.failedTestCount} SKIP=${result.skippedTestCount}")
+        }
     }
 }

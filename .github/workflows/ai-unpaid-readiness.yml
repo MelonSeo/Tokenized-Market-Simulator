@@ -41,6 +41,7 @@ jobs:
         with:
           node-version: '22.22.0'
       - name: Build existing web and Korean Chrome environment
+        id: web
         shell: bash
         run: |
           set -euo pipefail
@@ -52,18 +53,22 @@ jobs:
           npm test --prefix tools/websocket-test-client
           npm run build --prefix tools/websocket-test-client
       - name: Unpaid AI, auth and settlement regression
+        id: regression
         shell: bash
         run: |
           set -euo pipefail
-          bash backend/gradlew -p backend test --no-daemon --max-workers=1 '-Dorg.gradle.jvmargs=-Xmx384m -XX:MaxMetaspaceSize=256m' --tests 'com.pricetrack.exchange.ai.*' --tests '*LatestAiNovelHarnessTest' --tests '*OnchainSettlementServiceTest' --tests '*JwtTokenProviderTest' --tests '*AuthServiceTest' --tests '*AuthIntegrationTest' --tests '*StaticWebSecurityTest'
+          bash backend/gradlew -p backend -I "$PWD/deployment/ai-readiness.gradle" test --no-daemon --max-workers=1 '-Dorg.gradle.jvmargs=-Xmx384m -XX:MaxMetaspaceSize=256m' --tests 'com.pricetrack.exchange.ai.*' --tests '*LatestAiNovelHarnessTest' --tests '*OnchainSettlementServiceTest' --tests '*JwtTokenProviderTest' --tests '*AuthServiceTest' --tests '*AuthIntegrationTest' --tests '*StaticWebSecurityTest'
           python3 -B -m unittest discover -s deployment -p 'test_ai*.py'
       - name: Cached locked database image
+        id: database
+        if: ${{ !cancelled() && steps.web.outcome == 'success' && hashFiles('backend/build/classes/java/test/com/pricetrack/exchange/ai/readiness/AiReadinessHttpPerformanceTest.class') != '' }}
         shell: bash
         run: |
           set -euo pipefail
           image=$(python3 -c 'import json;print(json.load(open("deployment/ai-readiness-plan.json"))["image"])')
           docker pull "$image"
       - name: Real HTTP and PostgreSQL with controlled providers
+        if: ${{ !cancelled() && steps.database.outcome == 'success' }}
         shell: bash
         run: python3 -B deployment/ai-readiness.py run
       - name: Validate numeric-only public evidence

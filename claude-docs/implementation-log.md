@@ -3240,3 +3240,11 @@ Stage 공개후보67파일의 제한 패턴 검사에서는 비밀 키/JWT/비�
 또한 C 브라우저 screenshot에서 JS로 select값만 바꿔 실제 change 이벤트/포지션 target 표시를 확인하지 않은 하네스 누락을 확인했다. 기존 사용자 프로필 대신 소유 Chrome에서 input+change를 발생시키고 target 표시 assertion을 추가한다. 실제 제품 UI를 새로 설계하거나 금융 API를 켜는 변경은 아니다. 이 런타임 진단 후속은 테스트/관측만의 별도 검증 단위이며 제품 소스는 변경하지 않는다.
 
 이 진단 후속 독립 검토: 발견된 필수 수정 없음. Python16/product-read72/Node구문은 검토자도 직접 확인했고 compileTestJava는 구현자가 PASS했다. 대문자 코드 형식 검사는 완전한 비밀 탐지가 아니며 실제 고정된 서버 판정 코드만 사용한다. 새 Java 진단 회귀와 최초 원인 확인은 Linux 후속 실행으로 구분한다.
+
+진단 실행4f98c88/readiness41198657083은 실제 HTTP 전에 기존16문항 smoke의 http200 assertion에서 실패했다(382수집/346PASS/1FAIL/35SKIP). 앞선2CI에서 같은 제품 소스로 통과했던 항목이다. 현재 클래스패스를 Gradle로 추출해 소유한 별도 JVM에서 순수25개를10회 실행한250개는 모두 PASS했으며 원인은 아직 재현되지 않았다. 이 실행은 Gradle의 native listen을 쓰지 않으며 private probe/클래스패스는 Git 제외다. C-read41198657066은 PASS했다.
+
+정답·HTTP 기대값은 유지하고 실패 시 Q번호/고정 error/route/HTTP marker와 테스트 총계만 Gradle listener가 출력하도록 관측을 보완한다. 웹 빌드와 현재 test class 컴파일이 성공한 경우 독립 HTTP 시험은 앞선 회귀 실패 후에도 수행하되 기존 실패 step과 전체 job FAIL을 그대로 유지한다(continue-on-error 없음). 회귀가 통과한 것처럼 만들지 않고 첫 정상 응답 실패 코드도 같은 실행에서 확보하기 위한 분리다. 컴파일 실패·취소·웹 미준비에서는 HTTP 환경을 만들지 않는다.
+
+이후 Windows Gradle은 daemon listen에서 동일 native 오류로 시작하지 못했다. 현재 Gradle 산출 testRuntimeClasspath만 읽어 `javac`로 변경 시험을 컴파일하고 소유한 별도 JVM의 순수25개를1회 다시 PASS했다. 전체 Gradle/실환경 성공으로 확대하지 않는다. Python16 및 YAML parse도 PASS했다. CI를 재시도하기 전에 이 관측/실행조건 diff의 독립 재검토를 수행한다.
+
+관측/실행조건 첫 재검토: 필수 수정 없음. 검토자는 Python16/YAML/실패를 유지하는 workflow 조건을 직접 대조했다. listener 실제 실행과 원인 확정은 후속 CI에서 확인한다. 모든 과거 실패를 유지하고 승인된 CI branch 외에는 Push하지 않는다.
