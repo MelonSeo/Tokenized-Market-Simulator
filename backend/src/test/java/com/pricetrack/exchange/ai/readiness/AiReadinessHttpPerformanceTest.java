@@ -293,6 +293,8 @@ class AiReadinessHttpPerformanceTest {
             assertThat(store.searchForScope(corpus.fingerprint(),vector(),5,.25,UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isNotEmpty().allMatch(h->h.path().equals("c-vault-read-policy.md")&&h.role().equals("USER"));
             assertThat(store.searchLegacyIdentifiers(corpus.fingerprint(),vector(),List.of("getCAccount"),UserRole.USER,Duration.ofSeconds(5))).isEmpty();
             assertThat(store.searchIdentifiers(corpus.fingerprint(),vector(),List.of("getCAccount"),UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isNotEmpty();
+            assertThat(store.searchIdentifiers(corpus.fingerprint(),vector(),List.of("getCPosition"),UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isNotEmpty();
+            for(String prefixOrSuffix:List.of("getCAccountExtra","XgetCAccount"))assertThat(store.searchIdentifiers(corpus.fingerprint(),vector(),List.of(prefixOrSuffix),UserRole.USER,Set.of("custody"),Duration.ofSeconds(5))).isEmpty();
             security();browser();var os=(com.sun.management.OperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();cpuBefore=os.getProcessCpuTime();long start=System.nanoTime();
             sampler=Executors.newSingleThreadScheduledExecutor();sampler.scheduleAtFixedRate(this::sample,0,25,TimeUnit.MILLISECONDS);
             var loads=new ArrayList<Object>();result.put("load",loads);

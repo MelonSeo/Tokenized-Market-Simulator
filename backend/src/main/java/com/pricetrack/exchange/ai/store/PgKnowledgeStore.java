@@ -143,7 +143,8 @@ public class PgKnowledgeStore implements KnowledgeStore, AutoCloseable {
             s.setQueryTimeout((int)Math.max(1,Math.min(5,(timeout.toMillis()+999)/1000)));
             s.setString(1,vector(query));s.setString(2,fingerprint);int n=3;
             if(domains!=null)s.setArray(n++,c.createArrayOf("text",domains.toArray(String[]::new)));
-            s.setString(n,"\\m("+String.join("|",identifiers)+")\\M");
+            // Identifiers are ASCII; PostgreSQL Unicode word boundaries also treat Korean particles as word characters.
+            s.setString(n,"(^|[^A-Za-z0-9_])("+String.join("|",identifiers)+")($|[^A-Za-z0-9_])");
             var result=new ArrayList<KnowledgeHit>();try(var r=s.executeQuery()){while(r.next())result.add(new KnowledgeHit(r.getString(1),r.getString(2),r.getString(3),r.getString(4),r.getString(5),r.getString(6),r.getString(7),r.getDouble(8)));}
             return List.copyOf(result);
         }catch(SQLException failure){throw new AiFailure("AI_DATABASE_UNAVAILABLE");}

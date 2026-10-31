@@ -3226,3 +3226,9 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 독립 제품 첫 재검토/하네스 최종2차 재검토: 발견된 필수 수정 없음. 검토자는 실제 DB/Chrome/CI를 실행한 것으로 표시하지 않았으며 하네스 Python16개는 직접 PASS했다. 마지막 Java compileJava/compileTestJava/productReadCiClasses/runtime PASS, 웹238/build PASS, 전체 Python204 및 product-read72 PASS 후 추가 readiness16 PASS다. Windows Java581 수집 중543 PASS/3 nativeSocketException/35 SKIP와 후속 Gradle worker fork native실패를 보존하고 Linux 검증으로 이동한다. 공급자 전송과 금융 거래는0이다.
 
 Stage 공개후보67파일의 제한 패턴 검사에서는 비밀 키/JWT/비공개 runtime 포함0, 로컬 경로1건은 `test_ai_readiness`의 의도적인 `C:/Users/local/runtime` 거부 canary로 직접 대조했다. 실제 개인 경로가 아니므로 시험을 보존한다. 이는 절대적인 무유출 보증이 아니다. 개인 remote main9abf/신규CIbranch미게시/Actionsenabled를 다시 확인했다. 이 기록 이후 CI 브랜치만 게시하며 main/Organization에는 쓰지 않는다.
+
+## 최초 Linux 실행과 식별자 경계 결함
+
+`fcb008d`의 C-read 실행41194933278은 PASS했다. 별도 무과금 readiness41194933216은 일반 회귀/컴파일 후 실제 PG 검색의 `getCAccount` 기대 근거에서 실패했고 소유 PG는 정상 제거했다. PostgreSQL의 `\m...\M`은 한글 조사도 word로 처리하므로 정책의 `getCAccount와`/`getCPosition은`을 정확 ASCII 식별자로 검색하지 못했다. 단순히 문서를 영어로 바꾸거나 assertion을 삭제하지 않고 허용 식별자의 ASCII 경계를 사용했다. 한글 조사 뒤 검색의 성공과 ASCII 접두/접미(`XgetCAccount`, `getCAccountExtra`)의 비일치를 함께 검사한다. 권한·domain·활성 index 필터는 그대로다. 이는 과거 고정 질문의 성능을 새로 측정한 결과가 아니며 후속 CI로 회귀를 확인한다.
+
+이 수정의 제품 최종2차 독립 검토: 필수 수정 없음. compileJava/compileTestJava와 Python16 PASS. 검토 범위 한계: 음성 assert는 긴 검색어가 짧은 본문에 맞지 않는 방향이며, 짧은 검색어가 긴 본문 식별자에 부분 일치하지 않는 정방향 데이터 fixture까지 추가한 것은 아니다. 새 양쪽 ASCII 경계의 코드 확인과 후속 실제 PG 결과를 구분한다. 기존 C-read 화면2개를 시각 대조해 한글·자산/legacy 분리·Claims 범위 표시를 확인했다. 시험 EOA의 자동 읽기이며 실제 사용자 파일럿은 아니다.
