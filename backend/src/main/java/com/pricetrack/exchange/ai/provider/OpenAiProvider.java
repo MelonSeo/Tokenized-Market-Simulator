@@ -18,6 +18,8 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
     private final ObjectMapper json;
     private final HttpClient http;
     private final EvaluationTransport evaluationTransport;
+    private ProviderBudget budget=ProviderBudget.DENY;
+    public OpenAiProvider budget(ProviderBudget value){budget=Objects.requireNonNull(value);return this;}
     /** Evaluation-only transport: production constructors never enable it. */
     @FunctionalInterface public interface EvaluationTransport {
         JsonNode post(String path, byte[] body, Duration timeout);
@@ -135,9 +137,12 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
             if (!"https".equals(uri.getScheme()) && !Set.of("127.0.0.1", "localhost").contains(uri.getHost()))
                 throw new AiFailure("AI_PROVIDER_CONFIG_INVALID");
             if (timeout.isNegative() || timeout.isZero() || Thread.currentThread().isInterrupted()) throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
+            var payload=json.valueToTree(body);if("responses".equals(path))((com.fasterxml.jackson.databind.node.ObjectNode)payload).put("service_tier","default");
+            byte[] wire=json.writeValueAsBytes(payload);
+            String reservation=budget.reserve(path,wire); // fsync/DB commit before any provider dispatch
             HttpRequest request = HttpRequest.newBuilder(uri).timeout(deadline.remaining())
                     .header("Authorization", "Bearer " + properties.apiKey()).header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body))).build();
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(wire)).build();
             var pending = http.sendAsync(request, ignored -> new BoundedBodySubscriber());
             HttpResponse<byte[]> response;
             try {
@@ -152,7 +157,7 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
                 if (response.statusCode() < 200 || response.statusCode() >= 300) throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
                 byte[] bytes = response.body();
                 if (bytes.length > 2_000_000) throw new AiFailure("AI_PROVIDER_RESPONSE_INVALID");
-                var result=json.readTree(bytes);deadline.remaining();return result;
+                var result=json.readTree(bytes);budget.observed(reservation,result.path("usage"));deadline.remaining();return result;
             }
         } catch (AiFailure e) { throw e; }
         catch (Exception e) { throw new AiFailure("AI_PROVIDER_UNAVAILABLE"); }

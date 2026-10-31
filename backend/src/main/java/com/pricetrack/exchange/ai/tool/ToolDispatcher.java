@@ -21,6 +21,8 @@ public final class ToolDispatcher implements AutoCloseable {
     private final Duration timeout;
     private com.pricetrack.exchange.ai.observability.AiObservability observation;
     private java.util.function.Supplier<com.pricetrack.exchange.ai.tool.read.FuturesToolReader> futures=()->null;
+    private java.util.function.Supplier<com.pricetrack.exchange.ai.tool.read.CVaultToolReader> custody=()->null;
+    public ToolDispatcher custody(java.util.function.Supplier<com.pricetrack.exchange.ai.tool.read.CVaultToolReader> value){custody=value;return this;}
     public ToolDispatcher futures(java.util.function.Supplier<com.pricetrack.exchange.ai.tool.read.FuturesToolReader> value){futures=value;return this;}
     public ToolDispatcher observe(com.pricetrack.exchange.ai.observability.AiObservability value){observation=value;return this;}
 
@@ -89,12 +91,16 @@ public final class ToolDispatcher implements AutoCloseable {
             case "listAbnormalOrders" -> reads.abnormal(context, args);
             case "getFuturesPosition" -> futures().position(context,args.positionId());
             case "getFuturesLiquidationEvidence" -> futures().evidence(context,args.positionId());
+            case "getCAccount" -> custody().account(context);
+            case "getCPosition" -> custody().position(context,args.positionId());
             default -> throw new ToolFailure("TOOL_NOT_ALLOWED");
         };
     }
     private com.pricetrack.exchange.ai.tool.read.FuturesToolReader futures(){var reader=futures.get();if(reader==null)throw new ToolFailure("TOOL_DISABLED");return reader;}
+    private com.pricetrack.exchange.ai.tool.read.CVaultToolReader custody(){var reader=custody.get();if(reader==null)throw new ToolFailure("TOOL_DISABLED");return reader;}
     private static String safeError(Throwable e) {
         if (e instanceof ToolFailure f) return f.code();
+        if(e instanceof com.pricetrack.exchange.custody.runtime.CCustodyFailure c)return c.status()==404?"RESOURCE_NOT_FOUND":c.status()==400?"INVALID_TOOL_ARGUMENTS":"TOOL_UNAVAILABLE";
         for (Throwable cause = e; cause != null; cause = cause.getCause()) {
             if (cause instanceof QueryTimeoutException || cause instanceof jakarta.persistence.QueryTimeoutException
                     || cause instanceof org.springframework.transaction.TransactionTimedOutException
@@ -106,6 +112,7 @@ public final class ToolDispatcher implements AutoCloseable {
     private static String source(String name) {
         return switch (name) {
             case "getReceiptSummary", "getFuturesLiquidationEvidence" -> "TRADING_DB+RPC";
+            case "getCAccount", "getCPosition" -> "JWT_PROVED_WALLET+PINNED_RPC";
             case "getMarketStatus", "getCurrentReferencePrice" -> "MARKET_SNAPSHOT";
             case "getPortfolio" -> "TRADING_DB+MARKET_SNAPSHOT";
             default -> "TRADING_DB";

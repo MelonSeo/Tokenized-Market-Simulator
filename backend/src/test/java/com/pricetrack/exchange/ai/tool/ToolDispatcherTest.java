@@ -76,7 +76,7 @@ class ToolDispatcherTest {
     }
     @Test void schemaAndValidationCoverAllEightAllowlistedFunctions() {
         var registry = new ToolRegistry(json);
-        assertThat(ToolRegistry.NAMES).hasSize(10);
+        assertThat(ToolRegistry.NAMES).hasSize(12).contains("getCAccount","getCPosition");
         for (String name : ToolRegistry.NAMES) {
             JsonNode schema = registry.inputSchema(name);
             assertThat(schema.path("additionalProperties").asBoolean()).isFalse();

@@ -10,7 +10,7 @@ public final class AgentEvidence {
     private static final Set<String> PRIVATE_FIELDS=Set.of("userId","orderId","quoteId","txHash","senderAddress",
             "executor","signature","nonce","rawTransaction","loginId","password","passwordHash",
             "privateKey","apiKey","apiSecret","secret","jwt","accessToken","refreshToken","dbPassword",
-            "id","positionId","operationId","journalId","pendingOperation","accountRef");
+            "id","positionId","operationId","journalId","pendingOperation","accountRef","nextCursor","cursor","owner","userNonce");
     public static ObjectNode modelInput(ObjectMapper json,List<KnowledgeHit> knowledge,List<AgentResponse.ToolEvidence> tools){
         ObjectNode out=json.createObjectNode();out.set("knowledge",json.valueToTree(knowledge));
         var array=out.putArray("tools");
@@ -33,6 +33,7 @@ public final class AgentEvidence {
                 || generated.citationIds()==null || generated.citationIds().size()>9 || generated.facts()==null || generated.facts().size()>20
                 || !safeList(generated.uncertainties()) || !safeList(generated.recommendedNextCheck())) invalid();
         if(!"ANSWERED".equals(generated.status()))return;
+        if(BuyFeeMeaning.contradiction(generated.interpretation(),input))invalid();
         Map<String,JsonNode> known=new HashMap<>();Set<String> knowledgeIds=new HashSet<>();Set<String> toolIds=new HashSet<>();
         for(var doc:input.path("knowledge")){known.put(doc.path("id").asText(),doc);knowledgeIds.add(doc.path("id").asText());}
         for(var tool:input.path("tools")){known.put(tool.path("evidenceId").asText(),tool.path("data"));toolIds.add(tool.path("evidenceId").asText());}

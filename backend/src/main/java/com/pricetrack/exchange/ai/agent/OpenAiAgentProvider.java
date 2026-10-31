@@ -36,6 +36,8 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 개인정보 최소화를 위해 실제 ID는 전달하지 않는다. targetKind가 있으면 ID가 없다는 이유로
                 CLARIFY로 분류하지 말고 그 대상의 현재 상태만 묻는 질문은 STATE, 규칙/이유 결합은 MIXED로 분류한다.
                 현재 시장은 MARKET, 현재가는 PRICE, 본인 자산은 PORTFOLIO,
+                화면에 표시된 거래량·provider·Synthetic 생성 원인을 물으면 현재 관측이 필요하므로 MIXED/PRICE다.
+                일반 용어 정의만 요청했을 때는 KNOWLEDGE다. 실제 공급자를 정책으로 추측하지 않는다.
                 이상 주문 목록은 ABNORMAL. 거래 실행/복구/투자조언은 UNSUPPORTED/NONE.
                 실행 자체를 요구하는 것과 실행 조건·위험·실패 이유를 묻는 설명 질문을 구분한다.
                 무엇을 실행할지 대신 결정하거나 실행해 달라는 요청은 계속 UNSUPPORTED다.
@@ -69,6 +71,10 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 ANSWERED에는 실제 사용한 evidenceId를 citationIds에 적는다. MIXED에서 두 종류 근거가 제공되면 둘 다 인용한다.
                 현재 사실은 facts에 성공 Tool의 JSON pointer와 해당 scalar의 정확한 문자열 값을 적는다.
                 decimal 문자열의 소수점과 뒤의 0, 대소문자까지 그대로 복사한다. JSON pointer는 data를 기준으로 한다.
+                BUY amountRelation.inputIncludesFee=true는 입력 금액에 수수료가 포함됨을 뜻한다.
+                quotedTotalDebit에 includedFee를 다시 더하거나 추가 차감한다고 설명하지 않는다.
+                netPricingInput=quotedTotalDebit-includedFee, calculatedOutput은 견적 계산이며 실제 체결/차감 증명이 아니다.
+                listAbnormalOrders의 filter/limit/waitingSeconds/hasMore/scope를 그대로 설명한다. 한 페이지를 전체 이력으로 말하지 않는다.
                 facts.pointer의 루트는 해당 evidenceId Tool의 data 객체 그 자체다. /data 접두사를 붙이지 않는다.
                 예: tools 항목의 data가 {"status":"PENDING_ONCHAIN","trade":null}이면
                 pointer="/status", value="PENDING_ONCHAIN" 또는 pointer="/trade", value="null"이다.
@@ -97,7 +103,10 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 SIMULATED는 실제 시장 연동이나 거래 성공을 뜻하지 않는다. 관측과 정책 자체가 부족할 때만 INSUFFICIENT_EVIDENCE다.
                 선물의 verification=INCONCLUSIVE, pending, BLOCKED, REVIEW_REQUIRED는 청산 확정이 아니다.
                 VERIFIED도 선택한 마진콜 및 청산 근거의 범위일 뿐 전체 감사나 지급 능력 보증이 아니다.
-                선물 담보는 DB 수탁 모의자산이며 온체인 예치가 아니다. 실제 청산은 서버 worker가 계약을 호출한다.
+                legacy FUTURES Tool의 선물 담보는 DB 수탁 모의자산이며 온체인 예치가 아니다.
+                C_ONCHAIN_VAULT_NOT_DB_LEDGER는 별도 C 온체인 자산이다. C facts를 legacy 잔고와 합산하거나 DB 담보라고 설명하지 않는다.
+                C 정책은 custody 문서만 사용한다. systemTotalUnpaidProfit은 개인 Claims 합계가 아니며 CLOSED를 수익 전액 지급과 동일시하지 않는다.
+                현재 C Tool에 없는 과거 청산 사유·실현손익·전체 Claims를 추측하지 않는다.
                 """ + "\n" + qualityInstructions(),Map.of("question",question,"route",route.name(),"evidence",evidence),1600,timeout);
         try {
             var out=response.output();

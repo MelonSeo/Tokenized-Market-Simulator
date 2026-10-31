@@ -2,7 +2,7 @@
 def ciHelpers = ['ProductReadGate', 'ProductReadDriver', 'ProductReadDriverRpcTest',
     'ProductReadConnection', 'ProductReadConnectionTest', 'ProductReadFixture',
     'FullAppReadGate', 'FullAppReadDriver', 'FaucetSchemaFixtureBridge',
-    'ConditionalSchemaFixtureBridge', 'CDirectBrowserPipe', 'CAnvilContractGate', 'CAnvilRiskClaimsScenario']
+    'ConditionalSchemaFixtureBridge', 'CDirectBrowserPipe', 'CAnvilContractGate', 'CAnvilRiskClaimsScenario', 'ProductAiCReadGate', 'ProductAiCReadDriver']
 allprojects {
     afterEvaluate { p ->
         if (p.plugins.hasPlugin('java')) {

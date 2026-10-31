@@ -5,19 +5,20 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /** Strict, stateless request. Resource identifiers are supplied explicitly and never invented by a model. */
-public record AgentRequest(String question, Long orderId, String quoteId,String skillId,String positionId) {
+public record AgentRequest(String question, Long orderId, String quoteId,String skillId,String positionId,String cPositionId,Map<String,Object> abnormal) {
+    public AgentRequest(String question,Long orderId,String quoteId,String skillId,String positionId){this(question,orderId,quoteId,skillId,positionId,null,null);}
     public AgentRequest(String question,Long orderId,String quoteId,String skillId){this(question,orderId,quoteId,skillId,null);}
     public AgentRequest(String question,Long orderId,String quoteId){this(question,orderId,quoteId,null);}
     public static AgentRequest parse(ObjectMapper json,byte[] bytes){
         try {
             if(bytes==null || bytes.length>4096)throw new AgentFailure("AGENT_INPUT_LIMIT",400);
             var root=json.readTree(bytes);
-            if(root==null || !root.isObject() || !root.has("question") || root.size()>3
-                    || root.properties().stream().anyMatch(e -> !Set.of("question","target","skillId").contains(e.getKey()))
+            if(root==null || !root.isObject() || !root.has("question") || root.size()>4
+                    || root.properties().stream().anyMatch(e -> !Set.of("question","target","skillId","abnormal").contains(e.getKey()))
                     || !root.path("question").isTextual())throw new AgentFailure("INVALID_AGENT_REQUEST",400);
             String q=root.path("question").asText();
             if(q.isBlank() || q.length()>1000)throw new AgentFailure("AGENT_INPUT_LIMIT",400);
-            Long order=null;String quote=null;String position=null;
+            Long order=null;String quote=null;String position=null;String cPosition=null;
             if(root.has("target")){
                 var target=root.get("target");
                 if(!target.isObject() || target.size()!=1)throw new AgentFailure("INVALID_AGENT_REQUEST",400);
@@ -25,7 +26,8 @@ public record AgentRequest(String question, Long orderId, String quoteId,String 
                     var id=target.get("orderId");
                     if(!id.isIntegralNumber() || !id.canConvertToLong() || id.longValue()<=0)throw new AgentFailure("INVALID_AGENT_REQUEST",400);
                     order=id.longValue();
-                }else if(target.has("quoteId") && target.get("quoteId").isTextual()
+                }else if(target.has("cPositionId")&&target.get("cPositionId").isTextual()&&target.get("cPositionId").asText().matches("0x[0-9a-fA-F]{64}"))cPosition=target.get("cPositionId").asText();
+                else if(target.has("quoteId") && target.get("quoteId").isTextual()
                         && target.get("quoteId").asText().matches("0x[0-9a-fA-F]{64}")) quote=target.get("quoteId").asText();
                 else if(target.has("positionId")&&target.get("positionId").isTextual()&&target.get("positionId").asText().matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"))position=target.get("positionId").asText();
                 else throw new AgentFailure("INVALID_AGENT_REQUEST",400);
@@ -35,10 +37,17 @@ public record AgentRequest(String question, Long orderId, String quoteId,String 
                 if(!root.get("skillId").isTextual() || !root.get("skillId").asText().matches("[a-z-]{1,64}"))throw new AgentFailure("INVALID_AGENT_REQUEST",400);
                 skill=root.get("skillId").asText();
             }
-            return new AgentRequest(q,order,quote,skill,position);
+            Map<String,Object> abnormal=null;
+            if(root.has("abnormal")){
+                if(root.has("target")||skill!=null)throw new AgentFailure("INVALID_AGENT_REQUEST",400);
+                try{new com.pricetrack.exchange.ai.tool.ToolRegistry(json).validate("listAbnormalOrders",root.get("abnormal"));}
+                catch(RuntimeException e){throw new AgentFailure("INVALID_AGENT_REQUEST",400);}
+                abnormal=Map.copyOf(json.convertValue(root.get("abnormal"),new com.fasterxml.jackson.core.type.TypeReference<Map<String,Object>>(){}));
+            }
+            return new AgentRequest(q,order,quote,skill,position,cPosition,abnormal);
         }catch(AgentFailure e){throw e;}catch(Exception e){throw new AgentFailure("INVALID_AGENT_REQUEST",400);}
     }
-    public AgentModelProvider.Subject targetKind(){return positionId!=null?AgentModelProvider.Subject.FUTURES:orderId!=null?AgentModelProvider.Subject.ORDER:quoteId!=null?AgentModelProvider.Subject.QUOTE:AgentModelProvider.Subject.NONE;}
+    public AgentModelProvider.Subject targetKind(){return cPositionId!=null?AgentModelProvider.Subject.C_POSITION:positionId!=null?AgentModelProvider.Subject.FUTURES:orderId!=null?AgentModelProvider.Subject.ORDER:quoteId!=null?AgentModelProvider.Subject.QUOTE:AgentModelProvider.Subject.NONE;}
     public boolean conflictingTarget(){
         var positions=Pattern.compile("(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").matcher(question);
         while(positions.find())if(positionId==null||!positions.group().equals(positionId))return true;
@@ -47,7 +56,7 @@ public record AgentRequest(String question, Long orderId, String quoteId,String 
             while(matcher.find())if(orderId==null || !matcher.group(1).equals(orderId.toString()))return true;
         }
         var quotes=Pattern.compile("0x[0-9a-fA-F]{64}").matcher(question);
-        while(quotes.find())if(quoteId==null || !quotes.group().equalsIgnoreCase(quoteId))return true;
+        while(quotes.find())if(!quotes.group().equalsIgnoreCase(quoteId==null?cPositionId:quoteId))return true;
         return false;
     }
     /** The provider receives no target IDs, JWTs or user profile. User-supplied recognizable secrets are redacted. */

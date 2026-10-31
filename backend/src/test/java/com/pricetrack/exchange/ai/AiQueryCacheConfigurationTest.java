@@ -22,7 +22,7 @@ class AiQueryCacheConfigurationTest {
     static class Dependencies extends AiConfiguration {
         @Bean @Override PgKnowledgeStore aiKnowledgeStore(AiProperties p){return mock(PgKnowledgeStore.class);}
         @Bean @Override KnowledgeLoader aiKnowledgeLoader(AiProperties p,ObjectMapper j){return mock(KnowledgeLoader.class);}
-        @Bean @Override OpenAiProvider aiProvider(AiProperties p,ObjectMapper j,AiObservability o){return mock(OpenAiProvider.class);}
+        @Bean @Override OpenAiProvider aiProvider(AiProperties p,ObjectMapper j,AiObservability o,com.pricetrack.exchange.ai.provider.PgProviderBudget b){return mock(OpenAiProvider.class);}
     }
     @Test void measuredCacheDefaultIsWiredWithoutCallingProvider(){context().run(c->{
         assertThat(c).hasNotFailed();assertThat(ReflectionTestUtils.getField(c.getBean(AuthorizedKnowledgeRetrieval.class),"embedding")).isInstanceOf(QueryVectorCache.class);

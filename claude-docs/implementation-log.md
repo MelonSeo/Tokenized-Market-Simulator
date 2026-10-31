@@ -3177,3 +3177,52 @@ ONCHAIN EXECUTION COMPLETE & SUCCESSFUL
 - 수수료의자연어관계/F1, A2/C4모델경로와다른기존충분성한계는미해결/미검증이다. 전체운영품질완료나새유료모델성과를주장하지않고개발마감을종료한다. 면접학습/원인·대안·관측은EVALUATION_REPORT최상단마감절및기존학습절에연결하며로컬회고는공개Git대상이아니다.
 - 커밋전Git직접검사에서frozen v2의working/index SHA8666064a…aaa40은같았지만 `git -c core.autocrlf=true cat-file --filters --path=... :...`의Windowscheckout은CRLF272개/SHA3b989919…4010dd로바뀜을확인했다. 미래checkout에서동결감사가깨지는확정적이식성결함이다. 평가정답/해시를고치지않고.gitattributes의novel-*.json범위에만text eol=lf를추가해원래바이트를보존한다. 기존deployment.sh정책불변/새평가세트없음. 직접필터대조와독립재검토결과는종료추기로연결한다.
 - 패키징독립재검토1은원래shell속성보존/novel5파일working·index·Windows필터SHA동일/동결해시불변/77파일금지자료0/diffcheck0을직접확인해필수없음. 실제새checkout·모델·전체회귀재실행은아니다. 전체77개Staged blob/Diff는별도로PEM/API/JWT/credential literal/설치경로제한패턴0건·금지runtime0으로확인했으나절대무유출보장은아니다. 명시선별AI파일만로컬기능커밋으로보존하고main/다른refs/원격에는반영하지않는다.
+
+# AI 최종 main 통합·운영 특성 무과금 검증 — 2026-10-31
+
+## 목적·구현과 판단
+
+- 사용자가 최종main9abf3db의CI공백·운영성능 평가를 별도 승인했다. 기존 AI 개발 마감과 구분한다. 별도 `ci/ai-unpaid-readiness-20261031`/`deployment/runtime/ai-readiness-worktree`를 만들었고 기존24worktree/미커밋 작업/main·melon-init을 변경하지 않았다. 제품 Java/main·계약·인증·Oracle·금융 정책은 diff0이다.
+- 기존 두 거래 workflow가 main을 제외한 branch/ref조건임을 확인했다. 이를 무조건 넓히지 않고 별도 `ai-unpaid-readiness.yml`을 준비했다. 고정Action/Java21·Python·문항해시·AI/auth/정산 회귀·최소권한·수치만 Artifact를 포함한다. Push/Actions/main반영은 NOT_RUN/승인대기다.
+- 사전 계획JSON SHA f31b4b53…cecfc2를 실행 전 고정했다. 새 소유 tmpfs PG 하나+H2거래 fixture+실제 JWT/HTTP/Agent/Tool/RAG를 연결하고 공급자는 Mock/합성벡터로 대체했다. 기존 사용자DB/Anvil 미접근·유료 호출·금융거래 없음, 비용원장/STOP은 SQLite를 열지 않고 파일해시만 대조했다. 실제모델/semantic품질/운영공급자RTT와 분리한다.
+- 무제한 큐나 worker증설로 성능을 높이지 않고 기존 worker2/queue0에서 동시성1/2/4/8을 측정했다. HTTP200만 성공으로 보는 방식은 독립검토에서 부적절함이 확인됐다. fallback을 빠른 성공으로 집계하지 않도록 route/ANSWERED/필수근거/인용/VALIDATEDtrace를 요구하고 PARTIAL·근거없는200의 거부 회귀를 추가했다.
+- 모델 Tool 입력의 비공개필드 재귀검사도 독립검토에 따라 추가했다. 초기모델질문에 맞춰 답변품질 기준을 바꾼 것이 아니라 시험의 과장된 성공 판정을 막은 변경이다. Docker create 응답불명 후에도 exactname/label/image로 본인 컨테이너만 확인·정리한다.
+
+## 실제 검증
+
+- 실행 `ai-readiness-20261031T070710Z-f763ece7`, 기동전 RAM3604.14MiB/disk44.8GiB. 175.172초에 Gradle성공/측정PASS/소유컨테이너제거true. 처음부터 정상종료하여 실패환경 반복생성은 없다. 결과는 EVALUATION_REPORT 최상단과 이번 ignored runtime의 metrics/manifest/termination/java.private.log에 보존했다. 실환경 JUnit XML은 후속회귀가 SKIP XML로 덮어써 별도 원본을 보존하지 못했다. 실제실행은 해당 단일테스트 명령·성공로그·사전고정검증metrics로 대조하며, 후속SKIP을 실환경PASS증거로 쓰지 않는다. 향후 런처는 종료직후 XML을 private run폴더에 복사하도록 보완했다.
+- 3경로×4단계×32=384시도 중 정상264/503거절120/예상밖오류0. 저부하192/192정상, C4/8거절50/75%. STATE C1/2 p95 11.039/12.693ms, KNOWLEDGE341.261/343.027ms, MIXED267.831/304.707ms. 작은 표본·고정Mock·배치부하 결과이며 실제 SLA 아님.
+- cache OFF/ON각12의 RAG컴포넌트 p50 99.703→53.850ms, Embedding12→0/결과·권한·index검사보존. 고정40ms모의공급자의 효과이지 실제 LLM속도개선이 아니다.
+- 모델실패/활성index비활성화/클라이언트취소/DBpause를 검증했다. 비협조96초 작업2개에서 90.012초504, 작업종료전슬롯반환안함/추가8요청503/종료후15초이내회복. DB장애5.049초PARTIAL/정책비노출. 활성버전교체·DB복구후별도RAG재조회·영구비협조작업정리는 미검증으로 구분한다.
+- 실제로그인·401/403/400/타인동일404·본인포트폴리오분리·생성입력민감필드0/USER문서만·금융5테이블불변·마지막borrowedconnection0확인. 10Tool/4Skill 전체 운영 데이터 인수로 합치지 않는다.
+- 최종 Java358중326PASS32선택SKIP/0FAIL0ERROR, Python204PASS. 이전마감302/31·177과 다른 수집범위다. Java최종XML은 이번 runtime/final-regression-xml에 별도 보존했다. YAMLparse/계획해시/문항8666064a…aaa40/공개수치검사/diffcheck PASS. 신규자원관측·실행증거의 최종독립검토는 완료추기로 기록한다.
+
+## 한계·학습·후속 경계
+
+- 서비스 준비도 PARTIAL을 유지한다. F1/A2/C4/답변충분성·최종소스30문항실제모델·실공급자지연·장기SLA·C Vault AI는 미완료다. 새 유료예산/Push/main병합/배포는 실행하지 않는다.
+- 핵심학습: fallback서비스의 성공 정의, deadline과협조적cancellation의차이, backpressure와가용성, currentstate아닌queryvector캐시, 샘플p95의한계, CI격리와Artifact보호. 자세한문제/원인/선택/수치/면접질문은 EVALUATION_REPORT의 이번 절에 연결한다. 실제검토하지않은 대안이나 사용자동기를 사후에 만들어 기록하지 않는다.
+- 최종2차독립검토 review_ai_readiness: 필수지적없음. metrics/공개manifest/계획hash/부하384/캐시/장애/종료/Java358XML직접대조·Python11직접PASS, Python204는구현자결과로구분. 원본실환경XML미보존/후속1SKIP과범위한계를확인했다. 이후동작변경없이기록만추가했다. 원본dirty8SHA·25worktreeHEAD·기존AIfeatureclean·과거원장STOP해시동일/remote main9abf동일/staged0·commit0·push0확인. 공개후보10파일제한secret패턴0건(절대보장X), 기존제품·계약·거래CI diff0이다.
+
+# AI 실사용 전환 — 2026-10-31 진행 중
+
+## 목적·원인·선택
+
+사용자 승인으로 기존 무과금 준비 작업을 이어 제품 결함과 C 자산 지원 공백을 보완한다. F1의 숫자 일치만으로 금액 관계가 정확하다고 볼 수 없어 기존 BUY 계산을 변경하지 않고 Tool의 구조화 관계와 결정적 설명/모순 검증을 선택했다. A2/C4는 답변 문구만 고치지 않고 현재 사실 조회 경로와 적용 필터를 고정한다. C Vault는 기존 온체인 소유 증명/고정 블록 reader를 재사용하며 두 읽기 Tool만 추가했다. 거래 권한은 없다.
+
+기존 manifest에 C 정책을 직접 추가하면 frozen corpus 감사가 CORPUS_CHANGED로 실패했다. 이것은 없애야 할 제약이 아니라 과거 평가 재현성을 보호하는 검사다. 원본9/88을 복원하고 별도 pilot10/93 manifest로 분리했다. C와 legacy 정책이 같은 검색 후보로 섞이지 않도록 SQL 단계의 scope 제외를 선택했다. 검색 기준/재인수 필요성을 문서화했다.
+
+서버의 일반 웹 요청은 Python 평가 원장 밖이므로 PG의 단일 policy 행을 잠가 전송 전 비용을 예약한다. 재시작·동시 요청에서도 예산 경쟁을 막고 실패/불명 사용량을 환불하지 않는다. 캐시 적중이나 실패를 재정산해 한도를 확대하지 않는 대신 보수적으로 실행 가능량이 줄어드는 trade-off가 있다. 초기화는 ADMIN의 명시 요청이며 외부 과금은 기본 차단이다.
+
+## 검증·검토 상태
+
+무과금 표적 테스트에서 기존 실패를 드러낸 회귀 기대값(모델 미호출 권한 차단, A2 현재 조회, C4 기본 인자)을 새 안전 경로로 보완했다. pilot chunk 수는 실제 loader 출력93으로 고정했으며 정답 품질 기준을 낮춘 것이 아니다. Windows 전체 회귀 중 일부 loopback 서버 생성이 native `Bad address: listen`으로 실패했다. Java helper 컴파일 성공과 환경 SocketException을 구분하고 별도 Linux CI에서 재검증한다. 현 단계 미검증을 PASS로 기록하지 않는다.
+
+문서 초안: EVALUATION_REPORT 후속 절/READINESS_PLAN 후속 절. 독립 검토·Linux CI와 최종 결과는 후속 추기한다. 유료 호출0/main 변경0/사용자 자산 접근0. 기존 취업 회고 인덱스와 예산 원장은 공개 대상이 아니다.
+
+초기 독립검토(product/harness)에서 필수 결함을 확인했다: 비용 schema 초기화의 실제 AI DB 이름 검사 누락, 웹 C4 구조화 인자 미연결, 비용 금액 상한의 실제 PG 경계 시험 누락, CDP timeout 인자 object/number 혼동, 전역 오류 표시가 비AI429/504까지 AI로 바꾸는 회귀. DDL 전 타깃검사/거절시험, ADMIN 필터 UI+제한된 명확 숫자 파싱, 정확 상한·1nano 부족·UTC 일 변경·동시 비용 예약·upstream0 시험, 숫자 CDP 인자와 회귀, 명시 AI 오류 코드만 표시하도록 수정했다. 실패 진단은 assertion 값 대신 testcase/type/프로젝트 frame만 정제한다. 기존 데이터는 사용하지 않고 새 시험 소유 DB만 사용한다. 재검토 및 실제 Linux 실행 결과는 아직 기다리는 중이다.
+
+첫 하네스 재검토에서 screenshot 복사 루프가 소유 컨테이너 `name`을 덮어써 finally cleanup을 건너뛰는 새 결함을 발견했다. `screenshot_name`으로 분리하고 loop target AST 회귀 및 소유 컨테이너 제거 미확인 시 성공 차단을 추가했다. 이는 실제 자원 누수가 발생했다는 기록이 아니라 기동 전 코드 검토에서 발견해 수정한 결함이다. 재검토 중 추가 기능은 확장하지 않는다.
+
+독립 제품 첫 재검토/하네스 최종2차 재검토: 발견된 필수 수정 없음. 검토자는 실제 DB/Chrome/CI를 실행한 것으로 표시하지 않았으며 하네스 Python16개는 직접 PASS했다. 마지막 Java compileJava/compileTestJava/productReadCiClasses/runtime PASS, 웹238/build PASS, 전체 Python204 및 product-read72 PASS 후 추가 readiness16 PASS다. Windows Java581 수집 중543 PASS/3 nativeSocketException/35 SKIP와 후속 Gradle worker fork native실패를 보존하고 Linux 검증으로 이동한다. 공급자 전송과 금융 거래는0이다.
+
+Stage 공개후보67파일의 제한 패턴 검사에서는 비밀 키/JWT/비공개 runtime 포함0, 로컬 경로1건은 `test_ai_readiness`의 의도적인 `C:/Users/local/runtime` 거부 canary로 직접 대조했다. 실제 개인 경로가 아니므로 시험을 보존한다. 이는 절대적인 무유출 보증이 아니다. 개인 remote main9abf/신규CIbranch미게시/Actionsenabled를 다시 확인했다. 이 기록 이후 CI 브랜치만 게시하며 main/Organization에는 쓰지 않는다.

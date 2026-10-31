@@ -99,12 +99,13 @@ public final class AgentService implements AutoCloseable {
                 result.skill().trace().stream().map(t -> t.stepId()+":"+t.status()+":"+t.resultCode()).toList());
         return result;
     }
-    private AgentResponse observedRun(String id,Run run){return observation==null?run.execute():observation.correlated(id,run::execute);}
+    private AgentResponse observedRun(String id,Run run){return com.pricetrack.exchange.ai.provider.ProviderAccess.call(run.user.userId(),id,()->observation==null?run.execute():observation.correlated(id,run::execute));}
     private AgentResponse failure(String id,String code,int http,Run run){
         if(run==null)return AgentResponse.failure(id,code,http);
         return new AgentResponse(id,"ERROR",run.route,"요청을 처리할 수 없습니다.",null,List.of(),List.of(),List.of(),
             List.of(code),List.of(),run.metrics(),code,http);
     }
+    private static boolean budgetFailure(String code){return code.startsWith("AI_BUDGET_")||code.equals("AI_ACCOUNT_RATE_LIMIT");}
     private final class Run {
         final String id;final AuthenticatedUser user;final AgentRequest request;final AgentModelProvider provider;final long start,deadline;
         final LinkedHashMap<String,AgentResponse.ToolEvidence> evidence=new LinkedHashMap<>();
@@ -128,15 +129,17 @@ public final class AgentService implements AutoCloseable {
                 if(request.orderId()!=null)preflight(call("getOrder",Map.of("orderId",request.orderId())));
                 if(request.quoteId()!=null)preflight(call("getQuote",Map.of("quoteId",request.quoteId())));
                 if(request.positionId()!=null)preflight(call("getFuturesPosition",Map.of("positionId",request.positionId())));
+                if(request.cPositionId()!=null)preflight(call("getCPosition",Map.of("positionId",request.cPositionId())));
                 if(skill!=null && skill.target()==Subject.NONE)preflight(call("getCurrentReferencePrice",Map.of()));
                 Plan plan;
                 try{
                     if(skill!=null)plan=new Plan(Route.MIXED,skill.target()==Subject.NONE?Subject.PRICE:skill.target(),Usage.none(),skill.id());
+                    else if((plan=RequiredReadRoute.select(request))!=null) { /* current facts cannot be replaced by policy-only planning */ }
                     else if(properties.deterministicState()&&(plan=DeterministicStateRoute.select(request))!=null) { /* same ownership preflight and subject/role checks below */ }
                     else {modelCalls++;plan=skills.enabled()?provider.planWithSkills(request.modelQuestion(),request.targetKind(),registry.eligible(user.role(),request.targetKind()),remaining(properties.planningSeconds()))
                             :provider.plan(request.modelQuestion(),request.targetKind(),remaining(properties.planningSeconds()));addUsage(plan==null?null:plan.usage());}
                 }
-                catch(Exception e){return degraded("PLAN_UNAVAILABLE");}
+                catch(Exception e){if(e instanceof com.pricetrack.exchange.ai.AiFailure f&&budgetFailure(f.code()))return failure(id,f.code(),f.code().equals("AI_ACCOUNT_RATE_LIMIT")?429:503,this);return degraded("PLAN_UNAVAILABLE");}
                 if(plan==null || plan.route()==null || plan.subject()==null)throw new AgentFailure("INVALID_AGENT_PLAN",503);
                 route=plan.route().name();
                 if(skill==null && plan.skillId()!=null && !plan.skillId().equals("NONE")){
@@ -151,7 +154,7 @@ public final class AgentService implements AutoCloseable {
                 if(plan.route()==Route.KNOWLEDGE && (plan.subject()!=Subject.NONE || request.targetKind()!=Subject.NONE))
                     return response("NEEDS_CLARIFICATION","정책 질문과 조회 대상을 구분해 주세요.",List.of(),List.of());
                 if(plan.route()!=Route.KNOWLEDGE && (plan.subject()==Subject.NONE
-                        || (plan.subject()==Subject.ORDER || plan.subject()==Subject.QUOTE || plan.subject()==Subject.FUTURES) && plan.subject()!=request.targetKind()
+                        || (plan.subject()==Subject.ORDER || plan.subject()==Subject.QUOTE || plan.subject()==Subject.FUTURES || plan.subject()==Subject.C_POSITION) && plan.subject()!=request.targetKind()
                         || request.targetKind()!=Subject.NONE && plan.subject()!=request.targetKind()))
                     return response("NEEDS_CLARIFICATION","주문/견적 target과 질문 대상을 일치시켜 주세요.",List.of(),List.of());
                 if(plan.subject()==Subject.ABNORMAL && user.role()!=UserRole.ADMIN)throw new AgentFailure("TOOL_FORBIDDEN",403);
@@ -163,16 +166,21 @@ public final class AgentService implements AutoCloseable {
                     });
                     skillRunner.execute(request);
                 }else if(plan.route()!=Route.KNOWLEDGE)executeTools(plan);
+                if((plan.subject()==Subject.C_ACCOUNT||plan.subject()==Subject.C_POSITION)&&RequiredReadRoute.select(request)==null)throw new AgentFailure("INVALID_AGENT_PLAN",503);
+                if((plan.subject()==Subject.C_ACCOUNT||plan.subject()==Subject.C_POSITION)&&plan.route()==Route.STATE){
+                    if(!hasFacts())return degraded("TOOL_UNAVAILABLE");
+                    return response("ANSWERED",StateExplanation.explain(List.copyOf(evidence.values()))+"\n고정 블록의 현재 조회입니다. 청산 원인·개인 Claims 전체 진단 또는 전체 감사 결과는 아닙니다.",List.of(),List.of());
+                }
                 checkConsistency();
                 if(plan.route()!=Route.STATE){
                     retrievalCalls++;
                     long retrievalStart=System.nanoTime();
                     try{
                         var retriever=retrieval.get();if(retriever==null)throw new AgentFailure("RAG_UNAVAILABLE",503);
-                        var found=skill==null?retriever.search(user,retrievalQuestion(plan),remaining(properties.retrievalSeconds()))
+                        var found=plan.subject()==Subject.C_ACCOUNT||plan.subject()==Subject.C_POSITION?retriever.searchScoped(user,retrievalQuestion(plan),remaining(properties.retrievalSeconds()),Set.of("custody")):skill==null?retriever.search(user,retrievalQuestion(plan),remaining(properties.retrievalSeconds()))
                                 :retriever.searchScoped(user,retrievalQuestion(plan),remaining(properties.retrievalSeconds()),skill.domains());knowledge=found.hits();index=found.indexVersion();
                         if(skillRunner!=null)skillRunner.trace("RETRIEVE_POLICY","EXECUTED","RAG",knowledge.stream().map(KnowledgeHit::id).toList(),knowledge.isEmpty()?"NO_EVIDENCE":"SUCCESS",TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-retrievalStart));
-                    }catch(Exception e){uncertainties.add("RAG_UNAVAILABLE");traceOnce("RETRIEVE_POLICY","UNAVAILABLE","RAG",List.of(),"RAG_UNAVAILABLE",retrievalStart);}
+                    }catch(Exception e){uncertainties.add(e instanceof com.pricetrack.exchange.ai.AiFailure f&&budgetFailure(f.code())?f.code():"RAG_UNAVAILABLE");traceOnce("RETRIEVE_POLICY","UNAVAILABLE","RAG",List.of(),"RAG_UNAVAILABLE",retrievalStart);}
                 }
                 if(plan.route()==Route.STATE){
                     if(!hasFacts())return degraded("TOOL_UNAVAILABLE");
@@ -207,21 +215,23 @@ public final class AgentService implements AutoCloseable {
                     }
                     modelUncertainties=List.copyOf(generated.uncertainties());
                     return response(uncertainties.isEmpty() && modelUncertainties.isEmpty()?"ANSWERED":"PARTIAL",generated.interpretation(),generated.citationIds(),generated.recommendedNextCheck());
-                }catch(Exception e){traceOnce("SUMMARIZE","UNAVAILABLE","MODEL",List.of(),"SYNTHESIS_UNAVAILABLE",synthesisStart);return degraded("SYNTHESIS_UNAVAILABLE");}
+                }catch(Exception e){traceOnce("SUMMARIZE","UNAVAILABLE","MODEL",List.of(),"SYNTHESIS_UNAVAILABLE",synthesisStart);return degraded(e instanceof com.pricetrack.exchange.ai.AiFailure f&&budgetFailure(f.code())?f.code():"SYNTHESIS_UNAVAILABLE");}
             }catch(AgentFailure e){return failure(id,e.code(),e.http(),this);}
             catch(Exception e){return degraded("AGENT_UNAVAILABLE");}
         }
         String retrievalQuestion(Plan plan){
             if(plan.route()==Route.KNOWLEDGE)return request.modelQuestion();
-            return switch(plan.subject()){
+            String context=switch(plan.subject()){
                 case ORDER -> "주문 대기 PENDING_ONCHAIN REVIEW_REQUIRED 상태와 온체인 receipt DB 정산 확정 조건";
                 case QUOTE -> "서명 견적 만료 validUntil observedAt 30초 일회용 소비 CONSUMED 정책";
                 case MARKET,PRICE -> "시장 CLOSED LIVE STALE 가격 신선도 신규 거래 차단 정책";
                 case PORTFOLIO -> "포트폴리오 잔고 잠금 available 내부 원장 기준";
                 case ABNORMAL -> "REVIEW_REQUIRED SIGNED SUBMITTED 장애 읽기 진단 정책";
                 case FUTURES -> "선물 격리증거금 손익 유지증거금 5퍼센트 마진콜 60초 유예 강제청산 FuturesEngine Receipt journal DB 수탁";
+                case C_ACCOUNT,C_POSITION -> "C MarginVault cMKRW free locked house Claims 사용자 직접 승인 예치 인출 단일 RPC 고정 블록 조회 범위";
                 default -> request.modelQuestion();
             };
+            String question=request.modelQuestion();return question.substring(0,Math.min(700,question.length()))+"\n"+context;
         }
         void traceOnce(String step,String status,String action,List<String> refs,String code,long start){
             if(skillRunner!=null && skillRunner.result().trace().stream().noneMatch(t -> t.stepId().equals(step)))
@@ -243,7 +253,9 @@ public final class AgentService implements AutoCloseable {
                 case MARKET -> call("getMarketStatus",Map.of());
                 case PRICE -> call("getCurrentReferencePrice",Map.of());
                 case PORTFOLIO -> call("getPortfolio",Map.of());
-                case ABNORMAL -> call("listAbnormalOrders",Map.of("limit",10));
+                case ABNORMAL -> call("listAbnormalOrders",RequiredReadRoute.abnormal(request));
+                case C_ACCOUNT -> preflight(call("getCAccount",Map.of()));
+                case C_POSITION -> preflight(call("getCPosition",Map.of("positionId",request.cPositionId())));
                 case FUTURES -> {call("getFuturesPosition",Map.of("positionId",request.positionId()));if(plan.route()==Route.MIXED)call("getFuturesLiquidationEvidence",Map.of("positionId",request.positionId()));}
                 default -> throw new AgentFailure("INVALID_AGENT_PLAN",503);
             }
@@ -281,6 +293,7 @@ public final class AgentService implements AutoCloseable {
                     if(p.path("status").asText().equals("OPEN")&&!p.path("priceAvailable").asBoolean())uncertainties.add("FUTURES_PRICE_UNAVAILABLE");
                 }
                 if(data.path("orderLink").asText().equals("INCONSISTENT_LINK"))uncertainties.add("INCONSISTENT_LINK");
+                if(data.has("amountRelation")&&!data.path("amountRelation").path("verification").asText().equals("QUOTED_ARITHMETIC_ONLY_NOT_EXECUTION"))uncertainties.add("AMOUNT_RELATION_UNVERIFIED");
                 if(item.tool().equals("getReceiptSummary")){
                     if(data.path("receiptStatus").asText().equals("NOT_FOUND"))uncertainties.add("RECEIPT_NOT_FOUND");
                     if(data.path("eventValidation").asText().equals("MISMATCH"))uncertainties.add("RECEIPT_EVENT_MISMATCH");
@@ -313,7 +326,7 @@ public final class AgentService implements AutoCloseable {
         void addUsage(Usage usage){if(usage!=null){inputTokens+=Math.max(0,usage.inputTokens());outputTokens+=Math.max(0,usage.outputTokens());}}
         AgentResponse degraded(String code){
             uncertainties.add(code);
-            if(hasFacts() || !knowledge.isEmpty())return response("PARTIAL","확보된 근거만 제공합니다. 추가 해석은 확인하지 못했습니다.",List.of(),List.of());
+            if(hasFacts() || !knowledge.isEmpty())return response("PARTIAL",(hasFacts()?StateExplanation.explain(List.copyOf(evidence.values()))+"\n":"")+"확보된 근거만 제공합니다. 추가 해석은 확인하지 못했습니다.",List.of(),List.of());
             return failure(id,code,code.equals("AGENT_TIMEOUT")?504:503,this);
         }
         AgentResponse.Metrics metrics(){return new AgentResponse.Metrics(toolCalls,retrievalCalls,modelCalls,inputTokens,outputTokens,TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-start));}

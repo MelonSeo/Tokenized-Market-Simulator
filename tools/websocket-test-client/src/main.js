@@ -5,6 +5,7 @@ import { ChartController } from './chart-controller.js';
 import { normalizeQuote, quoteUsability, remainingSeconds, shouldRenderOrder, friendlyTradeError } from './trade-quote.js';
 import { RequestState, number, time, label, positiveAmount, uncertainWrite, marketNotice, mergeMarketRead } from './state.js';
 import { node, button, fields, empty, orderCard, tradeCard, renderDiagnosis } from './ui.js';
+import { aiFailureMessage } from './ai-feedback.js';
 import { createReservePanel } from './reserve-panel.js';
 import { createTradeAuditPanel } from './trade-audit-panel.js';
 import { createFaucetPanel } from './faucet-panel.js';
@@ -47,6 +48,7 @@ function message(id, text = '', style = '') { $(id).textContent = text; $(id).cl
 function toast(text) { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5000); }
 function errorText(error) {
   const code = error?.body?.code || error?.body?.error;
+  const aiMessage = aiFailureMessage(code, error?.status); if (aiMessage) return aiMessage;
   const messages = { AI_DISABLED: 'AI 기능이 비활성 상태입니다. 거래 기능은 계속 이용할 수 있습니다.', AGENT_DISABLED: 'AI 도움 기능이 준비되지 않았습니다.',
     AGENT_BUSY: 'AI 분석이 혼잡합니다. 잠시 후 다시 요청해 주세요.', TOOL_BUSY: '조회가 혼잡합니다. 잠시 후 다시 요청해 주세요.',
     DIAGNOSIS_DISABLED: '자동 진단 이력 기능이 비활성 상태입니다.', DIAGNOSIS_NOT_FOUND: '진단 이력을 찾을 수 없습니다.',
@@ -118,7 +120,7 @@ function resetPrivate() {
   $('quote-dialog').close();
   requests.reset(); clearTimeout(sessionExpiry); state.user = null; state.quote = null; state.orders = []; state.trades = []; state.portfolio = null;
   state.latestId = null; state.detailId = null; state.uncertain = null; state.history = []; state.nextBefore = null; portfolioRevision++;
-  $('ai-question').value = ''; $('ai-target').value = ''; $('ai-kind').value = 'general'; syncAiTarget();
+  $('ai-question').value = ''; $('ai-target').value = ''; $('ai-kind').value = 'general'; for(const [id,value] of [['ai-abnormal-filter','REVIEW_REQUIRED'],['ai-abnormal-limit','10'],['ai-abnormal-wait','300']]){if($(id))$(id).value=value;} syncAiTarget();
   for (const id of ['admin-order', 'admin-filter-order', 'password', 'nickname']) $(id).value = '';
   for (const id of ['auth-message', 'ai-message', 'admin-message', 'history-message', 'portfolio-message', 'faucet-message', 'trade-message']) message(id);
   for (const id of ['ai-result', 'admin-result', 'admin-history', 'portfolio-summary', 'history-list', 'observation', 'latest-order']) $(id).replaceChildren();
@@ -312,22 +314,31 @@ function socketEvent(channel, event) {
   if (channel === 'portfolio' && state.user) { portfolioRevision++; state.portfolio = event.data; renderPortfolio(); }
 }
 $('ai-kind').add(new Option('내 선물 포지션·청산 진단', 'futures'));
-function syncAiTarget() { $('ai-target-wrap').hidden = !['quote', 'order', 'futures'].includes($('ai-kind').value); }
+function syncAiTarget() { $('ai-target-wrap').hidden = !['quote', 'order', 'futures', 'c-position'].includes($('ai-kind').value); const a=$('ai-abnormal'); if(a){a.hidden=$('ai-kind').value!=='abnormal';a.disabled=a.hidden;} }
 function invalidateAi() { requests.invalidate('ai'); $('ai-result').replaceChildren(); message('ai-message'); }
 function selectAi(kind, target, question) { if (!requireUser('ai')) return; invalidateAi(); $('ai-kind').value = kind; $('ai-target').value = target || ''; $('ai-question').value = question; syncAiTarget(); navigate('ai'); }
 for (const id of ['ai-kind', 'ai-target', 'ai-question']) $(id).addEventListener('input', invalidateAi);
 async function runAi(event) {
   event.preventDefault(); if (!requireUser('ai') || $('ai-submit').disabled || requests.busy('ai')) return;
   const kind = $('ai-kind').value, value = $('ai-target').value.trim(), question = $('ai-question').value.trim();
-  let target = null, skill = null;
+  let target = null, skill = null, abnormal = null;
+  if(kind==='abnormal'){
+    if(state.user?.role!=='ADMIN'){message('ai-message','이상 주문 목록은 ADMIN 전용입니다.','warning');return;}
+    const limit=Number($('ai-abnormal-limit').value),waitingSeconds=Number($('ai-abnormal-wait').value),filter=$('ai-abnormal-filter').value;
+    if(!Number.isInteger(limit)||limit<1||limit>20||!Number.isInteger(waitingSeconds)||waitingSeconds<60||waitingSeconds>3600){message('ai-message','조회 건수 1~20, 대기 기준 60~3600초를 입력하세요.','warning');return;}
+    abnormal={filter,limit,waitingSeconds};
+  }
   if (kind === 'order') { const id = Number(value); if (!Number.isSafeInteger(id) || id <= 0) { message('ai-message', '양의 정수 주문 번호를 입력해 주세요.', 'warning'); return; } target = { orderId: id }; }
   if (kind === 'quote') { if (!/^0x[0-9a-fA-F]{64}$/.test(value)) { message('ai-message', '발급된 견적 번호를 선택하거나 정확히 입력해 주세요.', 'warning'); return; } target = { quoteId: value }; skill = 'signed-quote-diagnosis'; }
   if (kind === 'market') skill = 'market-availability-diagnosis';
   if (kind === 'futures') { if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value)) { message('ai-message', '선물 포지션에서 진단을 선택하거나 정확한 UUID를 입력해 주세요.', 'warning'); return; } target = { positionId: value }; skill = 'futures-liquidation-diagnosis'; }
+  if (kind === 'c-position') { if (!/^0x[0-9a-fA-F]{64}$/.test(value)) { message('ai-message','C 자산 탭의 본인 bytes32 포지션 ID를 입력하세요. legacy UUID와 다릅니다.','warning'); return; } target = { cPositionId: value }; }
   if (new TextEncoder().encode(JSON.stringify({ question, target, skillId: skill })).length > 4000) { message('ai-message', '질문을 조금 더 짧게 입력해 주세요.', 'warning'); return; }
   $('ai-submit').disabled = true; empty($('ai-result'), '근거를 조회하고 있습니다.');
   const generation = requests.generation;
-  await read('ai', () => api.agent(question, target, skill), (body) => renderDiagnosis($('ai-result'), body), 'ai-message', true);
+  const waiting = setTimeout(() => { if (generation === requests.generation && requests.busy('ai')) message('ai-message','AI 근거 조회·설명을 기다리는 중입니다. 최대 약 90초이며 자동 중복 제출하지 않습니다.'); }, 15000);
+  try { await read('ai', () => api.agent(kind === 'c-account' ? `C Vault 조회: ${question}` : question, target, skill, abnormal), (body) => renderDiagnosis($('ai-result'), body), 'ai-message', true); }
+  finally { clearTimeout(waiting); }
   if (generation === requests.generation) { $('ai-submit').disabled = false; if (requests.resources.get('ai')?.status === 'error') empty($('ai-result'), '이번 분석 결과를 받지 못했습니다. 거래 내역은 별도로 확인할 수 있습니다.'); }
 }
 async function loadDiagnosisHistory(before = null) {
@@ -388,6 +399,15 @@ $('acknowledge-order').onclick = () => {
 };
 $('history-refresh').onclick = loadActivity; for (const tab of ['orders', 'trades']) $(`history-${tab}`).onclick = () => { state.historyTab = tab; renderHistory(); };
 $('portfolio-refresh').onclick = () => {void loadPortfolio();faucetPanel.setContext(state.user,'portfolio');};
+for (const [value, text] of [['c-account','C 온체인 지갑·Vault 조회'],['c-position','C 온체인 포지션 조회 (bytes32)']]) { const option = node('option',text); option.value=value; $('ai-kind').append(option); }
+$('ai-kind').add(new Option('이상 주문 목록 (ADMIN·명시 필터)', 'abnormal'));
+const abnormalFields=node('fieldset');abnormalFields.id='ai-abnormal';abnormalFields.hidden=true;abnormalFields.disabled=true;
+abnormalFields.append(node('legend','실제 적용할 목록 조건'),node('p','자연어보다 아래 명시 조건을 우선 적용합니다. 전체 이력·임의 날짜 범위 조사가 아닌 첫 페이지입니다. 일반 질문에서 숫자 조건이 필요하면 이 진단 대상을 선택하세요.','muted'));
+const abnormalFilter=node('select');abnormalFilter.id='ai-abnormal-filter';for(const value of ['REVIEW_REQUIRED','WAITING_LONG'])abnormalFilter.add(new Option(value,value));
+const filterLabel=node('label','필터');filterLabel.htmlFor=abnormalFilter.id;abnormalFields.append(filterLabel,abnormalFilter);
+for(const [id,text,value,min,max] of [['ai-abnormal-limit','최대 조회 건수',10,1,20],['ai-abnormal-wait','대기 기준 (초, WAITING_LONG)',300,60,3600]]){const input=node('input');input.id=id;input.type='number';input.value=value;input.min=min;input.max=max;input.step=1;const label=node('label',text);label.htmlFor=id;abnormalFields.append(label,input);input.addEventListener('input',invalidateAi);}
+abnormalFilter.addEventListener('change',invalidateAi);$('ai-submit').before(abnormalFields);
+$('ai-form').after(node('p','C 조회는 먼저 C 자산 탭에서 이 계정의 지갑 소유 증명을 연결해야 합니다. C 정책 설명은 별도 custody 색인이 필요합니다. 과거 청산 원인·개인 Claims 전체 진단은 미지원이며 legacy DB 선물과 합산하지 않습니다.','notice'));
 $('ai-kind').onchange = syncAiTarget; $('ai-form').onsubmit = runAi;
 $('ask-policy').onclick = () => selectAi('general', null, 'mSEC와 모의 원화, 견적과 체결 방식을 설명해주세요.');
 $('ask-market').onclick = () => selectAi('market', null, '지금 시장에서 신규 거래가 가능한지 진단해주세요.');

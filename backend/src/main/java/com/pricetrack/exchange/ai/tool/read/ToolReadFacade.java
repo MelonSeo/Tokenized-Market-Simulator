@@ -83,6 +83,7 @@ public class ToolReadFacade {
                 .put("minimumOutputAmount", decimal(TokenUnits.fromWei(quote.getMinimumOutput())))
                 .put("fee", decimal(TokenUnits.fromWei(quote.getFee()))).put("feeSymbol", WalletService.KRW_SYMBOL)
                 .put("expiredByTime", clock.instant().isAfter(quote.getValidUntil()));
+        if(quote.getSide().name().equals("BUY"))data.set("amountRelation",BuyAmountRelation.quoted(json,quote));
         boolean buy = quote.getSide().name().equals("BUY");
         units(data, buy);
         time(data, "observedAt", quote.getObservedAt()); time(data, "validUntil", quote.getValidUntil());
@@ -126,6 +127,8 @@ public class ToolReadFacade {
         ObjectNode data = snapshot(snapshot);
         if (includePrice) data.put("price", decimal(snapshot.price())).put("priceSymbol", WalletService.KRW_SYMBOL)
                 .put("priceKind", "MARKET_REFERENCE_NOT_EXECUTION_PRICE");
+        data.put("volumeObserved",false).put("volumeScope","CURRENT_TOOL_HAS_NO_CHART_INTERVAL_OR_VOLUME_VALUE").put("volumeSymbol",WalletService.TOKEN_SYMBOL)
+            .put("volumeMeaning",snapshot.provider().equals("SIMULATED")?"GENERATED_NOT_USER_FILLS":"PROVIDER_OBSERVATION_NOT_TMS_USER_FILLS");
         return data;
     }
     public ObjectNode portfolio(ToolContext ctx) {
@@ -163,7 +166,8 @@ public class ToolReadFacade {
         else q.setParameter("status", BlockchainTransactionStatus.REVIEW_REQUIRED);
         if (args.cursor() != null) q.setParameter("after", args.cursor().createdAt()).setParameter("afterId", args.cursor().id());
         var rows = q.setMaxResults(args.limit() + 1).getResultList();
-        ObjectNode data = fresh().put("filter", args.filter());
+        ObjectNode data = fresh().put("filter", args.filter()).put("limit",args.limit()).put("waitingSeconds",args.waitingSeconds())
+            .put("scope",args.cursor()==null?"FIRST_PAGE_NOT_FULL_HISTORY":"PAGE_AFTER_CURSOR_NOT_FULL_HISTORY").put("hasMore",rows.size()>args.limit());
         var items = data.putArray("items");
         for (var tx : rows.stream().limit(args.limit()).toList()) {
             ObjectNode item = transactionSummary(tx);

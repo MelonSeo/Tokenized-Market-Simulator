@@ -1,5 +1,89 @@
 # AI 최종 평가 보고서
 
+## 2026-10-31 실사용 전환 후속 작업 — 진행 중 / 유료 호출 0
+
+별도 `ci/ai-unpaid-readiness-20261031`에서 main9abf를 기반으로 제품 AI/웹 및 격리 CI를 보완한다. 아래 이전 평가를 새 소스의 결과로 대체하지 않는다. **전체 실사용 인수 PARTIAL**, 최종 실제 모델·새 C 정책 Embedding·사용자 파일럿은 새 예산 승인 전 NOT_RUN이다. main/Organization/원본 사용자 데이터는 수정하지 않는다.
+
+- F1은 계약·정산 계산을 고치지 않고 BUY 견적의 포함 수수료 관계를 구조화해 전달하고 결정적 설명 및 명백한 추가 차감 모순 검증을 추가했다. 무과금 산술/캡처 재현과 임의 자연어 실제 모델 인수는 구분한다.
+- A2 현재 공급자/거래량 출처는 실제 Tool을 반드시 조회하도록 보완했다. 현재 Tool에는 차트 구간 거래량 숫자가 없으며 이를 명시한다. C4는 기존 ADMIN 권한/Tool 검증을 재사용하고 요청의 구조화 필터·실제 적용값·한 페이지 범위를 표시한다. 자연어의 모든 기간/복합 필터를 지원한다고 주장하지 않는다.
+- C1/F3/F4 관련 정책 검색은 사용자 질문을 보존하고 fallback도 실제 Tool 사실을 설명한다. 근거 없는 과거 사유/실현손익을 생성하지 않는다. 답변 충분성의 실제 모델 재검증은 남아 있다.
+- C 핵심 자산 기능을 제외하지 않고 기존 소유 증명/고정 RPC를 재사용하는 두 읽기 Tool을 추가했다. 기존 legacy10 Tool/4Skill과 다른 C12 Tool 총집합이다. 별도 C policy manifest10문서/93 Chunk이며 기존9/88과 고정30문항 hash는 불변이다. C/legacy 검색 분리와 global unpaid≠personal Claim 경계를 유지한다. 현재 C STATE 조회는 정책·LLM 없이 실제 고정 관측을 설명하고, C MIXED는 custody 정책 색인이 필요하다. Claims 전수/과거 청산 원인/전체 C AI 감사는 미지원이다.
+- 서버 비용 보호는 공급자 전송 전 별도 PG 보수 예약, 전역·일일·계정·호출량 제한, 재시작 보존, 불명 예약 유지, 미설정 fail-closed다. 기존 Python 평가 원장이 일반 웹 요청을 보호한다고 가정하지 않는다. 실제 예산과 키는 아직 활성화하지 않는다.
+- 실제 웹의 질문·대기·오류 안내와 계정 전환 청소를 보완했다. 새 headless Chrome 시험은 실제 JWT/Agent HTTP+Tool/PG/RAG에 controlled provider를 연결하며 고정 브라우저 응답으로 대체하지 않는다. 별도 C-read Linux 프로필은 새 PG/Anvil/시험 EOA만 사용한다. 실제 사용자 MetaMask/유료 모델/사용자 만족도 인수와 다르다.
+- 새 CI 두 개는 개인 저장소의 main/CI 브랜치 조건을 갖지만 이번 Push는 CI 브랜치만 허용된다. 기존 금융 read/direct CI 조건은 그대로다. 공개 artifact는 정제 allowlist만, 비밀 설정·브라우저 프로필·비공개 로그·기존 ledger는 제외한다.
+
+사전 기준과 활성화/비용 제안은 [READINESS_PLAN_2026-10-31.md](READINESS_PLAN_2026-10-31.md)의 후속 절 및 `pilot-acceptance-v1.json`에 기록했다. 새 모델 평가 제안 US$15/LLM80/Embedding60은 **승인 아님**이다. 실제 검증 결과·독립 검토·CI SHA는 완료 시 이 절에 추기한다. 소표본 controlled provider 성능을 실제 모델 SLA로 보고하지 않는다.
+
+## 2026-10-31 최종 main 무과금 통합·운영 특성 평가
+
+**서비스 준비도 PARTIAL / 이번 통제 HTTP·DB 시험 PASS / 유료 재인수·Linux Actions 실행 NOT_RUN.** 기능을 추가하거나 기존 품질 한계를 완료로 바꾸지 않았다. 개인 원격 main 기준은 `9abf3dbc30701032d5cdd6b9346b1111e2c3d686`이며 별도 `ci/ai-unpaid-readiness-20261031` worktree에서만 시험/CI/문서를 보완했다. Commit·Push·main 변경·배포·유료 호출·금융 거래는 없다.
+
+### 소스와 CI 공백
+
+- 이전 실제 모델 소스 fingerprint `5a1c6fa4d1baaa9653c1ed052ece358387e39519bfcf0b01226a15d0a403a1f0`와 최종 마감 `be7674e94cfe827ce6b2820115e10c4dd1cb1c1e149e31b141ea38e3867c2ab5`는 다르다. 최종 main의 표시 보완은 무과금 검증이며 마지막 소스로 전체30문항을 유료 재인수하지 않았다. 이번에도 제품 main 소스/계약/금융/인증/Oracle는 수정하지 않았다.
+- 기존 read workflow는 push `melon-init`, direct workflow는 `melon-init`/`feat/c-owner-direct-integration`만 대상으로 하고 job의 ref 조건도 같다. 따라서 main에서 실행되지 않은 것은 확인된 설정 결과이며 두 기존 거래 CI를 확장하지 않았다.
+- 별도 `.github/workflows/ai-unpaid-readiness.yml`을 준비했다. 개인 저장소 main/이 시험 브랜치만, Ubuntu24.04·고정 SHA Actions·Temurin21.0.10+7.0.LTS·contents:read·동시1·25분 상한·자격증명 비상속·고정 문항 해시·AI/JWT/인증/정산 회귀·새 임시 pgvector/실제 HTTP·수치만 Artifact·검사 실패 시 업로드 금지·보존3일이다. YAML/오프라인 검사는 통과했으나 원격 Push와 Actions 실행은 승인 전 NOT_RUN이다. Linux 실행 성공으로 표현하지 않는다.
+
+### 사전 기준과 실제 환경
+
+계획은 [READINESS_PLAN_2026-10-31.md](READINESS_PLAN_2026-10-31.md) 및 `deployment/ai-readiness-plan.json`에 실행 전 고정했다. canonical 계획 SHA256 `f31b4b53d8072ae1fb3382ba873abbd6f370dcc91cc657cf7dd08374edcecfc2`는 결과 이후에도 동일하다. C1/2 성공률95% 이상, 성공 p95 STATE1500ms/그 외2500ms, worker2/queue0/Tool4/AI연결2/거래연결4, 90초 deadline88.5~95초, DB장애20초, 종료 후15초 회수 및 권한/금융 불변을 요구했다. C4/8은 포화 특성 관측이며 높은 성공률의 합격 약속을 하지 않았다.
+
+실행 `ai-readiness-20261031T070710Z-f763ece7`: Windows·JDK21.0.10·논리12코어, JVM heap 상한384MiB, Docker PostgreSQL/pgvector pinned digest `eac621400b7b7ff52493883e41e930e3d104695fea5b68cc0c42370cf7880067`의 새 컨테이너 하나(CPU1/320MiB/tmpfs/loopback). 기동 직전 RAM3604.14MiB/디스크44.80GiB, 실행 중 읽기 관측 RAM2441.88MiB였다(연속 최소값 아님). 거래 조회 저장소는 새 H2/JPA fixture, 지식 DB는 실제 PostgreSQL이다. 기존 사용자 DB/Anvil/볼륨은 미접근, 과거 원장/STOP은 SQLite를 열지 않고 파일 해시만 보존 대조했다.
+
+실제 Spring Boot/JWT/HTTP/Agent/Tool/RAG SQL/승인·인용 검증을 연결하되 **OpenAiProvider는 통제 Mock, Embedding은 합성1536차원 벡터**다. Planning50ms/생성150ms/Embedding40ms를 가정했다. 실제 LLM·semantic 검색 정확성·공급자 RTT·Anvil/RPC·C Vault AI·브라우저 인수가 아니다. 부하의 ANSWERED는 검증된 시험 응답 계약이며 자연어 품질 성공률이 아니다.
+
+### 부하 결과
+
+각 행은 배치형32시도, 경로별 warmup2, 자동 재시도0이다. p95는 성공 표본만의 nearest-rank이며 거절은 분리했다. 성공은 HTTP200뿐 아니라 예상 route·필수 Tool/정책·검증된 인용·불확실성 없음·모델 호출 수를 검사했다. 총384시도 중264정상/120 AGENT_BUSY503/예상 밖 오류0. 저부하 C1/2는192/192 정상이다.
+
+| 경로 | 동시성 | 정상/거절 | 성공 p50/p95 ms | 성공 처리량 req/s |
+|---|---:|---:|---:|---:|
+| STATE | 1 | 32/0 | 9.899 / 11.039 | 98.550 |
+| STATE | 2 | 32/0 | 10.142 / 12.693 | 177.189 |
+| STATE | 4 | 16/16 | 9.985 / 15.022 | 181.732 |
+| STATE | 8 | 8/24 | 9.252 / 10.623 | 200.112 |
+| KNOWLEDGE | 1 | 32/0 | 318.889 / 341.261 | 3.117 |
+| KNOWLEDGE | 2 | 32/0 | 327.942 / 343.027 | 6.051 |
+| KNOWLEDGE | 4 | 16/16 | 334.225 / 355.337 | 5.894 |
+| KNOWLEDGE | 8 | 8/24 | 333.002 / 338.835 | 5.991 |
+| MIXED Skill | 1 | 32/0 | 247.554 / 267.831 | 3.982 |
+| MIXED Skill | 2 | 32/0 | 268.433 / 304.707 | 7.339 |
+| MIXED Skill | 4 | 16/16 | 270.331 / 283.146 | 7.355 |
+| MIXED Skill | 8 | 8/24 | 266.671 / 279.504 | 7.338 |
+
+C4의 거절50%, C8의 거절75%는 worker2/즉시 거절 구조와 일치한다. 낮은 성공 지연을 높은 동시성 수용 능력으로 해석하면 안 된다. 25ms 샘플의 peak Agent2/queue0/Tool2/AI active2/H2 active4, heap125.730MiB/nonheap174.580MiB였다. 큐는 없으며 요청별 대기 시간 분포를 별도로 계측한 것은 아니다. HTTP에서 Agent 외 p50은 약6~8ms였지만 순수 큐 대기나 Java-Python 중계 지연이 아니다(이번 시험에는 Python 모델 broker 없음).
+
+전체 관측 구간의 논리코어 정규화 process CPU2.374%는 긴 장애 대기까지 포함한다. 짧은 STATE 부하 행에서는 최대68.398%로 훨씬 높았다. JVM 메모리는 RSS가 아니며 샘플 사이의 절대 peak도 보장하지 않는다. PG Docker stats 별도2회 관측은97.96/103.90MiB, CPU0.97/0.06%였다(연속 peak 아님). 다중 인스턴스·장기 안정성·실제 LLM 부하 SLA로 확대하지 않는다.
+
+### 캐시·장애·보안
+
+- 같은 정책 질의를 cache OFF/ON 각12회(warmup별도) 비교: OFF p50/p95=99.703/109.998ms, ON=53.850/67.640ms, Embedding 호출12→0. 중앙값45.853ms 감소는 통제40ms 공급자와 실제 로컬 검색의 **컴포넌트** 결과다. 이12회에서 query vector 재사용은12/12이며 전체 서비스 캐시 적중률이 아니다. 결과 ID 동일/USER 범위/활성색인 검증을 유지했고 제품 캐시 설정은 바꾸지 않았다.
+- 모델 생성 오류:97.996ms HTTP200/PARTIAL, Tool 사실 보존. 활성 index를 생성 후 비활성화:274.827ms, 정책과 인용 제거·승인 불확실성 반환. 다른 활성 version 교체/문서 변경 시나리오는 별도 NOT_RUN이다.
+- 클라이언트 요청 취소 후 제한 내 worker 회수를 확인했다. 클라이언트 연결 해제가 서버/외부 호출을 즉시 취소한다고 입증한 것은 아니다.
+- 비협조 공급자96초 점유2개: HTTP504가90011.795/90011.586ms에 반환됐다. 포화 추가8요청은 모두503, timeout 후 실제 작업이 끝나기 전에도 슬롯을 점유해503을 유지했다. 실제 작업 종료 후15초 이내 idle/STATE200 회복을 확인했다. 이는 deadline과 자원 회수가 다름을 보여주며 무제한 비협조 외부 작업 전체의 종료 보장은 아니다.
+- 이번 소유 PG만 pause:5049.266ms에 PARTIAL, 정책 근거 없음. finally unpause/정상 정리했다. 장애 뒤 새 RAG 성공 응답을 별도로 다시 측정하지는 않았다.
+- 실제 JWT 로그인, 무인증401, USER의ADMIN Tool403, 잘못된 입력400, 타인/미존재 견적 동일404 및 모델 호출0, 사용자별 포트폴리오 분리, 모델 입력 USER문서만·Tool 비공개 필드 재귀검사0위반, 응답 JWT 비노출, 금융 fixture5테이블 전후 동일, borrowed DB연결0/Agent idle를 확인했다. HTTP에서 정상 호출한 Tool은 getPortfolio/getQuote/getOrder/getBlockchainTransaction/listAbnormalOrders, 명시적 Skill은 signed-quote-diagnosis다. 10Tool/4Skill 전체 실제 운영 데이터 인수로 합치지 않는다.
+- 총175.172초/JUnit1PASS, 수치 Artifact schema/금지 필드·문자열·manifest 해시 검사 PASS, 신규 소유 컨테이너 제거true. DB는 의도된 일회성 tmpfs이며 검증 수치/실패 진단 로그는 private runtime에 보존했다. 기존 볼륨은 삭제하지 않았다.
+
+### 회귀·검토·한계와 다음 승인
+
+- 초기 동일 main 무과금 회귀:Java334중302PASS/32SKIP(기존31선택시험+신규부하 opt-in1), Python `test_ai*.py`204PASS(기존177의 명령 범위와 달라 단순 증가 성과로 비교하지 않음). 별도 JWT/인증/측정 음성 회귀24PASS. 최종 통합 수치는 아래 완료 추기에 남긴다.
+- 완료 추기: 최종 Java358중326PASS/32SKIP/실패·오류0, Python204PASS. 마지막 32SKIP은 실행하지 않은 선택 통합·유료 경로이며 PASS가 아니다. XML은 이번 private run의 `final-regression-xml`에 보존했다. 신규11개 Python/Assertions5개·문항 LF 해시·YAML parse·공개수치 검사도 통과했다.
+- 독립 검토의 두 필수 지적은 HTTP200 fallback 오집계와 모델 Tool 입력 민감 필드 검사 누락이었다. 판정 강화 및 음성 회귀5개로 보완했고 재검토에서 필수 없음이었다. Docker create CLI timeout 후 소유 자원 확인 정리, 공개 Artifact 검사 성공 조건도 보완했다. 측정 기준을 낮추거나 제품 정책을 수정하지 않았다. 최종 실행 증거 대조 결과는 완료 추기로 구분한다.
+- 최종 독립2차 재검토 `review_ai_readiness`: 발견된 필수 수정 없음. 공개/원본 metrics·계획SHA·384합산·캐시·장애·종료·Java358XML을 직접 대조하고 Python11을 직접 PASS했다. Python204는 구현자 결과로 구분했다. 원본 실환경 XML 미보존 및 후속1SKIP의 차이, 실제 모델/운영성능 한계를 확인했다. 이후 동작 변경 없이 이 완료 기록만 추가했다.
+- 보존 대조: 기존24개+이번1개=25worktree HEAD 동일, 원본 dirty8파일 SHA/상태 동일, 기존 AI 기능 브랜치9abf clean 동일, 과거 budget.sqlite/STOP 해시 동일, 개인 원격main9abf 동일. 10개 공개 후보의 제한된 PEM/API/JWT 패턴0건·공백0, gitleaks 미설치이므로 무유출 절대 보장은 아니다. staged0/commit0/push0이며 runtime/개인자료는 추적 대상이 아니다.
+- 서비스 전체는 PARTIAL이다. F1 자연어 수수료 관계, A2/C4 실제 모델 경로, 일부 답변 충분성, 마지막 소스의 전체30문항 유료 재인수, 실제 사용자 만족도/공급자 지연/장기 SLA/C Vault AI는 미완료다. 이 시험의 낮은 Mock 지연으로 기존 실제 답변10~수십초 문제를 해결했다고 하지 않는다.
+- 추가 유료 인수는 현재 NOT_RUN이며 승인 필요다. 기존 동결 프로토콜의 baseline 상한51LLM(실제는 라우팅에 따라 감소), corpus6배치+질문30회면 Embedding 최대36회가 최소 재인수 제안 범위다. 입력1,671,168/출력81,600/Embedding160,000토큰 상한에서 **기존 원장 보수 단가** input$2.50/M·output$12/M·Embedding$0.02/M를 조건부 적용하면 최대$5.16032, 제안 별도 상한$5.20이다(현재 요금·할증·직렬화 예약 재검증 전 실행 불가/새 승인 아님). 공급자 p50/p95는 이30개의 서로 다른 경로를 합쳐 SLA로 만들지 않고, 동일 질의 반복·추가 표본의 별도 예산과 운영 환경이 필요하다. 과거 원장·STOP·불명 예약은 그대로 유지한다.
+
+### 기술 학습 연결
+
+1. **HTTP 성공과 AI 기능 성공은 다르다.** 200/PARTIAL은 안전한 복구일 수 있지만 정상 답변 성능 분모에 섞으면 실패한 검색이 빠른 성공으로 보인다. route/근거/인용/생성 trace까지 검증하고 의도된 장애는 별도 집계했다. 면접 질문: fallback이 있는 서비스에서 성공률을 어떻게 정의하는가?
+2. **deadline과 cancellation은 다르다.** Future.cancel(true)는 협조적 interrupt이며 비협조 호출을 강제 종료하지 않는다. 실제 작업 종료 전 worker를 반환하지 않는 구조는 bounded 실행을 보존하지만 가용성을 낮춘다. worker2에서 C4/8의50/75% 거절을 확인했다. 면접 꼬리 질문: 무제한 큐 대신 즉시 거절을 택했을 때 무엇을 운영 지표로 보아야 하는가?
+3. **안전한 캐시의 단위는 현재 사실이 아니라 query vector다.** 벡터 재사용 후에도 role/corpus/index 검증과 DB 조회를 계속한다. cache ON/OFF45.853ms 차이는 통제 공급자 아래에서의 결과이고 실제 요금/공급자 속도로 일반화하지 않는다. 면접 질문: 조회 결과 캐시와 임베딩 캐시의 신선도·권한 위험은 어떻게 다른가?
+4. **CI 격리는 준비와 실행을 구분한다.** 소유 label/name/image·loopback/tmpfs·원본 환경 비접근과 Artifact allowlist/해시 검사가 필요하다. 기존 거래 workflow를 main으로 무조건 확장하지 않고 별도 무과금 gate를 준비했다. 아직 Push하지 않았으므로 Linux 성공을 주장하지 않는다.
+
+---
+
 ## 개발 마감 — 추가 고도화·유료 평가 종료
 
 사용자 지시에 따라 추가 LLM/Embedding 호출, 새 평가 세트 및 새 기술 도입을 종료했다. 아래 실제 모델 성과는 해당 실행 당시 소스에 귀속되며, 이번 마감의 무과금 보완을 실제 모델에서 검증했다고 확대하지 않는다. PostgreSQL/Anvil/Docker를 새로 기동하지 않고 기존 데이터·볼륨·STOP·비용 원장·실패 증거를 유지한다.

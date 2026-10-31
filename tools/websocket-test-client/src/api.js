@@ -70,10 +70,10 @@ export class ApiClient {
     return this.#request('/api/me/google/link', { method: 'POST', headers: { 'X-Google-Auth': '1' }, body: JSON.stringify({ challengeId, credential, password }) });
   }
 
-  agent(question, target = null, skillId = null) {
+  agent(question, target = null, skillId = null, abnormal = null) {
     return this.#request('/api/ai/agent/answers', {
       method: 'POST',
-      body: JSON.stringify({ question, ...(target ? { target } : {}), ...(skillId ? { skillId } : {}) }),
+      body: JSON.stringify({ question, ...(target ? { target } : {}), ...(skillId ? { skillId } : {}), ...(abnormal ? { abnormal } : {}) }),
     });
   }
 

@@ -1,0 +1,8 @@
+// Test-only memory envelope. No product defaults or assertions are changed.
+allprojects {
+    tasks.withType(Test).configureEach {
+        maxHeapSize = '384m'
+        maxParallelForks = 1
+        forkEvery = 0
+    }
+}

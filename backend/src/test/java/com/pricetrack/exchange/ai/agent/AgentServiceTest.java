@@ -126,9 +126,9 @@ class AgentServiceTest {
         plan(Route.STATE,Subject.ABNORMAL);
         when(model.plan(anyString(),any(),any())).thenReturn(new Plan(Route.STATE,Subject.ABNORMAL,new Usage(31,9)));
         var result=call("{\"question\":\"이상 주문 목록\"}");
-        assertThat(result.httpStatus()).isEqualTo(403);assertThat(result.metrics().modelCalls()).isEqualTo(1);
-        assertThat(result.metrics().inputTokens()).isEqualTo(31);assertThat(result.metrics().outputTokens()).isEqualTo(9);
-        verifyNoInteractions(tools,retrieval);
+        assertThat(result.httpStatus()).isEqualTo(403);assertThat(result.metrics().modelCalls()).isZero();
+        assertThat(result.metrics().inputTokens()).isZero();assertThat(result.metrics().outputTokens()).isZero();
+        verifyNoInteractions(tools,retrieval,model);
     }
     @Test void questionInjectionCannotElevateUserOrSelectAdminTool(){
         plan(Route.STATE,Subject.ABNORMAL);

@@ -44,7 +44,7 @@ try{
  cdp=await BoundedCdp.connect(target.webSocketDebuggerUrl,{timeoutMs:budget(3000),onEvent:m=>{if(m==='Network.webSocketCreated')ws=true;if(m==='Network.webSocketFrameReceived')wsFrames++;if(m==='Runtime.exceptionThrown')runtimeError=true;}});
  // Metadata only: JWT, signatures and response bodies are never recorded.
  cdp.socket.addEventListener('message',event=>{try{const r=JSON.parse(event.data);if(r.method==='Network.responseReceived'){const v=r.params.response,u=new URL(v.url);if(u.origin===c.origin&&u.pathname.startsWith('/api/'))api.push({path:u.pathname,status:v.status});}
-  if(r.method==='Network.requestWillBeSent'){const v=r.params.request,u=new URL(v.url);if(v.method==='POST'&&!['/api/auth/login'].includes(u.pathname))financial=true;}
+  if(r.method==='Network.requestWillBeSent'){const v=r.params.request,u=new URL(v.url);if(v.method==='POST'&&!['/api/auth/login',...(c.aiReadMode?['/api/ai/agent/answers']:[])].includes(u.pathname))financial=true;}
   if(r.method==='Network.webSocketFrameReceived'){const frame=r.params.response?.payloadData;if(typeof frame==='string'&&frame.startsWith('MESSAGE\n')&&frame.includes('destination:/topic/markets/mSEC/price'))marketPriceMessageReceived=true;}}catch{}});
  await command('Runtime.enable');await command('Network.enable');await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1366,height:768,deviceScaleFactor:1,mobile:false});
  if(process.platform==='linux'){await command('DOM.enable');await command('CSS.enable');}
@@ -63,9 +63,20 @@ try{
   await fill('c-position-id',u.positionId);await click('c-position-read');await poll(()=>evaluate(`document.getElementById('c-position').textContent.includes(${JSON.stringify(u.positionId)})`));
   assert(await evaluate(`document.getElementById('c-position').textContent.includes(${JSON.stringify(u.positionStatus)})`));await capture(i?'03-user-b':'02-user-a','#view-custody h1');
   if(!i){await capture('05-account','#c-account','#c-account > div');await capture('06-position','#c-position','#c-position dt');}
+  if(c.aiReadMode){
+   await evaluate("location.hash='ai'");await fill('ai-kind','c-account');await fill('ai-question','내 지갑과 Free Locked 조회');
+   await evaluate("document.getElementById('ai-form').requestSubmit()");await poll(()=>evaluate("document.getElementById('ai-result').textContent.includes('C 온체인 지갑')"));
+   assert(await evaluate(`document.getElementById('ai-result').textContent.includes(${JSON.stringify(amount18(u.walletBalance))})`));
+   if(!i)await capture('07-ai-c-account','#ai-result');
+   await fill('ai-kind','c-position');await fill('ai-target',u.positionId);await fill('ai-question','C 포지션 조회');
+   await evaluate("document.getElementById('ai-form').requestSubmit()");await poll(()=>evaluate("document.getElementById('ai-result').textContent.includes('C 온체인 포지션 상태')"));
+   assert(await evaluate(`document.getElementById('ai-result').textContent.includes(${JSON.stringify(u.positionStatus)})`));
+   if(!i)await capture('08-ai-c-position','#ai-result');
+  }
   // Actual product logout must remove prior data, not just hide the route.
   await click('logout');await poll(()=>evaluate("document.getElementById('logout').hidden"));
   assert.equal(await evaluate("document.getElementById('c-account').textContent+document.getElementById('c-position').textContent+document.getElementById('c-identity').textContent"),'');
+  assert.equal(await evaluate("document.getElementById('ai-result').textContent"),'');
  }
  await capture('04-logged-out');assert(ws);assert(!runtimeError);assert(!financial);assert(api.some(a=>a.path==='/api/c-futures/account'&&a.status===200));assert(api.some(a=>a.path==='/api/markets/mSEC/candles'&&a.status===200));passed=true;
 }catch(e){failure=e.code??e.name??'BROWSER_FAILED';}

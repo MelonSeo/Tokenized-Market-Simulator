@@ -82,11 +82,16 @@ public class PgKnowledgeStore implements KnowledgeStore, AutoCloseable {
     @Override public List<KnowledgeHit> searchForScope(String fingerprint,float[] query,int topK,double threshold,
             UserRole role,Set<String> domains,Duration timeout) {
         if(domains==null || domains.isEmpty() || domains.size()>4 || domains.stream().anyMatch(d ->
-                !Set.of("trading","settlement","operations","support","market").contains(d)))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
+                !Set.of("trading","settlement","operations","support","market","custody").contains(d)))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
         return searchScoped(fingerprint,query,topK,threshold,role,Set.copyOf(domains),timeout);
     }
     private List<KnowledgeHit> searchScoped(String fingerprint,float[] query,int topK,double threshold,
             UserRole role,Set<String> domains,Duration timeout) {
+        return searchScoped(fingerprint,query,topK,threshold,role,domains,timeout,false);
+    }
+    @Override public List<KnowledgeHit> searchLegacyAssets(String f,float[] q,int k,double t,UserRole role,Duration timeout){return searchScoped(f,q,k,t,role,null,timeout,true);}
+    private List<KnowledgeHit> searchScoped(String fingerprint,float[] query,int topK,double threshold,
+            UserRole role,Set<String> domains,Duration timeout,boolean legacyAssets) {
         if (role == null) throw new org.springframework.security.access.AccessDeniedException("Role required");
         String rolePredicate = role == UserRole.ADMIN ? "d.minimum_role in ('USER','ADMIN')" : "d.minimum_role='USER'";
         List<KnowledgeHit> result = new ArrayList<>();
@@ -96,7 +101,7 @@ public class PgKnowledgeStore implements KnowledgeStore, AutoCloseable {
             join ai.indexes i on i.id=ch.index_id
             where i.active and i.id=? and %s
             and 1-(ch.embedding <=> ?::vector)>=? order by ch.embedding <=> ?::vector,ch.id limit ?
-            """.formatted(rolePredicate+(domains==null?"":" and d.domain = any (?::text[])")))) {
+            """.formatted(rolePredicate+(domains==null?"":" and d.domain = any (?::text[])")+(legacyAssets?" and d.domain <> 'custody'":"")))) {
             if (Thread.currentThread().isInterrupted() || timeout.isZero() || timeout.isNegative()) throw new AiFailure("AI_QUERY_TIMEOUT");
             s.setQueryTimeout((int)Math.max(1, Math.min(5, (timeout.toMillis()+999)/1000)));
             String vector = vector(query);
@@ -119,16 +124,21 @@ public class PgKnowledgeStore implements KnowledgeStore, AutoCloseable {
     }
     @Override public List<KnowledgeHit> searchIdentifiers(String fingerprint,float[] query,List<String> identifiers,
             UserRole role,Set<String> domains,Duration timeout){
+        return identifiers(fingerprint,query,identifiers,role,domains,timeout,false);
+    }
+    @Override public List<KnowledgeHit> searchLegacyIdentifiers(String f,float[] q,List<String> ids,UserRole role,Duration timeout){return identifiers(f,q,ids,role,null,timeout,true);}
+    private List<KnowledgeHit> identifiers(String fingerprint,float[] query,List<String> identifiers,
+            UserRole role,Set<String> domains,Duration timeout,boolean legacyAssets){
         if(role==null||identifiers==null||identifiers.isEmpty()||identifiers.size()>2||identifiers.stream().anyMatch(x->!x.matches("[A-Za-z][A-Za-z0-9_]{2,79}")))
             throw new AiFailure("AI_IDENTIFIER_QUERY_INVALID");
-        if(domains!=null&&(domains.isEmpty()||domains.size()>4||!Set.of("trading","settlement","operations","support","market").containsAll(domains)))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
+        if(domains!=null&&(domains.isEmpty()||domains.size()>4||!Set.of("trading","settlement","operations","support","market","custody").containsAll(domains)))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
         if(timeout.isNegative()||timeout.isZero()||Thread.currentThread().isInterrupted())throw new AiFailure("AI_QUERY_TIMEOUT");
         String roles=role==UserRole.ADMIN?"d.minimum_role in ('USER','ADMIN')":"d.minimum_role='USER'";
         String sql="""
             select ch.id,d.path,d.title,ch.heading,d.version,d.minimum_role,ch.content,1-(ch.embedding <=> ?::vector) score
             from ai.chunks ch join ai.documents d on d.index_id=ch.index_id and d.path=ch.path join ai.indexes i on i.id=ch.index_id
             where i.active and i.id=? and %s and ch.content ~ ? order by score desc,ch.id limit 40
-            """.formatted(roles+(domains==null?"":" and d.domain=any (?::text[])"));
+            """.formatted(roles+(domains==null?"":" and d.domain=any (?::text[])")+(legacyAssets?" and d.domain <> 'custody'":""));
         try(var c=pool.getConnection();var s=c.prepareStatement(sql)){
             s.setQueryTimeout((int)Math.max(1,Math.min(5,(timeout.toMillis()+999)/1000)));
             s.setString(1,vector(query));s.setString(2,fingerprint);int n=3;

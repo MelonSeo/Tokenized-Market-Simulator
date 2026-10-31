@@ -27,7 +27,7 @@ class OpenAiAgentProviderTest {
     OpenAiAgentProvider provider(){
         var p=new AiProperties(true,"jdbc:postgresql://127.0.0.1:1/test","test","test",".",".","fake-test-key",
             "http://127.0.0.1:"+server.getAddress().getPort()+"/","text-embedding-3-small","gpt-5.6-terra",1200,60,5,.25,20);
-        return new OpenAiAgentProvider(new OpenAiProvider(p,json),json);
+        return new OpenAiAgentProvider(new OpenAiProvider(p,json).budget(com.pricetrack.exchange.ai.UnpaidLoopbackBudget.forBase(p.apiBase())),json);
     }
     void output(Object data) throws Exception {
         body=json.writeValueAsString(Map.of("status","completed","usage",Map.of("input_tokens",21,"output_tokens",9),
@@ -87,7 +87,8 @@ class OpenAiAgentProviderTest {
         assertThat(base).doesNotContain("과거 원인·실시간 공급자 상태는 uncertainties에 남긴다", "실제 숫자는 facts를 가리킨다");
         assertThat(base).contains("정책으로 설명할 수 있는 부분", "서버가 PARTIAL로 표시", "핵심에 답할 근거가 전혀 없을 때만");
         assertThat(HexFormat.of().formatHex(digest.digest(base.getBytes(StandardCharsets.UTF_8))))
-            .isEqualTo("8ead79f27c0ebf6ce47bf3bfab820f7a2f75541e31117f43c80266b15674b664");
+            .isEqualTo("e0253fc871f8512b3d3d6710e44879ba33140bd9d5a6cf2373c79edd63ec5d75");
+        assertThat(base).contains("amountRelation.inputIncludesFee=true","quotedTotalDebit","includedFee","hasMore/scope");
         assertThat(payload.path("max_output_tokens").asInt()).isEqualTo(1600);
         assertThat(payload.at("/text/format/schema/properties/facts/maxItems").asInt()).isEqualTo(20);
         assertThat(payload.path("text").path("format").path("strict").asBoolean()).isTrue();

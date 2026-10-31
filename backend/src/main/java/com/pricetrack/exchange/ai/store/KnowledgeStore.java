@@ -13,6 +13,8 @@ public interface KnowledgeStore {
     /** Empty is safe for older stores; implementations must role/domain filter BEFORE exact ranking. */
     default List<KnowledgeHit> searchIdentifiers(String fingerprint,float[] query,List<String> identifiers,
             UserRole role,Set<String> domains,Duration timeout){return List.of();}
+    default List<KnowledgeHit> searchLegacyAssets(String fingerprint,float[] query,int topK,double threshold,UserRole role,Duration timeout){throw new com.pricetrack.exchange.ai.AiFailure("AI_DOMAIN_FILTER_UNAVAILABLE");}
+    default List<KnowledgeHit> searchLegacyIdentifiers(String fingerprint,float[] query,List<String> identifiers,UserRole role,Duration timeout){throw new com.pricetrack.exchange.ai.AiFailure("AI_DOMAIN_FILTER_UNAVAILABLE");}
     /** Existing implementations are ADMIN-only unless they explicitly implement SQL role filtering. */
     default List<KnowledgeHit> searchForRole(String fingerprint, float[] query, int topK,
             double minimumSimilarity, UserRole role, Duration timeout) {

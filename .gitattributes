@@ -3,3 +3,5 @@ deployment/*.sh text eol=lf
 
 # Frozen AI evaluation bytes must keep their approved SHA on Windows checkouts.
 backend/src/test/resources/ai/novel-*.json text eol=lf
+backend/src/test/resources/ai/pilot-acceptance-v1.json text eol=lf
+docs/ai/ingest-manifest-pilot.json text eol=lf
