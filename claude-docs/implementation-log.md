@@ -3260,3 +3260,13 @@ readiness 시험에 한정해 제품 기본값인 simulated/1000ms 갱신/1000ms
 자체 소스 대조에서 새 서버 예산 원장은 LLM usage에 output_tokens가 없을 때0으로 관측 완료 표시할 수 있음을 발견했다. 실제 과금 사건이 아니라 미활성 소스 결함이며 보수 예약액은 원래 환불하지 않아 상한 계산을 낮추지는 않는다. 누락·타입 불일치·long 범위 초과는 UNKNOWN/원래 예약 유지, 정상 LLM 두 토큰 또는 정상 Embedding prompt_tokens만 해당 kind에 기록하도록 수정했다. 기존 PostgreSQL 시험에서 같은 예약에 누락/잘못된 kind/범위 초과 사용량을 전달해 UNKNOWN/null 유지 후 정상 관측을 검사한다. 기존 과거 SQLite 원장이나 불명1건은 열거나 수정하지 않는다. 이 좁은 비용 관측 수정은 별도 독립 검토 후 게시한다.
 
 시세 fixture의 런타임 진단 최종2차 검토와 별도 비용 관측 검토는 모두 필수 수정 없음이다. 검토자의 소스 대조와 구현자의 직접 javac/Python16/순수26 PASS를 구분하며, 두 수정의 실제 PG/Chrome/부하 재검증은 다음 Linux 실행 결과로 남긴다. 시세 갱신을 확인하지 않고 성공 처리하거나 UNKNOWN을 실제0토큰으로 보고하지 않는다.
+
+## 최종 무과금 인수 결과와 비용 승인 경계
+
+최종 시험 소스4913acc의 readiness41200683883/C-read41200683738 모두PASS. Java383/348PASS35SKIP0FAIL, Python209/웹238/buildPASS. 실제PG/HTTP/Chrome166.555초 exit0/소유PG제거true. 384시도282정상102AGENT_BUSY, lowC1/2 192/192. p95ms STATE11.559/13.706, KNOWLEDGE283.921/288.822, MIXED219.092/227.790. cache12회p50 76.015→35.998ms/embedding12→0. 실제90초504·비협조작업슬롯보존/8busy차단/종료후회복·AI DBpause約5.024초PARTIAL·금융행불변·borrowed0을확인했다. 고정모델지연/합성벡터/작은표본으로실공급자SLA나의미검색품질을주장하지않는다.
+
+별도 검토자가 동일SHA의 두CI성공, metrics/Cmanifest/PNG SHA, 부하집계·캐시·장애·CI로그와 일부PNG를 직접 대조해 필수지적없음을 확인했다. 개별PG JUnit XML은공개artifact에없어testcase별직접검증과구분한다. 구현자는root8SHA·다른worktreeHEAD·기존AIfeatureclean·oldbudget/STOP동일을확인했다. 원본DB/Anvil/지갑미접근, 새로운paid0/main변경0/배포0. 간헐smoke한회실패원인미확정기록은보존한다.
+
+최종보고/학습은 EVALUATION_REPORT의 후속절과READINESS_PLAN에정리했다. 새실제모델인수와사용자파일럿은NOT_RUN/전체PARTIAL. 예산초안v1의파일럿잔여의존을확인해v2는파일럿6요청최대12LLM도예약한US18/LLM92/Embedding70으로산정했다. 최대토큰6123520/147200/4659200, 최고단가보수예약US17.168384이며아직승인아님. 문항/기준JSON은고정유지하고미승인v1예산을사용하지않는다. 기존비용원장을합치거나초기화하지않고새승인경계에서중단한다.
+
+최종 문서 및 v2 예산 독립 검산도 필수 지적 없음이다. 호출 분해/토큰 상한/US17.168384 계산과 미승인·실모델NOT_RUN 구분을 대조했다. 결과 추기는 문서3개만 로컬 커밋으로 보존하고 Push하지 않는다. 이는 원격의 시험완료 소스4913acc를 유지하고 문서 기록만으로 두 전체 CI를 다시 생성하지 않기 위한 선택이다. 로컬 문서 커밋과 원격 검증 SHA를 완료 보고에서 구분한다. main/원본 worktree·데이터는 변경하지 않는다.

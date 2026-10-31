@@ -23,7 +23,7 @@
 
 실사용 외부 호출은 기본 OFF다. 관리자만 운영자가 구성한 `app.ai.budget.approval`, `total-nusd`, `daily-nusd`, `llm-calls`, `embedding-calls`, `actor-daily-requests`, `actor-minute-requests`를 `POST /api/ai/provider-budget/initialize`로 최초 바인딩할 수 있다(1 nanoUSD=$0.000000001). 요청 본문으로 상한을 바꾸지 못한다. 같은 DB의 다른 approval/정책으로 누적 초기화할 수 없다. 이 단계에서는 외부 키를 구성하거나 실제 비용 예산을 초기화하지 않는다. 무과금 시험은 독립 DB의 명시적인 `UNPAID_TEST_NOT_APPROVAL` 정책만 사용한다.
 
-### 실제 모델 최종 인수 제안 — 아직 승인 아님
+### 실제 모델 인수 예산 초안 v1 — 미승인 이력
 
 `backend/src/test/resources/ai/pilot-acceptance-v1.json`에 사용자2명/동시 Agent2/대기열0, 저부하 수용률95%, STATE p95 1.5초, controlled 복합 p95 2.5초, 실제 공급자 반복 표본 경로별6개/p95 목표45초(운영 SLA 아님), 90초 deadline 및 안전 위반0을 실행 전 고정한다. 기존30문항을 그대로 유지하고 F1/A2/C4 각각2표현 및 C3문항을 추가한다. 기존 PARTIAL을 단순 ANSWERED로 바꾸는 기준이 아니다.
 
@@ -32,6 +32,26 @@
 2026-10-31 공식 모델 문서 확인: 입력 $2/M, 출력 $12/M, cache write 1.25배를 반영해 입력 $2.50/M로 전량 보수 예약한다. 요청당 입력 상한이272K보다 작아 장문 할증 구간에 들어가지 않는다. Embedding $0.02/M 기준 최대 예약액은 **$14.856**이다. 표준 tier/no hosted tool/no auto retry만 허용한다. 가격 및 모델은 승인 직전 다시 확인해야 하며 rate-card 변경 시 호출하지 않는다. 과거 $5/$5.70 원장·불명 예약·STOP은 그대로 보존한다. 실제 사용량과 예약액은 구분하며 0건 탐지를 무유출 보증으로 표현하지 않는다.
 
 출처: [모델 가격/할증](https://developers.openai.com/api/docs/models/gpt-5.6-terra), [비용 예약 원칙](https://developers.openai.com/cookbook/articles/per_run_spending_controller_responses_api). 기능 인수와 실제 사용자 만족도·장기 SLA는 별개다. 이 후속 작업의 실행 결과/CI SHA/독립 검토는 EVALUATION_REPORT에 별도 누적한다.
+
+### 최종 별도 승인안 v2 — API 사용료 US18 상한
+
+v1의 자동 평가80호출 안에 파일럿을 잔여분으로만 둔 구성은 전체 인수를 보장하지 않는다. 최종 제안은 자동 평가뿐 아니라 시험 사용자2명×3요청=파일럿6요청(최대12LLM/6Embedding)을 **명시적으로 예약**한다. 새 승인 요청은 이 v2 한 번으로 통합하며 아직 실제 호출은 없다. `pilot-acceptance-v1.json`의 문항·합격 기준 및 SHA는 보존하고 그 안의 `budgetProposalNotApproval`은 미승인 초안 이력으로 취급한다. 실제 실행 전 승인된 v2 값을 별도 불변 policy/원장에 바인딩해야 하며 v1을 실행 승인으로 사용하지 않는다.
+
+| 항목 | 최종 제안 상한 |
+|---|---:|
+| LLM | 92회 = 기존30최대51 + 표적/C9최대11 + 반복지연최대18 + 파일럿최대12 |
+| Embedding | 70회 = 색인6batch +30+9+12+6질문63회에 여유 포함 |
+| LLM 입력 보수 예약 | 6,123,520토큰 =92×66,560 |
+| LLM 출력 | 147,200토큰 =92×1,600 |
+| Embedding 입력 보수 예약 | 4,659,200토큰 =70×66,560 |
+| 모델 사용료 최대 보수 예약 | US$17.168384 |
+| 요청할 별도 API 사용료 총상한 | **US$18.00** |
+
+Embedding의 이론 상한도 wire64KiB+overhead1,024/호출에 맞춰 계산했다. 실제93 Chunk 및 짧은 질의의 예상량보다 큰 보수 상한이며 실제 토큰 소비가 이만큼 필요하다는 뜻이 아니다. 입력최고단가 $2.50/M(일반입력$2에 cache-write1.25배), 출력$12/M, Embedding$0.02/M로 계산한다. 요청당66,560입력 상한은272K 장문 할증 구간보다 작다. 표준 tier·text-only·hosted tool없음·자동재시도0 조건이며 공급자 가격/청구 조건이 달라지면 전송 전에 중단한다. 계정의 다른 프로젝트 사용료·세금·환전까지 보증하는 청구액은 아니다.
+
+실제 전송 전 별도 policy의 금액·일일금액·LLM92/Embedding70을 검사하고, per-call wire/output 제한으로 위 누적 토큰 이론 상한도 지킨다. 평가 계정100요청/일·5요청/분, 파일럿 계정은 기본20/일·5/분을 사용한다. 파일럿 요청도 같은 전체92/70/US18을 소비하며 별도 무제한 사용자 사용 승인이 아니다. 실제 사용량과 예약·불명 usage는 분리한다. 기존 두 평가 예산·STOP·불명1건은 그대로 보존한다.
+
+출처: [LLM 단가와 할증](https://developers.openai.com/api/docs/models/gpt-5.6-terra), [Embedding 단가](https://developers.openai.com/api/docs/models/text-embedding-3-small). 최종 모델 평가 전 공급자 계정의 사용 가능 모델과 이 단가를 다시 확인한다. CI/controlled provider PASS 뒤 실제 모델 인수와 제한된 파일럿이 남아 있어 전체 서비스 준비도는 PARTIAL이다. 현재 지속 파일럿 서버나 인터넷 공개 배포는 수행하지 않았다.
 
 ---
 

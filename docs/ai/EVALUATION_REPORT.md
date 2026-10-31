@@ -1,18 +1,18 @@
 # AI 최종 평가 보고서
 
-## 2026-10-31 실사용 전환 후속 작업 — 진행 중 / 유료 호출 0
+## 2026-10-31 실사용 전환 후속 작업 — 무과금 인수 PASS 전체 준비도 PARTIAL
 
 별도 `ci/ai-unpaid-readiness-20261031`에서 main9abf를 기반으로 제품 AI/웹 및 격리 CI를 보완한다. 아래 이전 평가를 새 소스의 결과로 대체하지 않는다. **전체 실사용 인수 PARTIAL**, 최종 실제 모델·새 C 정책 Embedding·사용자 파일럿은 새 예산 승인 전 NOT_RUN이다. main/Organization/원본 사용자 데이터는 수정하지 않는다.
 
 - F1은 계약·정산 계산을 고치지 않고 BUY 견적의 포함 수수료 관계를 구조화해 전달하고 결정적 설명 및 명백한 추가 차감 모순 검증을 추가했다. 무과금 산술/캡처 재현과 임의 자연어 실제 모델 인수는 구분한다.
 - A2 현재 공급자/거래량 출처는 실제 Tool을 반드시 조회하도록 보완했다. 현재 Tool에는 차트 구간 거래량 숫자가 없으며 이를 명시한다. C4는 기존 ADMIN 권한/Tool 검증을 재사용하고 요청의 구조화 필터·실제 적용값·한 페이지 범위를 표시한다. 자연어의 모든 기간/복합 필터를 지원한다고 주장하지 않는다.
 - C1/F3/F4 관련 정책 검색은 사용자 질문을 보존하고 fallback도 실제 Tool 사실을 설명한다. 근거 없는 과거 사유/실현손익을 생성하지 않는다. 답변 충분성의 실제 모델 재검증은 남아 있다.
-- C 핵심 자산 기능을 제외하지 않고 기존 소유 증명/고정 RPC를 재사용하는 두 읽기 Tool을 추가했다. 기존 legacy10 Tool/4Skill과 다른 C12 Tool 총집합이다. 별도 C policy manifest10문서/93 Chunk이며 기존9/88과 고정30문항 hash는 불변이다. C/legacy 검색 분리와 global unpaid≠personal Claim 경계를 유지한다. 현재 C STATE 조회는 정책·LLM 없이 실제 고정 관측을 설명하고, C MIXED는 custody 정책 색인이 필요하다. Claims 전수/과거 청산 원인/전체 C AI 감사는 미지원이다.
+- C 핵심 자산 기능을 제외하지 않고 기존 소유 증명/고정 RPC를 재사용하는 두 읽기 Tool을 추가했다. 기존10개에 C 읽기2개를 추가해 총12 Tool이며 4 Skill은 유지한다. 별도 C policy manifest10문서/93 Chunk이며 기존9/88과 고정30문항 hash는 불변이다. C/legacy 검색 분리와 global unpaid≠personal Claim 경계를 유지한다. 현재 C STATE 조회는 정책·LLM 없이 실제 고정 관측을 설명하고, C MIXED는 custody 정책 색인이 필요하다. Claims 전수/과거 청산 원인/전체 C AI 감사는 미지원이다.
 - 서버 비용 보호는 공급자 전송 전 별도 PG 보수 예약, 전역·일일·계정·호출량 제한, 재시작 보존, 불명 예약 유지, 미설정 fail-closed다. 기존 Python 평가 원장이 일반 웹 요청을 보호한다고 가정하지 않는다. 실제 예산과 키는 아직 활성화하지 않는다.
 - 실제 웹의 질문·대기·오류 안내와 계정 전환 청소를 보완했다. 새 headless Chrome 시험은 실제 JWT/Agent HTTP+Tool/PG/RAG에 controlled provider를 연결하며 고정 브라우저 응답으로 대체하지 않는다. 별도 C-read Linux 프로필은 새 PG/Anvil/시험 EOA만 사용한다. 실제 사용자 MetaMask/유료 모델/사용자 만족도 인수와 다르다.
 - 새 CI 두 개는 개인 저장소의 main/CI 브랜치 조건을 갖지만 이번 Push는 CI 브랜치만 허용된다. 기존 금융 read/direct CI 조건은 그대로다. 공개 artifact는 정제 allowlist만, 비밀 설정·브라우저 프로필·비공개 로그·기존 ledger는 제외한다.
 
-사전 기준과 활성화/비용 제안은 [READINESS_PLAN_2026-10-31.md](READINESS_PLAN_2026-10-31.md)의 후속 절 및 `pilot-acceptance-v1.json`에 기록했다. 새 모델 평가 제안 US$15/LLM80/Embedding60은 **승인 아님**이다. 실제 검증 결과·독립 검토·CI SHA는 완료 시 이 절에 추기한다. 소표본 controlled provider 성능을 실제 모델 SLA로 보고하지 않는다.
+사전 기준은 [READINESS_PLAN_2026-10-31.md](READINESS_PLAN_2026-10-31.md) 및 `pilot-acceptance-v1.json`에 기록했다. 평가 문항과 합격 기준의 고정 해시는 유지한다. JSON 안의 예산 초안v1(US$15/80/60)은 승인되지 않았으며, 파일럿을 잔여 호출에 의존하게 한 한계를 바로잡은 **최종 별도 예산 제안v2 US$18/LLM92/Embedding70**을 아래 계획에 제시한다. 아직 유료 호출 승인이나 실행은 없다. 소표본 controlled provider 성능을 실제 모델 SLA로 보고하지 않는다.
 
 ### 후속 Linux 실행에서 확인한 결함과 경계
 
@@ -22,6 +22,57 @@
 4. `5dc269d`: C-read41199541761 PASS, 회귀382중347PASS/35SKIP/0FAIL, Python209PASS. 독립 HTTP에서는 STATE/200/PARTIAL/PRICE_STALE 및 getPortfolio SUCCESS가 관측됐다. 공통 테스트가 Synthetic 초기 지연·갱신60000ms를 사용해 Chrome 진행 후 제품의5초 신선도를 넘은 것이 확인됐다. Agent의 유보는 정상이며 시험에만 제품 기본1초 갱신을 적용하고 실제 tick 증가와 Chrome 후 상태를 검사하도록 수정했다. 기존5초 신선도와90초 deadline은 보존한다.
 
 과거 실패, 소유 PG 정상 제거 결과와 정제 산출물을 각각 보존했다. 새 비용 원장의 불완전 usage를 UNKNOWN으로 유지하는 관측 보완도 별도 검토했다. 독립 검토를 실제 PG 실행이나 유료 사용량 검증으로 표시하지 않는다. 최신 재실행 결과는 아래 후속 기록으로 구분한다.
+
+### 최종 실제 실행과 판정
+
+시험 소스는 `4913acc994a89a424b974f55f20a0135f9a52ed9`이다. [무과금 AI readiness41200683883](https://github.com/MelonSeo/Tokenized-Market-Simulator/actions/runs/41200683883), [C-read41200683738](https://github.com/MelonSeo/Tokenized-Market-Simulator/actions/runs/41200683738)가 같은 SHA에서 모두 PASS했다. 이 결과 정리 이후 제품·테스트 소스는 변경하지 않는다.
+
+| 항목 | 실제 결과 | 해석 범위 |
+|---|---|---|
+| Java AI·인증·정산 회귀 | 383중348PASS,35SKIP,0FAIL | 조건부 외부/구형 실환경 시험의 SKIP을 PASS로 합치지 않음 |
+| Python·웹 | Python209PASS, 웹238PASS 및 빌드PASS | 실제 모델 품질을 대체하지 않음 |
+| 실제 PG·HTTP·Chrome | 실행 exit0,166.555초, 소유 PG 제거true | 실제 JWT/JPA/pgvector와 controlled provider 및 합성 벡터. 거래 DB는 H2 |
+| 실제 C 조회 | 별도 신규 PG/Anvil/Spring/Chrome PASS | EIP-191시험EOA·재사용409·타인404·owner 고정블록·C Agent모델0, 실제 MetaMask 아님 |
+| 비용 보호 회귀 | 선택된 PG 비용 시험 포함 프로세스 exit0 | 실제 공급자 과금 아님. 개별 JUnit XML은 공개artifact에 포함되지 않음 |
+| 새로운 유료 호출·실사용자 거래 | 0 | 과거 원장/불명 예약/STOP 유지 |
+
+C 화면과 일반 AI/ADMIN 화면 PNG를 직접 확인했다. 한글·WAITING_LONG5건/120초/첫 페이지 범위·C 잔고와 legacy 비합산·Claims 한계가 표시된다. 인용 및 Skill trace는 실제 DOM에서 검사했으며 캡처 상단에 모든 펼침 상세가 보이는 것은 아니다. 고정 브라우저 응답을 주입하지 않고 실제 웹의 Agent API를 호출했다. 일반 AI의 생성 문장은 통제 공급자 결과이므로 자연어 품질 인수로 사용하지 않는다.
+
+### 운영 특성 수치
+
+Ubuntu24.04/Java21/논리CPU4, 새 소유 tmpfs pgvector320MiB, 서버와 부하 client가 같은 시험 JVM인 환경이다. 3경로×동시성1/2/4/8×32회=384시도, 정상282/503 AGENT_BUSY102/예상 밖 오류0. 제한된 목표인 C1/2는192/192 정상이다. 아래 각 셀의 표본은32이며 p95는 nearest-rank다.
+
+| 경로 | C1 p50 / p95 ms | C2 p50 / p95 ms |
+|---|---:|---:|
+| STATE | 7.276 / 11.559 | 8.842 / 13.706 |
+| KNOWLEDGE | 257.080 / 283.921 | 262.931 / 288.822 |
+| MIXED Skill | 194.262 / 219.092 | 211.571 / 227.790 |
+
+고부하 C4/C8 거절은 STATE9/32·13/32, KNOWLEDGE와MIXED 각각16/32·24/32다. 빠른 STATE는 한 배치의 늦은 요청까지 수용할 수 있어 항상50/75% 거절인 것은 아니다. Agent2/queue0/Tool최대2를 관측했고 worker·queue 정책은 변경하지 않았다. 이 결과는 동시 사용자4/8의 가용성이나 실제 공급자 SLA를 충족했다는 뜻이 아니다.
+
+캐시 OFF/ON 각12회의 RAG 컴포넌트 p50은76.015→35.998ms, p95는92.123→73.049ms, Embedding12→0이다. 지연40ms의 모의 Embedding에서 약40ms를 줄인 결과이며 실제 공급자 개선치가 아니다. 역할·승인색인 검사는 그대로 수행했다. JVM heap최대106.956MiB/nonheap180.742MiB는 RSS가 아니다. CPU는 서버·부하 client·JIT를 합친 동일 JVM/논리코어 정규화 지표다. knowledge pool/H2 pool의 active최대는각2, 종료 후 borrowed0이다. 실제 유료 공급자를 연결하면 별도 budget pool최대1이 추가되므로 운영 AI DB 총연결을2로 단정하지 않는다.
+
+모델 실패는 사실을 유지한PARTIAL, 활성 index 비활성화는 정책 비노출, client취소는 bounded정리를 확인했다. 비협조96초 작업2개는 약90012/90011ms에504로 반환하고 실제 작업종료 전 용량을 반환하지 않았다. 추가8요청을503으로 차단한 뒤 종료 후15초 이내 회복했다. AI DB pause는5023.647ms에PARTIAL/정책비노출이었다. 금융5테이블 전후 동일, Agent idle, borrowed0을 확인했다. 영구 비협조 공급자, 다른 활성 index로의 실제 교체, 장애 후 영속 서비스 장기 회복 및 실제 모델 지연은 별도 미검증이다.
+
+### 지원 범위와 남은 인수
+
+- F1 산술 포함 관계·A2 실제 조회 강제·C4 필터 전달 및 범위·C owner 조회·예산 사전차단의 무과금 검증은 PASS다. F1의 임의 자연어 의미, A2/C4의 다양한 실제 모델 표현, C1/F3/F4 충분성, 전체30문항 최신 소스 실제 재인수는 NOT_RUN이다.
+- 기본9문서88 Chunk는 보존했다. C 선택manifest10/93의 실제 Embedding·의미 검색 품질과 C MIXED 모델 설명은 NOT_RUN이다. C STATE는 실제 RPC로 검증했지만 개인 Claims 전수, 과거 청산 원인 및 C 전체 감사/AI 진단은 미지원이다. 미지원 범위를 UI/답변에 표시하며 legacy 장부와 합치지 않는다.
+- 실제 Chrome 정상·계정 전환·명시 필터 경로는 PASS다. Busy/timeout/예산 오류 문구는 단위 회귀, 해당 실패 API와 용량 회수는 실제 HTTP로 검증했다. 모든 오류 상태를 실제 브라우저에서 유발해 캡처한 것은 아니다.
+- 간헐 smoke 실패1회의 원인은 미확정이다. 최종 회귀와 별도 반복 순수 시험이 통과했다는 사실로 그 원인을 해결했다고 바꾸지 않는다. 추측으로 executor/정답을 변경하지 않았다.
+- 실제 LLM, 공급자 실제 지연·과금, 사용자 만족도와 지속 서버의 파일럿은 NOT_RUN이다. CI Runner의 일시적 주소는 사용자 인수 서버가 아니다. 비용 승인 후 실제 모델 인수를 통과해야 제한된2계정 파일럿을 진행할 수 있다. 인터넷 공개나 실제 지갑 자산 연결은 이번 권한 밖이다.
+
+### 보안 보존과 독립 대조
+
+코드 검토 지적을 수정한 뒤 각 작업 단위의 독립 재검토에서 필수 지적 없음으로 확인했다. 최종 실행 증거도 별도 검토자가 GitHub의 동일 SHA/두 성공 결과, metrics SHA, C manifest 전파일 및 공개PNG2개 SHA, 부하 집계/캐시/장애/CI로그를 직접 대조했다. 개별 PG JUnit XML과 원본 사용자 자료 해시는 그 검토자의 직접 대조 범위가 아니다.
+
+구현자는 원본 미커밋8개 SHA, 다른 worktree HEAD(전체25개 중 작업 branch만 변경), 이전 AI feature의 clean 상태와 과거 budget.sqlite/STOP 해시가 동일함을 대조했다. 원본 DB·손상 Anvil·지갑·checkpoint는 접근하지 않았다. 공개 후보는 소스·시험·공개문서만이며 제한 패턴 검사의 미해결 탐지0, 의도적인 경로 거부 canary1건은 직접 분류했다. 이를 무유출 절대보증으로 표현하지 않는다. main/Organization 변경·인터넷 배포·추가 모델 호출은 없다.
+
+### 학습과 다음 경계
+
+핵심 사례는 숫자의 provenance와 포함 관계의 의미 검증을 분리한 F1, 현재 사실을 정책으로 대체하지 않는 A2, 요청 필터와 실제 조회 범위를 분리한 C4, C/legacy 자산 정본과 SQL scope, frozen corpus 보존, 전송 전 durable 비용 예약 및 불완전 사용량 UNKNOWN, 테스트의60초 설정과 제품5초 freshness 충돌이다. 각 원인·선택·검토·검증 한계는 구현 로그 후속 절과 READINESS_PLAN에 연결했다. 로컬 취업 회고는 별도로 보존하며 공개하지 않는다.
+
+무과금 준비를 실제 모델 인수 완료로 바꾸지 않는다. 다음 승인안은 사용자 파일럿6요청까지 명시 예약한 **별도 API 사용료 상한US$18, LLM92/Embedding70**이다. 이전 US$15 초안은 파일럿의 잔여 호출을 보장하지 않아 최종안으로 사용하지 않는다. 평가 문항·기준 파일의 고정 SHA는 그대로이며, 승인 시 새 예산 policy/원장에 최종 v2 상한을 바인딩해야 한다. 과거 원장/STOP과 합치거나 초기화하지 않는다.
 
 ## 2026-10-31 최종 main 무과금 통합·운영 특성 평가
 
