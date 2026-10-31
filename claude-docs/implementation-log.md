@@ -3232,3 +3232,11 @@ Stage 공개후보67파일의 제한 패턴 검사에서는 비밀 키/JWT/비�
 `fcb008d`의 C-read 실행41194933278은 PASS했다. 별도 무과금 readiness41194933216은 일반 회귀/컴파일 후 실제 PG 검색의 `getCAccount` 기대 근거에서 실패했고 소유 PG는 정상 제거했다. PostgreSQL의 `\m...\M`은 한글 조사도 word로 처리하므로 정책의 `getCAccount와`/`getCPosition은`을 정확 ASCII 식별자로 검색하지 못했다. 단순히 문서를 영어로 바꾸거나 assertion을 삭제하지 않고 허용 식별자의 ASCII 경계를 사용했다. 한글 조사 뒤 검색의 성공과 ASCII 접두/접미(`XgetCAccount`, `getCAccountExtra`)의 비일치를 함께 검사한다. 권한·domain·활성 index 필터는 그대로다. 이는 과거 고정 질문의 성능을 새로 측정한 결과가 아니며 후속 CI로 회귀를 확인한다.
 
 이 수정의 제품 최종2차 독립 검토: 필수 수정 없음. compileJava/compileTestJava와 Python16 PASS. 검토 범위 한계: 음성 assert는 긴 검색어가 짧은 본문에 맞지 않는 방향이며, 짧은 검색어가 긴 본문 식별자에 부분 일치하지 않는 정방향 데이터 fixture까지 추가한 것은 아니다. 새 양쪽 ASCII 경계의 코드 확인과 후속 실제 PG 결과를 구분한다. 기존 C-read 화면2개를 시각 대조해 한글·자산/legacy 분리·Claims 범위 표시를 확인했다. 시험 EOA의 자동 읽기이며 실제 사용자 파일럿은 아니다.
+
+## 후속 Linux 실행의 정상 응답 진단 보완
+
+`df19727`의 C-read41197700535은 PASS했다. readiness41197700658은 C 정책 식별자 검색/인증·권한/실제 Chrome의 Agent·Tool·정책·Skill·계정 전환을 통과했지만 부하 warmup의 정상 응답 검사에서 실패했다. 공개 metrics의 chromeRealHttpControlledProvider=true와 load=[]를 구분한다. 현재 안전 로그에는 expected/actual 판정 코드가 없어 제품/하네스 원인을 확정하지 않는다. 검증 조건을 바꾸지 않고 실패 route/status/허용 오류 코드·Tool 상태만 정제해 기록한다. 답변·Tool 데이터·사용자 정보는 공개하지 않는다. 기존 실패와 PG 정상 제거 결과는 보존했다.
+
+또한 C 브라우저 screenshot에서 JS로 select값만 바꿔 실제 change 이벤트/포지션 target 표시를 확인하지 않은 하네스 누락을 확인했다. 기존 사용자 프로필 대신 소유 Chrome에서 input+change를 발생시키고 target 표시 assertion을 추가한다. 실제 제품 UI를 새로 설계하거나 금융 API를 켜는 변경은 아니다. 이 런타임 진단 후속은 테스트/관측만의 별도 검증 단위이며 제품 소스는 변경하지 않는다.
+
+이 진단 후속 독립 검토: 발견된 필수 수정 없음. Python16/product-read72/Node구문은 검토자도 직접 확인했고 compileTestJava는 구현자가 PASS했다. 대문자 코드 형식 검사는 완전한 비밀 탐지가 아니며 실제 고정된 서버 판정 코드만 사용한다. 새 Java 진단 회귀와 최초 원인 확인은 Linux 후속 실행으로 구분한다.

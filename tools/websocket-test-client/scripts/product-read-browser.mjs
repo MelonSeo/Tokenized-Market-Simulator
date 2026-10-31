@@ -17,7 +17,7 @@ const poll=op=>pollBounded(op,{timeoutMs:budget(12000),intervalMs:100});
 const command=(m,p={})=>cdp.command(m,p,budget(8000));
 const evaluate=async expression=>{const r=await command('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});assert(!r.exceptionDetails,'UI evaluation failed');return r.result.value;};
 const click=id=>evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
-const fill=(id,value)=>evaluate(`{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('input',{bubbles:true}));}`);
+const fill=(id,value)=>evaluate(`{const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));}`);
 const capture=async(name,selector=null,fontSelector=selector)=>{
  await evaluate(selector?`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'})`:"window.scrollTo(0,0)");
  await evaluate('document.fonts.ready.then(()=>true)');
@@ -68,7 +68,7 @@ try{
    await evaluate("document.getElementById('ai-form').requestSubmit()");await poll(()=>evaluate("document.getElementById('ai-result').textContent.includes('C 온체인 지갑')"));
    assert(await evaluate(`document.getElementById('ai-result').textContent.includes(${JSON.stringify(amount18(u.walletBalance))})`));
    if(!i)await capture('07-ai-c-account','#ai-result');
-   await fill('ai-kind','c-position');await fill('ai-target',u.positionId);await fill('ai-question','C 포지션 조회');
+   await fill('ai-kind','c-position');assert(await evaluate("!document.getElementById('ai-target-wrap').hidden"),'AI_C_TARGET_VISIBLE');await fill('ai-target',u.positionId);await fill('ai-question','C 포지션 조회');
    await evaluate("document.getElementById('ai-form').requestSubmit()");await poll(()=>evaluate("document.getElementById('ai-result').textContent.includes('C 온체인 포지션 상태')"));
    assert(await evaluate(`document.getElementById('ai-result').textContent.includes(${JSON.stringify(u.positionStatus)})`));
    if(!i)await capture('08-ai-c-position','#ai-result');

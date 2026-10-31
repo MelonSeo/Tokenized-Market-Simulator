@@ -133,6 +133,13 @@ class AiReadinessHttpPerformanceTest {
     void assertSafe(Reply r){if(r.status==200){assertThat(r.body.path("httpStatus").asInt()).isEqualTo(200);
         assertThat(r.body.toString()).doesNotContain(ownerToken,otherToken,adminToken);}}
     void assertNormal(String workload,Reply r){
+        if(r.status!=200||!r.body.path("route").asText().equals(workload)||!r.body.path("status").asText().equals("ANSWERED")){
+            var diagnostic=new LinkedHashMap<String,Object>();diagnostic.put("expectedRoute",workload);diagnostic.put("http",r.status);diagnostic.put("actualRoute",safeCode(r.body.path("route").asText()));diagnostic.put("status",safeCode(r.body.path("status").asText()));
+            diagnostic.put("error",safeCode(r.body.path("error").asText()));var codes=new ArrayList<String>();r.body.path("uncertainties").forEach(x->codes.add(safeCode(x.asText())));diagnostic.put("uncertainties",codes);
+            var tools=new ArrayList<Object>();for(var t:r.body.path("toolEvidence"))tools.add(Map.of("tool",ToolRegistry.NAMES.contains(t.path("tool").asText())?t.path("tool").asText():"UNAVAILABLE","status",safeCode(t.path("status").asText()),"error",safeCode(t.path("error").asText())));diagnostic.put("tools",tools);
+            var secure=new LinkedHashMap<String,Object>((Map<String,Object>)result.getOrDefault("security",Map.of()));secure.put("normalResponseFailure",diagnostic);result.put("security",secure);
+            try{if(output!=null)write();}catch(Exception e){throw new IllegalStateException("SAFE_DIAGNOSTIC_WRITE_FAILED");}
+        }
         assertSafe(r);assertThat(r.status).isEqualTo(200);assertThat(r.body.path("error").isNull()).isTrue();
         assertThat(r.body.path("route").asText()).isEqualTo(workload);assertThat(r.body.path("status").asText()).isEqualTo("ANSWERED");
         assertThat(r.body.path("uncertainties")).isEmpty();
@@ -154,6 +161,7 @@ class AiReadinessHttpPerformanceTest {
             }
         }
     }
+    static String safeCode(String code){return code!=null&&code.matches("[A-Z_]{1,80}")?code:"UNAVAILABLE";}
     List<Reply> batch(String workload,int c)throws Exception{
         var latch=new CountDownLatch(1);var futures=new ArrayList<Future<Reply>>();
         for(int n=0;n<c;n++)futures.add(clients.submit(()->{latch.await();return call(workload);}));
