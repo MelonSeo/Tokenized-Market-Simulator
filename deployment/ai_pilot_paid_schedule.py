@@ -95,6 +95,9 @@ class PaidSchedule:
 def from_session(folder):
     folder=Path(folder)
     meta=json.loads((folder/'session.json').read_text(encoding='utf8'))
+    if 'target13' in meta:
+        from ai_pilot_target13 import TargetSchedule
+        return TargetSchedule(load(folder),meta,load_permit(meta),source_fingerprint)
     if 'continuation' in meta:
         from ai_pilot_continuation import ContinuationSchedule
         return ContinuationSchedule(load(folder),meta,load_permit(meta),source_fingerprint)

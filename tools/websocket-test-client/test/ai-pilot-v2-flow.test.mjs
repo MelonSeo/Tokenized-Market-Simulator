@@ -1,8 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {runPilotSix} from '../scripts/ai-pilot-v2-flow.mjs';
+import {runPilotSix,runTargetTwo} from '../scripts/ai-pilot-v2-flow.mjs';
 import {readFile} from 'node:fs/promises';
 const rows=Array.from({length:6},(_,i)=>({phase:'WEB_PILOT',slot:i,actor:i<3?'owner':'other',case:['PA2a','PF1b','PCa'][i%3],body:{question:'controlled '+i},expectedHttp:200}));
+
+test('target reacceptance uses two real submissions and clears both account sessions',async()=>{
+ const events=[];const selected=[0,1].map(i=>({phase:'TARGET_WEB',slot:i,actor:i?'other':'owner',case:'PF1b',web:true,body:{question:'fee'},expectedHttp:200}));
+ const ui={login:async a=>events.push(a),logout:async()=>events.push('out'),assertCleared:async()=>events.push('clear'),submit:async()=>({http:200,body:{runId:'controlled'}})};
+ const host={before:async()=>{},after:async()=>{},stop:async()=>assert.fail('unexpected stop')};
+ const result=await runTargetTwo(selected,ui,host);assert.equal(result.requests,2);assert.equal(result.humanSatisfaction,false);
+ assert.deepEqual(events,['owner','out','clear','other','out','clear']);
+ await assert.rejects(runTargetTwo(rows,ui,host));
+});
 test('two actors three DOM submissions each, logout clears before switch, private host sees real returned object',async()=>{
  const events=[];const ui={login:async a=>events.push('login:'+a),logout:async()=>events.push('logout'),assertCleared:async()=>events.push('clear'),submit:async b=>{events.push('submit:'+b.question);return{http:200,body:{runId:'controlled'}};}};
  const host={before:async r=>events.push('before:'+r.slot),after:async(r,v)=>{assert.equal(v.body.runId,'controlled');events.push('after:'+r.slot);},stop:async()=>events.push('stop')};

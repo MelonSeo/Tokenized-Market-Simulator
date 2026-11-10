@@ -17,6 +17,12 @@ from test_ai_evaluation_guard import llm, embedding
 
 
 class BrokerTest(unittest.TestCase):
+    def test_controlled_synthesis_matches_current_citation_contract(self):
+        raw=llm(text={'format':{'type':'json_schema','name':'agent_interpretation','strict':True,'schema':{'type':'object'}}})
+        response=b.offline_sender('success')('responses',raw,1)
+        value=json.loads(response['output'][0]['content'][0]['text'])
+        self.assertEqual({'status','interpretation','citations','facts','uncertainties','recommendedNextCheck'},set(value))
+        self.assertEqual({'status':'INSUFFICIENT_EVIDENCE','policyIds':[],'toolIds':[]},value['citations'])
     def test_source_hash_is_identical_from_backend_relative_import(self):
         code="import sys; sys.path.insert(0,'../deployment'); from ai_evaluation_broker import source_hash; print(source_hash())"
         result=subprocess.run([sys.executable,'-B','-S','-c',code],cwd=b.REPO/'backend',capture_output=True,timeout=10)

@@ -4052,3 +4052,13 @@ Tool 금융 계산·인증/주체·SQL 권한/domain·C 고정블록·Oracle/RPC
 제품·시험·재현실행기145파일은 `8519c52170e9447f4e8f36bbd0cf965e99b56c7a` (`feat(ai): finalize grounded agent and preserve acceptance tooling`)로로컬커밋했다. 부모는d52b29fe57de338074bfd0c87bd4175a20bf5cee이며현재ci/ai-unpaid-readiness-20261031만진행시켰다. 공개문서7파일은이기록과함께별도문서커밋으로보존하며최종ID는git log/마감보고를따른다. 기존source/평가기록/질문을사후갱신하지않았다.
 
 서비스품질PARTIAL·수정후실모델NOT_RUN·원57결과·수수료원문불명3·B5UNKNOWN·원Receipt지연원인미확정·사람효용/장기SLA/C전체진단한계는그대로다. 이번작업은승인된코드를Git에보존하는절차이며새기능이나평가시스템을추가하지않았다. 다른24worktree HEAD·root원본8내용·main/원격refs·원장/STOP/실패증거를보존한다. Push/병합/배포/원자료삭제없음으로마감한다.
+
+# AI 최종 GitHub 통합 및 표적13 인수 — 진행 중
+
+> 2026-11-10. 이후 별도 사용자 승인을 받은 작업이며 앞선 로컬 마감의 실행 권한을 소급 변경하지 않는다.
+
+개인feature의47acb3d까지 비강제Push 완료. 첫 원격AI gate는407PASS/1FAIL/45SKIP: 통제 공급자의 구형인용응답과 새제품계약 불일치가 실제원인이다. offline_sender의 agent_interpretation fixture만 citations/status/policyIds/toolIds로 맞추고 계약회귀를 추가했다. 제품근거검증은 완화하지 않는다. 동일소스C-read gate는PASS다.
+
+표적13 실행연결은 기존57원문/기준을 유지하고 승인된같은원장77LLM/54Embedding/$3.653474240와B5UNKNOWN을 승계한다. 추가USD2/14/11/보수토큰상한은 기존USD18/92/70과 함께 atomic예약 내부에서 강제한다. 초기검토의 단일자식 claim 결박 지적을 받아 부모exclusive claim과childId/source/descriptor/session경로hash를 추가했다. 새PG복제본에는 기존소유stopped volume만RO로복제하고 새로운1GiB/no-mining Anvil을사용한다. 실제색인의재사용은별도실환경확인 대상이며 재색인비용을숨겨넣지않는다. 공급자키는기존lazy sender에서두예약후만읽고새UNKNOWN은중단한다.
+
+회귀: 추가상한/승계/UNKNOWN/중복claim5PASS, broker16PASS, 관련coordinator/sender/HTTP31PASS, adapter/environment/broker67실행중66PASS/Windows익명pipe1SKIP, 브라우저flow4PASS. 원115제품소스는바꾸지않았다. Node/무과금 Mock은 실제모델/브라우저품질PASS가 아니다. 기존frozen감사PASS. 실제launcher/13품질/필수CI/PR/main 결과는후속추기로분리한다. 운영배포는하지않는다.

@@ -16,7 +16,7 @@ from ai_evaluation_broker import offline_sender
 from ai_pilot_coordinator import PilotCoordinator, need, digest
 from ai_pilot_preflight import ROOT, canonical
 
-CARRY_SOURCES=('ai_pilot_continuation.py','ai_pilot_review.py','ai_pilot_carry_launcher.py','ai_pilot_held_resume.py','ai_pilot_review_resume.py','ai_pilot_oom_resume.py')
+CARRY_SOURCES=('ai_pilot_continuation.py','ai_pilot_review.py','ai_pilot_carry_launcher.py','ai_pilot_held_resume.py','ai_pilot_review_resume.py','ai_pilot_oom_resume.py','ai_pilot_target13.py')
 
 def source_paths(root):
     paths = [p for folder in ("backend/src/main", "backend/src/test/java/com/pricetrack/exchange/ai/pilot",
@@ -95,6 +95,9 @@ def load(folder):
         from ai_pilot_paid_sender import authorize,load_permit
         need(meta['folder']==str(folder.resolve()),'V2_PAID_ALLOCATION_PATH')
         authorize(meta,load_permit(meta),current_source=source_fingerprint())
+    if 'target13' in meta:
+        from ai_pilot_target13 import TargetCoordinator
+        return TargetCoordinator(folder/'pilot-v2.sqlite',meta=meta)
     coordinator=PilotCoordinator
     if meta.get('continuation',{}).get('version') in {'tms-pilot-held-b5-v4','tms-pilot-review-carry23-v5','tms-pilot-oom-carry32-v6'}:
         from ai_pilot_held_resume import HeldCoordinator

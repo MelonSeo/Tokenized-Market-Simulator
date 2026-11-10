@@ -259,7 +259,8 @@ def offline_sender(fixture):
             if "skillId" in body["text"]["format"]["schema"].get("properties", {}):
                 output["skillId"] = "NONE"
         if name == "agent_interpretation":
-            output = {"status": "INSUFFICIENT_EVIDENCE", "interpretation": "offline fixture", "citationIds": [],
+            output = {"status": "INSUFFICIENT_EVIDENCE", "interpretation": "offline fixture",
+                      "citations": {"status": "INSUFFICIENT_EVIDENCE", "policyIds": [], "toolIds": []},
                       "facts": [], "uncertainties": [], "recommendedNextCheck": []}
         return {"status": "completed", "service_tier": "default", "usage": {"input_tokens": 1, "output_tokens": 99999 if fixture == "breach" else 1},
                 "output": [{"content": [{"type": "output_text", "text": json.dumps(output)}]}]}

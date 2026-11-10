@@ -28,7 +28,7 @@ class PilotHttpPlan:
                 # Private adapter, not a public endpoint/model command. Existing D1/B5 controls remain labelled DTOs.
                 adapter.control(row["control"])
                 try:
-                    if phase == "WEB_PILOT":
+                    if phase == "WEB_PILOT" or row.get('web') is True:
                         status, reply = adapter.web_submit(row["actor"], row["body"])
                     else:
                         status, reply = adapter.request(row["actor"], "POST", "/api/ai/agent/answers", row["body"])

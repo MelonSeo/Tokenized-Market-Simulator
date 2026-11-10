@@ -15,6 +15,7 @@ def context(meta):
         'budgetSha256':V2_FILE_HASHES[POLICY_PATH.as_posix()],'planSha256':V2_FILE_HASHES[PLAN_PATH.as_posix()],
         'frozen':dict(FROZEN),'termsSha256':hashlib.sha256(canonical(json.loads((ROOT/POLICY_PATH).read_text()))).hexdigest()}
     if 'continuation' in meta:value['continuationSha256']=hashlib.sha256(canonical(meta['continuation'])).hexdigest()
+    if 'target13' in meta:value['target13Sha256']=hashlib.sha256(canonical(meta['target13'])).hexdigest()
     return value
 
 
@@ -39,6 +40,9 @@ def authorize(meta,permit,*,now=None,current_source=None):
     need(not (Path(meta['folder'])/'STOP').exists(),'V2_PAID_STOPPED')
     if 'continuation' in meta:
         from ai_pilot_continuation import verify_anchor
+        verify_anchor(meta)
+    if 'target13' in meta:
+        from ai_pilot_target13 import verify_anchor
         verify_anchor(meta)
     return permit['approvalId']
 

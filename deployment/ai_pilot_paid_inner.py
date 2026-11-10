@@ -99,8 +99,17 @@ def execute():
            [('java',['java','-version']),('node',['node','--version']),('python',['python','--version'])]}
     need('21.0.10' in (tools['java'].stdout+tools['java'].stderr).decode() and tools['node'].stdout.decode().strip()=='v22.22.0'
          and tools['python'].stdout.decode().startswith('Python 3.12.'),'V2_PAID_TOOLS_VERSION')
-    mode=os.environ['AI_PILOT_EXECUTION'];need(mode in {'PREPARE','PROBE','PAID','AUTHORIZE','CONTINUATION_PLAN','AUTHORIZE_CONTINUATION'},'V2_PAID_EXECUTION_MODE')
+    mode=os.environ['AI_PILOT_EXECUTION'];need(mode in {'PREPARE','PROBE','PAID','AUTHORIZE','CONTINUATION_PLAN','AUTHORIZE_CONTINUATION','TARGET_PLAN','AUTHORIZE_TARGET'},'V2_PAID_EXECUTION_MODE')
     config=json.loads(Path(os.environ['AI_PILOT_V2_CONFIG']).read_text())
+    if mode in {'TARGET_PLAN','AUTHORIZE_TARGET'}:
+        from ai_pilot_target13 import make_meta,import_session
+        meta=make_meta(config,RUN)
+        if mode=='TARGET_PLAN':
+            private_write(RUN/'approval-request.private.json',{'context':context(meta),'approvalId':meta['approvalId'],'status':'TARGET_NOT_ACTIVATED'})
+        else:
+            import_session(meta,RUN/'approved-permit.json')
+            private_write(RUN/'authorized.json',{'authorized':True,'source':source_fingerprint(),'sameBudget':True})
+        return
     if mode in {'CONTINUATION_PLAN','AUTHORIZE_CONTINUATION'}:
         from ai_pilot_continuation import make_meta,import_ledger
         meta=make_meta(config,RUN)
@@ -151,11 +160,11 @@ def execute():
             else:
                 c=runner.c;need(binding==runner.meta['fixture'],'V2_PAID_FIXTURE_DRIFT')
             rows=c.rows
-            selected=[r for r in rows if r['phase']=='SAFETY_LEGACY' and r['case']=='PF1b'] if mode=='PROBE' else [r for r in rows if r['phase']=='WEB_PILOT']
+            selected=[r for r in rows if r['phase']=='SAFETY_LEGACY' and r['case']=='PF1b'] if mode=='PROBE' else [r for r in rows if r['phase']=='WEB_PILOT' or r.get('web') is True]
             browser=BrowserAdapter(RUN,{'origin':descriptor['origin'],'mode':config['mode'],'accounts':{k:descriptor['accounts'][k] for k in ('owner','other')},
-                       'rows':selected,**({'scope':'SINGLE_CONNECTION_PROBE'} if mode=='PROBE' else {})},host_admission=host_admission)
+                       'rows':selected,**({'scope':'SINGLE_CONNECTION_PROBE'} if mode=='PROBE' else {'scope':'TARGET_THIRTEEN'} if 'target13' in runner.meta else {})},host_admission=host_admission)
             adapter=SpringAdapter(c,binding,descriptor,RUN,browser=browser,mode=config['mode'])
-            if mode=='PAID' and 'continuation' in runner.meta:
+            if mode=='PAID' and ('continuation' in runner.meta or 'target13' in runner.meta):
                 need(c.reconcile(adapter.budget_snapshot())['matching'],'V2_CARRY_BUDGET_MISMATCH')
             else:
                 initialized=adapter.request('admin','POST','/api/ai/provider-budget/initialize',{})

@@ -210,7 +210,7 @@ def app(folder,base,meta,role,mode,observer,*,key_reference=None):
         opts+=['--mount',mount(key_reference,'/run/approved-provider-key')]
     if 'parentSession' in meta:
         parent=Path(meta['parentSession']);scope=ROOT/'deployment/runtime'/meta['owner']
-        need(parent.resolve() in {scope/'session',scope/'continuation-dcefa791d03e57e2/session',scope/'continuation-1dd8aa3b6d0eb93e/session',scope/'continuation-111a94ae5a0bd9c0/recovery-e7a47fc5a1ab/session',scope/'continuation-3e9742bfa5d17456/session',scope/'continuation-b3ebc4e68f260ec7/session'} and not parent.is_symlink(),'V2_CARRY_PARENT_SCOPE')
+        need(parent.resolve() in {scope/'session',scope/'continuation-dcefa791d03e57e2/session',scope/'continuation-1dd8aa3b6d0eb93e/session',scope/'continuation-111a94ae5a0bd9c0/recovery-e7a47fc5a1ab/session',scope/'continuation-3e9742bfa5d17456/session',scope/'continuation-b3ebc4e68f260ec7/session',scope/'continuation-60c4912e2e9417d9/session'} and not parent.is_symlink(),'V2_CARRY_PARENT_SCOPE')
         opts+=['--mount',mount(parent,'/run/pilot-parent')]
     if 'rootSession' in meta:
         root=Path(meta['rootSession']);need(root.resolve()==ROOT/'deployment/runtime'/meta['owner']/'session' and not root.is_symlink(),'V2_CARRY_ROOT_SCOPE')
@@ -218,7 +218,7 @@ def app(folder,base,meta,role,mode,observer,*,key_reference=None):
     if 'middleSession' in meta:
         middle=Path(meta['middleSession']);need(middle.resolve()==ROOT/'deployment/runtime'/meta['owner']/'continuation-dcefa791d03e57e2/session' and not middle.is_symlink(),'V2_CARRY_MIDDLE_SCOPE')
         opts+=['--mount',mount(middle,'/run/pilot-middle')]
-    net='none' if mode.startswith('AUTHORIZE') or mode=='CONTINUATION_PLAN' else 'container:'+meta['names']['pg']
+    net='none' if mode.startswith('AUTHORIZE') or mode in {'CONTINUATION_PLAN','TARGET_PLAN'} else 'container:'+meta['names']['pg']
     name=create(meta['owner'],role,meta['images']['app'],net,opts,['-B','-S','/work/deployment/ai_pilot_paid_inner.py'])
     try:
         cmd(['docker','cp',str((base/'source').resolve())+'/.',name+':/work'],120)

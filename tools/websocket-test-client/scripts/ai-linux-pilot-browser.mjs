@@ -6,7 +6,7 @@ import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 import {BoundedCdp,pollBounded,fetchJsonBounded} from './cdp-boundary.mjs';
 import {findChrome} from './browser-executable.mjs';
-import {runPilotSix} from './ai-pilot-v2-flow.mjs';
+import {runPilotSix,runTargetTwo} from './ai-pilot-v2-flow.mjs';
 import {nativeSandboxEvidence} from './native-sandbox-evidence.mjs';
 import {loginReadyExpression} from './pilot-dom-readiness.mjs';
 
@@ -83,7 +83,7 @@ try{
  const host={before:row=>privateStep({op:'before',slot:row.slot,actor:row.actor,body:row.body}),after:(row,reply)=>privateStep({op:'after',slot:row.slot,reply}),stop:()=>privateStep({op:'stop'})};
  let result;
  if(connectionProbe){const row=cfg.rows[0];await ui.login(row.actor);await host.before(row);const reply=await ui.submit(row.body);assert.equal(reply.http,row.expectedHttp);await host.after(row,reply);await ui.logout();await ui.assertCleared();result={requests:1,accounts:1,humanSatisfaction:false,scope:'CONNECTION_PROBE_NOT_SIX_ACCEPTANCE'};}
- else result=await runPilotSix(cfg.rows,ui,host);
+ else result=await (cfg.scope==='TARGET_THIRTEEN'?runTargetTwo:runPilotSix)(cfg.rows,ui,host);
  success=true;
  await writeFile(join(out,'six-dom-submissions.json'),JSON.stringify({...result,mode:cfg.mode,realModel:cfg.mode==='PAID_EXPLICIT_V2',node:process.version,platform:process.platform,chromeMajor:browser.major}),{flag:'wx'});
 }catch(error){const code=/^[A-Z][A-Z0-9_]{0,79}$/.test(error?.code??'')?error.code:'BROWSER_FAILURE';try{await writeFile(join(out,'browser-failure.json'),JSON.stringify({stage,shot,code,errorType:error?.constructor?.name??'Error',networkSummary,socketSummary}),{flag:'wx'});}catch{}process.stderr.write('V2_BROWSER_FAILED_NO_RETRY\n');}

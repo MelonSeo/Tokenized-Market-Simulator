@@ -275,6 +275,7 @@ class PilotCoordinator:
             need(len(sub) == 1 and sub[0][1] == server_request, "V2_SERVER_REQUEST_MISMATCH")
             ticket = sub[0][0]
             total, local = self.totals(c), self.totals(c, p["id"])
+            self.additional_limit(c, kind, tokens, output, cost)
             need(local["llmCalls" if kind == "LLM" else "embeddingCalls"] < p["llm" if kind == "LLM" else "embedding"], "V2_PHASE_LIMIT")
             from ai_pilot_preflight import dispatch_preview
             dispatch_preview(self.policy, total, kind, len(raw), output)
@@ -299,6 +300,10 @@ class PilotCoordinator:
             self.verify(c)
             c.execute("UPDATE reservations SET outcome='OBSERVED',actual_input=?,actual_output=? WHERE pg_id=?", (actual_input, actual_output, pg_id))
         return result
+
+    def additional_limit(self, c, kind, tokens, output, cost):
+        """Optional stricter, atomic sub-allocation; cannot replace the original guard."""
+        return None
 
     def complete_request(self, ticket, server_request=None):
         identifier(ticket)
