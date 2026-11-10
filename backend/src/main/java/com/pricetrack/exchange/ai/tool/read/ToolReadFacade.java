@@ -167,6 +167,7 @@ public class ToolReadFacade {
         if (args.cursor() != null) q.setParameter("after", args.cursor().createdAt()).setParameter("afterId", args.cursor().id());
         var rows = q.setMaxResults(args.limit() + 1).getResultList();
         ObjectNode data = fresh().put("filter", args.filter()).put("limit",args.limit()).put("waitingSeconds",args.waitingSeconds())
+            .put("waitingSecondsApplied",waiting)
             .put("scope",args.cursor()==null?"FIRST_PAGE_NOT_FULL_HISTORY":"PAGE_AFTER_CURSOR_NOT_FULL_HISTORY").put("hasMore",rows.size()>args.limit());
         var items = data.putArray("items");
         for (var tx : rows.stream().limit(args.limit()).toList()) {

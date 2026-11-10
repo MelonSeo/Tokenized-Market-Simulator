@@ -122,6 +122,32 @@ class AgentServiceTest {
         assertThat(call("{\"question\":\"주문 154 상태\",\"target\":{\"orderId\":153}}").status()).isEqualTo("NEEDS_CLARIFICATION");
         assertThat(call("{\"question\":\"매수해줘\"}").status()).isEqualTo("UNSUPPORTED");verifyNoInteractions(tools,retrieval,model);
     }
+    @Test void unsupportedAdminForeignPortfolioExplainsScopeWithoutAnyRead(){
+        plan(Route.UNSUPPORTED,Subject.NONE);
+        var response=service.answer(admin,"{\"question\":\"관리자 권한이면 다른 사용자의 자산도 보여줄 수 있나요?\"}".getBytes(StandardCharsets.UTF_8));
+        assertThat(response.status()).isEqualTo("UNSUPPORTED");
+        assertThat(response.answer()).contains("ADMIN을 포함해 로그인한 본인 기준", "임의 사용자를 선택하는 조회는 지원하지 않습니다", "본인 잔고를 타인의 잔고로 대신 표시하지 않습니다");
+        assertThat(response.toolEvidence()).isEmpty();assertThat(response.knowledgeSources()).isEmpty();
+        verifyNoInteractions(tools,retrieval);verify(model,never()).synthesize(any(),any(),any(),any());
+    }
+    @Test void foreignPortfolioRequestNeverSubstitutesAnOwnReadEvenWithAStatePlan(){
+        plan(Route.STATE,Subject.PORTFOLIO);
+        var balance=json.createObjectNode();balance.putArray("balances").addObject().put("symbol","mKRW").put("total","123").put("locked","0").put("available","123");
+        when(tools.invokeForAgent(eq(admin),eq("getPortfolio"),any(),any(),any())).thenReturn(ToolResult.success("getPortfolio","TRADING_DB",balance));
+        var response=service.answer(admin,"{\"question\":\"다른 사용자의 포트폴리오를 조회할 수 있나요?\"}".getBytes(StandardCharsets.UTF_8));
+        assertThat(response.status()).isEqualTo("UNSUPPORTED");assertThat(response.answer()).contains("로그인한 본인 기준", "본인 잔고를 타인의 잔고로 대신 표시하지 않습니다").doesNotContain("총액 123");
+        assertThat(response.toolEvidence()).isEmpty();verifyNoInteractions(model,retrieval,tools);
+    }
+    @Test void policyAboutTradeMechanismNeedsNoPersonalTargetButActualOrderStateStillDoes(){
+        plan(Route.KNOWLEDGE,Subject.NONE);
+        var policyOnly=call("{\"question\":\"주문에 다른 사람의 반대 주문이 연결되는 구조인지 정책으로 설명해주세요\"}");
+        assertThat(policyOnly.status()).isEqualTo("ANSWERED");assertThat(policyOnly.citationIds()).contains("knowledge-1");
+        assertThat(policyOnly.toolEvidence()).isEmpty();verify(retrieval).verify("index-1");verifyNoInteractions(tools);
+        clearInvocations(retrieval,model);plan(Route.CLARIFY,Subject.NONE);
+        var missing=call("{\"question\":\"내 주문이 실제 체결됐는지 확인해 주세요\"}");
+        assertThat(missing.status()).isEqualTo("NEEDS_CLARIFICATION");
+        verifyNoInteractions(retrieval,tools);verify(model,never()).synthesize(any(),any(),any(),any());
+    }
     @Test void userCannotExecuteAdminList(){
         plan(Route.STATE,Subject.ABNORMAL);
         when(model.plan(anyString(),any(),any())).thenReturn(new Plan(Route.STATE,Subject.ABNORMAL,new Usage(31,9)));
@@ -151,6 +177,31 @@ class AgentServiceTest {
         for(String field:List.of("privateKey","apiKey","apiSecret","jwt","dbPassword","rawTransaction","loginId","signature"))nested.put(field,"CANARY_"+field);
         var evidence=AgentResponse.ToolEvidence.from("tool-1",ToolResult.success("getOrder","TRADING_DB",data));
         String encoded=AgentEvidence.modelInput(json,List.of(policy),List.of(evidence)).toString();assertThat(encoded).doesNotContain("CANARY_").contains("PENDING_ONCHAIN");
+    }
+    @Test void accountSwitchIncidentUsesConnectionPolicyNotAnotherPortfolio(){
+        for(String question:List.of("계정을 바꿨는데 이전 잔고 알림이 보였어요. 어떤 연결을 확인하나요?",
+                "로그아웃 후 계정 전환했더니 다른 계정 이벤트가 화면에 보입니다.")){
+            var response=call("{\"question\":\""+question+"\"}");
+            assertThat(response.route()).isEqualTo("KNOWLEDGE");
+        }
+        verifyNoInteractions(tools);verify(model,never()).plan(any(),any(),any());
+        verify(retrieval,times(2)).search(eq(user),eq(AccountSwitchQuestion.policyQuery()),any());
+        for(String question:List.of("계정을 바꿨습니다. 내 잔고를 조회해주세요.","현재 계정 포트폴리오를 보여주세요."))
+            assertThat(AccountSwitchQuestion.matches(new AgentRequest(question,null,null))).isFalse();
+    }
+    @Test void authenticatedPortfolioScopeIsServerMetadataNotUserIdentity(){
+        var evidence=AgentResponse.ToolEvidence.from("tool-1",ToolResult.success("getPortfolio","TRADING_DB",json.createObjectNode().put("userId",1)));
+        var input=AgentEvidence.modelInput(json,List.of(policy),List.of(evidence));
+        assertThat(input.at("/tools/0/authorizationScope").asText()).isEqualTo("AUTHENTICATED_SELF");assertThat(input.toString()).doesNotContain("userId","SECRET_LOGIN");
+    }
+    @Test void rejectionObservationIsCorrelatedFixedReasonNotGeneratedText(){
+        var observation=new com.pricetrack.exchange.ai.observability.AiObservability();service.observe(observation);plan(Route.MIXED,Subject.ORDER);
+        when(model.synthesize(any(),any(),any(),any())).thenReturn(new Generated("ANSWERED","SECRET_GENERATED_TEXT",List.of("tool-1"),
+            List.of(new FactReference("tool-1","/status","PENDING_ONCHAIN")),List.of(),List.of(),Usage.none()));
+        var response=call("{\"question\":\"왜 대기?\",\"target\":{\"orderId\":153}}");
+        assertThat(response.status()).isEqualTo("PARTIAL");assertThat(response.uncertainties()).contains("SYNTHESIS_UNAVAILABLE");
+        assertThat(observation.snapshot().toString()).contains("VALIDATION:evidenceReason","EVIDENCE_POLICY_CITATION_MISSING=1").doesNotContain("SECRET_GENERATED_TEXT");
+        assertThat(response.answer()).doesNotContain("SECRET_GENERATED_TEXT");
     }
     @Test void adminListIsSingleBoundedPage(){
         plan(Route.STATE,Subject.ABNORMAL);

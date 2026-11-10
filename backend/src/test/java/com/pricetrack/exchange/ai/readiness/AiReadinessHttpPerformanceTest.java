@@ -107,7 +107,8 @@ class AiReadinessHttpPerformanceTest {
             else delay(plan.path("controlledSynthesisMs").asLong(),true);
             synthesisHook.run();
             var out=json.createObjectNode().put("status","ANSWERED").put("interpretation","통제된 정책 근거와 현재 조회 사실만 표시합니다. 거래 실행이나 체결 확정은 하지 않습니다.");
-            var cites=out.putArray("citationIds");cites.add(evidence.path("knowledge").get(0).path("id").asText());
+            var citations=out.putObject("citations").put("status","ANSWERED");
+            citations.putArray("policyIds").add(evidence.path("knowledge").get(0).path("id").asText());var cites=citations.putArray("toolIds");
             var facts=out.putArray("facts");
             if(!evidence.path("tools").isEmpty()){
                 var t=evidence.path("tools").get(0);String key=t.path("data").has("storedStatus")?"storedStatus":t.path("data").has("filter")?"filter":t.path("data").has("provider")?"provider":"status";

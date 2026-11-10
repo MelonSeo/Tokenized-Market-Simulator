@@ -44,7 +44,7 @@ class EvaluationRequestDryRunTest {
                 }else{
                     var e=input.path("evidence");var first=e.path("tools").get(0);var data=first.path("data");
                     String pointer=data.has("position")?"/position/status":data.has("status")?"/status":data.has("storedStatus")?"/storedStatus":data.has("totalValue")?"/totalValue":data.has("filter")?"/filter":"/marketStatus";
-                    answer=Map.of("status","ANSWERED","interpretation","제공된 정책과 조회 사실을 설명합니다.","citationIds",List.of(e.path("knowledge").get(0).path("id").asText(),first.path("evidenceId").asText()),
+                    answer=Map.of("status","ANSWERED","interpretation","제공된 정책과 조회 사실을 설명합니다.","citations",Map.of("status","ANSWERED","policyIds",List.of(e.path("knowledge").get(0).path("id").asText()),"toolIds",List.of(first.path("evidenceId").asText())),
                         "facts",List.of(Map.of("evidenceId",first.path("evidenceId").asText(),"pointer",pointer,"value",data.at(pointer).asText())),"uncertainties",List.of(),"recommendedNextCheck",List.of());
                 }
                 return json.valueToTree(Map.of("status","completed","service_tier","default","usage",Map.of("input_tokens",0,"output_tokens",0),"output",List.of(Map.of("content",List.of(Map.of("type","output_text","text",json.writeValueAsString(answer)))))));

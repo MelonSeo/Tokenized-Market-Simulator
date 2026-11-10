@@ -79,6 +79,31 @@ class ReadOnlyReceiptClientTest {
             assertThat(methods).containsExactly("eth_getTransactionReceipt", "eth_blockNumber");
         }
     }
+    @Test void timingSeparatesHeadersBodyAndValidationWithoutPayloads(){
+        var events=new CopyOnWriteArrayList<String>();
+        try(var c=client(true,Duration.ofSeconds(3)).observeTiming((op,stage,phase,start,elapsed,code)->events.add(stage+":"+phase+":"+code))){
+            assertThat(c.read(input()).path("eventValidation").asText()).isEqualTo("MATCH");
+            assertThat(events).contains("RPC_eth_getTransactionReceipt:HEADERS:HTTP_1_1_200","RPC_eth_blockNumber:BODY_COMPLETE:RECEIVED","EVENT_VALIDATION:END:MATCH","RECEIPT_TOTAL:END:OK");
+            assertThat(events.toString()).doesNotContain(ToolFixtures.HASH,ToolFixtures.ADDRESS,"SECRET_PROVIDER_ERROR");
+        }
+    }
+    @Test void slowBodyIsObservedWithoutExtendingTheOriginalBudget(){
+        mode="SLOW";var events=new CopyOnWriteArrayList<String>();long before=System.nanoTime();
+        try(var c=client(true,Duration.ofMillis(150)).observeTiming((op,stage,phase,start,elapsed,code)->events.add(stage+":"+phase+":"+code))){
+            assertThatThrownBy(()->c.read(input())).hasMessage("TOOL_TIMEOUT");
+            assertThat(Duration.ofNanos(System.nanoTime()-before)).isLessThan(Duration.ofSeconds(1));
+            assertThat(events).contains("RPC_eth_getTransactionReceipt:HEADERS:HTTP_1_1_200","RPC_eth_getTransactionReceipt:END:TOOL_TIMEOUT").doesNotContain("RPC_eth_getTransactionReceipt:BODY_COMPLETE:RECEIVED");
+        }
+    }
+    @Test void diagnosticCallbackFailureCannotReplaceTheReadResult(){
+        try(var c=client(true,Duration.ofSeconds(3)).observeTiming((op,stage,phase,start,elapsed,code)->{throw new IllegalStateException("DIAGNOSTIC_ONLY");})){
+            assertThat(c.read(input()).path("eventValidation").asText()).isEqualTo("MATCH");
+        }
+    }
+    public static void main(String[] args){
+        var l=new org.junit.platform.launcher.listeners.SummaryGeneratingListener();org.junit.platform.launcher.core.LauncherFactory.create().execute(org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request().selectors(org.junit.platform.engine.discovery.DiscoverySelectors.selectClass(ReadOnlyReceiptClientTest.class),org.junit.platform.engine.discovery.DiscoverySelectors.selectClass("com.pricetrack.exchange.ai.tool.ToolDispatcherTest")).build(),l);
+        var s=l.getSummary();s.printTo(new java.io.PrintWriter(System.out,true));s.printFailuresTo(new java.io.PrintWriter(System.out,true));if(s.getTestsFoundCount()==0||s.getTotalFailureCount()!=0||s.getTestsSkippedCount()!=0)System.exit(1);
+    }
     @Test void absentReceiptIsNotAnExecutionFailure() {
         receipt = null;
         try (var client = client(true, Duration.ofSeconds(3))) {

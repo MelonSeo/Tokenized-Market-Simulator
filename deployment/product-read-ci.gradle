@@ -1,8 +1,8 @@
 // CI-only build tasks. No private local classpath, old build output or runtime input.
 def ciHelpers = ['ProductReadGate', 'ProductReadDriver', 'ProductReadDriverRpcTest',
     'ProductReadConnection', 'ProductReadConnectionTest', 'ProductReadFixture',
-    'FullAppReadGate', 'FullAppReadDriver', 'FaucetSchemaFixtureBridge',
-    'ConditionalSchemaFixtureBridge', 'CDirectBrowserPipe', 'CAnvilContractGate', 'CAnvilRiskClaimsScenario', 'ProductAiCReadGate', 'ProductAiCReadDriver']
+    'FullAppReadGate', 'FullAppReadDriver', 'FaucetSchemaFixtureBridge', 'PilotV2LinuxSmoke',
+    'ConditionalSchemaFixtureBridge', 'CDirectBrowserPipe', 'CAnvilContractGate', 'CAnvilRiskClaimsScenario', 'ProductAiCReadGate', 'ProductAiCReadDriver', 'PilotV2ChainFixture']
 allprojects {
     afterEvaluate { p ->
         if (p.plugins.hasPlugin('java')) {
@@ -19,6 +19,11 @@ allprojects {
             tasks.register('productReadCiRuntime', Copy) {
                 from configurations.runtimeClasspath
                 into layout.buildDirectory.dir('product-read-ci/jars')
+            }
+            tasks.register('pilotV2TestRuntime', Copy) {
+                dependsOn tasks.named('testClasses')
+                from configurations.testRuntimeClasspath
+                into layout.buildDirectory.dir('pilot-v2-test/jars')
             }
             tasks.withType(JavaCompile).configureEach { options.compilerArgs += ['-parameters'] }
         }

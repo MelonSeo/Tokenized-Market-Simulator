@@ -19,7 +19,21 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
     private final HttpClient http;
     private final EvaluationTransport evaluationTransport;
     private ProviderBudget budget=ProviderBudget.DENY;
-    public OpenAiProvider budget(ProviderBudget value){budget=Objects.requireNonNull(value);return this;}
+    private ReservedDispatch reservedDispatch;
+    public OpenAiProvider budget(ProviderBudget value){
+        if(reservedDispatch!=null)throw new AiFailure("AI_EVALUATION_BUDGET_IMMUTABLE");
+        budget=Objects.requireNonNull(value);return this;
+    }
+    /** Private server channel, not browser metadata. Normal PG reservation precedes dispatch. */
+    @FunctionalInterface public interface ReservedDispatch {
+        JsonNode post(String path,byte[] body,Duration timeout,String pgReservation,ProviderAccess.Actor actor);
+    }
+    public static OpenAiProvider forReservedEvaluation(AiProperties p,ObjectMapper json,PgProviderBudget pg,ReservedDispatch channel){
+        if(!p.apiKey().isEmpty()||!p.apiBase().equals("guarded:pilot-v2/"))throw new AiFailure("AI_EVALUATION_CONFIG_INVALID");
+        var provider=new OpenAiProvider(p,json);
+        provider.budget=Objects.requireNonNull(pg);provider.reservedDispatch=Objects.requireNonNull(channel);
+        return provider;
+    }
     /** Evaluation-only transport: production constructors never enable it. */
     @FunctionalInterface public interface EvaluationTransport {
         JsonNode post(String path, byte[] body, Duration timeout);
@@ -129,17 +143,21 @@ public class OpenAiProvider implements EmbeddingProvider, ChatModelProvider {
             }
             catch(AiFailure e){throw e;}catch(Exception e){throw new AiFailure("AI_EVALUATION_TRANSPORT_FAILED");}
         }
-        if (properties.apiKey().isBlank()) throw new AiFailure("AI_API_KEY_MISSING");
+        if (reservedDispatch==null && properties.apiKey().isBlank()) throw new AiFailure("AI_API_KEY_MISSING");
         // 개발용 프로세스 수명당 상한. 지속 예산 관리로 오인하지 않는다.
         if (requests.incrementAndGet() > 500) throw new AiFailure("AI_PROVIDER_CALL_LIMIT");
         try {
-            URI uri = URI.create(properties.apiBase()).resolve(path);
-            if (!"https".equals(uri.getScheme()) && !Set.of("127.0.0.1", "localhost").contains(uri.getHost()))
+            URI uri = reservedDispatch==null?URI.create(properties.apiBase()).resolve(path):null;
+            if (reservedDispatch==null && !"https".equals(uri.getScheme()) && !Set.of("127.0.0.1", "localhost").contains(uri.getHost()))
                 throw new AiFailure("AI_PROVIDER_CONFIG_INVALID");
             if (timeout.isNegative() || timeout.isZero() || Thread.currentThread().isInterrupted()) throw new AiFailure("AI_PROVIDER_UNAVAILABLE");
             var payload=json.valueToTree(body);if("responses".equals(path))((com.fasterxml.jackson.databind.node.ObjectNode)payload).put("service_tier","default");
             byte[] wire=json.writeValueAsBytes(payload);
             String reservation=budget.reserve(path,wire); // fsync/DB commit before any provider dispatch
+            if(reservedDispatch!=null){
+                var result=reservedDispatch.post(path,wire,deadline.remaining(),reservation,ProviderAccess.actor());
+                budget.observed(reservation,result.path("usage"));deadline.remaining();return result;
+            }
             HttpRequest request = HttpRequest.newBuilder(uri).timeout(deadline.remaining())
                     .header("Authorization", "Bearer " + properties.apiKey()).header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofByteArray(wire)).build();

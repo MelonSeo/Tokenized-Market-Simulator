@@ -10,6 +10,35 @@ from test_ai_evaluation_guard import llm
 
 
 class TransportDiagnosticsTest(unittest.TestCase):
+    def test_tls_failure_is_before_post_but_still_has_no_refund_or_retry_authority(self):
+        import ssl
+        connection=MagicMock();connection.connect.side_effect=ssl.SSLCertVerificationError(1,'SECRET_CERT_PATH')
+        with patch.object(b.http.client,'HTTPSConnection',return_value=connection):
+            with self.assertRaises(ssl.SSLCertVerificationError):self.sender()('embeddings',llm(),1)
+        connection.connect.assert_called_once();connection.request.assert_not_called();connection.close.assert_called_once()
+        last=self.events()[-1];self.assertEqual(last['phase'],'CONNECT_TLS_BEGIN')
+        self.assertEqual(last['failureClass'],'SSLCertVerificationError');self.assertEqual(last['remoteDelivery'],'UNKNOWN')
+        self.assertNotIn('SECRET',json.dumps(self.events()))
+    def test_successful_connect_and_request_are_separate_observations(self):
+        connection=MagicMock();connection.getresponse.side_effect=TimeoutError()
+        with patch.object(b.http.client,'HTTPSConnection',return_value=connection):
+            with self.assertRaises(TimeoutError):self.sender()('responses',llm(),1)
+        phases=[e['phase'] for e in self.events()]
+        self.assertLess(phases.index('CONNECT_TLS_RETURNED'),phases.index('REQUEST_CALL_BEGIN'))
+        self.assertEqual(connection.auto_open,0);connection.connect.assert_called_once();connection.request.assert_called_once()
+    def test_request_failure_captures_only_safe_class_and_errno_without_retry(self):
+        connection=MagicMock();connection.request.side_effect=ConnectionResetError(104,'SECRET_PEER_AND_KEY')
+        with patch.object(b.http.client,'HTTPSConnection',return_value=connection):
+            with self.assertRaises(ConnectionResetError):self.sender()('responses',llm(),1)
+        connection.request.assert_called_once();connection.getresponse.assert_not_called();connection.close.assert_called_once()
+        last=self.events()[-1]
+        self.assertEqual(last['phase'],'REQUEST_CALL_BEGIN');self.assertEqual(last['failureClass'],'ConnectionResetError')
+        self.assertEqual(last['osErrno'],104);self.assertEqual(last['remoteDelivery'],'UNKNOWN')
+        self.assertNotIn('SECRET',json.dumps(self.events()));self.assertNotIn('Authorization',json.dumps(self.events()))
+    def test_arbitrary_exception_class_and_text_never_become_diagnostic_labels(self):
+        class SECRET_DYNAMIC_ERROR(Exception):pass
+        b._transport_event(self.folder,'b'*32,'embeddings','REQUEST_CALL_BEGIN','UPSTREAM_UNCERTAIN',time.monotonic(),1,None,SECRET_DYNAMIC_ERROR('SECRET_VALUE'))
+        last=self.events()[-1];self.assertEqual(last['failureClass'],'OTHER');self.assertIsNone(last['osErrno']);self.assertNotIn('SECRET',json.dumps(last))
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

@@ -150,7 +150,10 @@ public final class AgentService implements AutoCloseable {
                     if(skill.target()==Subject.NONE)preflight(call("getCurrentReferencePrice",Map.of()));
                 }
                 if(plan.route()==Route.CLARIFY)return response("NEEDS_CLARIFICATION","조회 대상을 명시해 주세요.",List.of(),List.of());
-                if(plan.route()==Route.UNSUPPORTED)return response("UNSUPPORTED","조회와 프로젝트 규칙 설명만 지원합니다.",List.of(),List.of());
+                if(plan.route()==Route.UNSUPPORTED)return response("UNSUPPORTED",
+                    "이 Agent는 지원되는 조회와 프로젝트 규칙 설명만 제공하며 거래 실행·복구·투자 판단을 대신하지 않습니다. "
+                    +"포트폴리오는 ADMIN을 포함해 로그인한 본인 기준이며, 임의 사용자를 선택하는 조회는 지원하지 않습니다. "
+                    +"본인 잔고를 타인의 잔고로 대신 표시하지 않습니다. 본인 조회 또는 정책 설명으로 질문 범위를 지정해 주세요.",List.of(),List.of());
                 if(plan.route()==Route.KNOWLEDGE && (plan.subject()!=Subject.NONE || request.targetKind()!=Subject.NONE))
                     return response("NEEDS_CLARIFICATION","정책 질문과 조회 대상을 구분해 주세요.",List.of(),List.of());
                 if(plan.route()!=Route.KNOWLEDGE && (plan.subject()==Subject.NONE
@@ -194,16 +197,19 @@ public final class AgentService implements AutoCloseable {
                 if(plan.route()==Route.MIXED && !hasFacts())return response("PARTIAL","현재 상태는 확인하지 못했습니다. 조회된 정책 출처만 제공합니다.",List.of(),List.of());
                 if(plan.subject()==Subject.FUTURES&&(uncertainties.contains("FUTURES_CUT_CHANGED")||evidence.values().stream().anyMatch(e->e.tool().equals("getFuturesLiquidationEvidence")
                         &&(!"SUCCESS".equals(e.status())||!"VERIFIED".equals(e.data().path("verification").asText())))))
-                    return response("PARTIAL","선물 조회 사실과 정책 근거만 제공합니다. 미확정 또는 불충분한 체인·장부 근거로 청산 완료나 원인을 확정할 수 없습니다.",List.of(),List.of());
+                    return response("PARTIAL",StateExplanation.explain(List.copyOf(evidence.values()))+"\n미확정 또는 불충분한 체인·장부 근거로 청산 완료나 원인을 확정할 수 없습니다.",List.of(),List.of());
                 var modelInput=AgentEvidence.modelInput(json,knowledge,List.copyOf(evidence.values()));
                 if(skillRunner!=null)modelInput.set("diagnosticObservations",json.valueToTree(skillRunner.result().diagnosis()));
                 if(json.writeValueAsBytes(modelInput).length>24_576)return degraded("AGENT_CONTEXT_LIMIT");
                 long synthesisStart=System.nanoTime();
                 try{
-                    modelCalls++;var generated=provider.synthesize(request.modelQuestion(),plan.route(),modelInput,remaining(properties.synthesisSeconds()));
+                    modelCalls++;AgentModelProvider.Generated generated;
+                    try{generated=provider.synthesize(request.modelQuestion(),plan.route(),modelInput,remaining(properties.synthesisSeconds()));}
+                    catch(AgentFailure rejected){recordEvidenceRejection(rejected,synthesisStart);throw rejected;}
                     addUsage(generated==null?null:generated.usage());
                     long validationStart=System.nanoTime();boolean valid=false;
                     try{AgentEvidence.validate(generated,plan.route(),modelInput);valid=true;}
+                    catch(AgentFailure rejected){recordEvidenceRejection(rejected,validationStart);throw rejected;}
                     finally{if(observation!=null)observation.record("VALIDATION","evidence",id,validationStart,valid,valid?"OK":"INVALID_AGENT_EVIDENCE",0,null,null);}
                     traceOnce("SUMMARIZE","EXECUTED","MODEL","ANSWERED".equals(generated.status())?generated.citationIds():List.of(),"ANSWERED".equals(generated.status())?"VALIDATED":"NO_EVIDENCE",synthesisStart);
                     if(!"ANSWERED".equals(generated.status())){
@@ -220,6 +226,8 @@ public final class AgentService implements AutoCloseable {
             catch(Exception e){return degraded("AGENT_UNAVAILABLE");}
         }
         String retrievalQuestion(Plan plan){
+            if(AccountSwitchQuestion.matches(request))return AccountSwitchQuestion.policyQuery();
+            if(RequiredReadRoute.counterpartyPolicy(request)){String q=request.modelQuestion();return q.substring(0,Math.min(700,q.length()))+"\nExchangeVault 체결 상대 풀 기반 가격 견적 mSEC 발행·소각 주문장 가격시간우선 매칭 미지원";}
             if(plan.route()==Route.KNOWLEDGE)return request.modelQuestion();
             String context=switch(plan.subject()){
                 case ORDER -> "주문 대기 PENDING_ONCHAIN REVIEW_REQUIRED 상태와 온체인 receipt DB 정산 확정 조건";
@@ -276,6 +284,10 @@ public final class AgentService implements AutoCloseable {
             throw new AgentFailure(result.error(),http);
         }}
         boolean hasFacts(){return evidence.values().stream().anyMatch(e -> "SUCCESS".equals(e.status()));}
+        void recordEvidenceRejection(AgentFailure rejected,long started){
+            if(observation!=null&&rejected.evidenceReason()!=null)observation.record("VALIDATION","evidenceReason",id,started,false,
+                "EVIDENCE_"+rejected.evidenceReason().name(),0,null,null);
+        }
         void checkConsistency(){
             JsonNode order=null,quote=null,futuresPosition=null,futuresEvidence=null;
             for(var item:evidence.values())if("SUCCESS".equals(item.status())){
