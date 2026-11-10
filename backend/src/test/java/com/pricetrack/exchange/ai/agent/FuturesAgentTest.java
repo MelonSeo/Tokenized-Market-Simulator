@@ -46,6 +46,14 @@ class FuturesAgentTest {
     @Test void missingEvidenceStaysPartialAndDoesNotInventConfirmedLiquidation()throws Exception {
         setup(false);try(var s=service()){var result=s.answer(user,request(",\"skillId\":\"futures-liquidation-diagnosis\""));assertThat(result.status()).isEqualTo("PARTIAL");assertThat(result.skill().diagnosis().classification()).isEqualTo("FUTURES_EVIDENCE_UNVERIFIED");assertThat(result.uncertainties()).contains("FUTURES_EVIDENCE_UNVERIFIED");verify(model,never()).synthesize(any(),any(),any(),any());}
     }
+    @Test void unverifiedLiquidationRetainsRecordedFactsButNotTheConclusion()throws Exception {
+        setup(false);try(var s=service()){
+            var r=s.answer(user,request(",\"skillId\":\"futures-liquidation-diagnosis\""));
+            assertThat(r.status()).isEqualTo("PARTIAL");assertThat(r.answer()).contains("DB 기록 상태는 LIQUIDATED","현재 담보 100000.000000000000000000",
+                "기록된 실현손익 -100000.000000000000000000","원인을 확정할 수 없습니다","C Vault 잔고가 아닙니다");
+            assertThat(r.uncertainties()).contains("FUTURES_EVIDENCE_UNVERIFIED");verify(model,never()).synthesize(any(),any(),any(),any());
+        }
+    }
     @Test void foreignTargetCannotReachModelOrRag() {
         when(tools.invokeForAgent(any(),any(),any(),any(),any())).thenReturn(ToolResult.failure("getFuturesPosition","RESOURCE_NOT_FOUND"));
         try(var s=service()){assertThat(s.answer(user,request("")).httpStatus()).isEqualTo(404);verifyNoInteractions(model,retrieval);}

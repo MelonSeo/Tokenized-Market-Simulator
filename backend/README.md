@@ -1,5 +1,7 @@
 # Backend — Spring Boot (Java 21)
 
+AI 개발 마감(2026-11-10): 현재 소스는 읽기 전용 Tool12개(기존10+C2)/Skill4개이며 Agent와 공급자 호출은 기본 비활성이다. JWT/소유권·승인 정책·서버 비용 예약·유한 deadline을 유지한다. 제품 품질은 PARTIAL, 최근 제품 수정 후 실제 모델 재인수는 NOT_RUN이다. [최종 마감 보고](../docs/ai/EVALUATION_REPORT.md#2026-11-10-ai-agent-개발-최종-마감-보고)에서 현재 상태와 아래 과거 Phase 기록을 구분한다. 이번 마감으로 서비스 기동·유료 호출·배포가 승인되는 것은 아니다.
+
 Google GIS 인증은 기본 비활성입니다. 기존 ID/비밀번호와 내부 사용자 ID JWT를 유지하고 이메일 자동 병합은 하지 않습니다. 설정과 LOGIN/LINK API, 실제 Google 연결 준비 및 검증 상태는 [Google 인증 구현 기록](../claude-docs/google-auth-implementation.md)을 참고하세요. Google-only 신규 계정은 0원이며 실제 Google 계정 인수는 별도 승인 단계입니다.
 
 ADMIN 거래 정체 관측: GET `/api/admin/transaction-observations` 및 `/{id}`. 기본300초 LONG_WAIT는 실패 상태가 아니며 기존 복구가 계속됩니다. 최신 완료 시도 metadata는 별도 bounded writer로 기록하고 미기록 과거 거래는 UNRECORDED로 표시합니다. 설정 `app.blockchain.observation.warning-seconds`, 조회 필터·보안·best-effort 한계·실제 검증 상태는 [관측 기록](../claude-docs/transaction-stall-observability-implementation.md)을 따릅니다. 신규 RPC나 거래 종료 기능은 없습니다.

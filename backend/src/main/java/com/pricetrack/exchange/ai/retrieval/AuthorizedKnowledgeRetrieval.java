@@ -62,12 +62,15 @@ public class AuthorizedKnowledgeRetrieval {
         catch(RuntimeException e){code=e.getMessage();throw e;}
         finally{if(observation!=null)observation.record("RETRIEVAL","search",null,start,result!=null,code,result==null?0:result.hits().size(),null,null);}
     }
-    private Evidence searchInternal(AuthenticatedUser principal,String question,Duration budget,boolean bounded,Set<String> domains) {
+    private Evidence searchInternal(AuthenticatedUser principal,String question,Duration budget,boolean bounded,Set<String> requestedDomains) {
         if (principal == null || principal.userId() == null || principal.userId() <= 0 || principal.role() == null)
             throw new org.springframework.security.access.AccessDeniedException("Authentication required");
         if (question == null || question.isBlank() || question.length() > 1000) throw new AiFailure("AI_INPUT_LIMIT");
         long end = System.nanoTime() + budget.toNanos();
         var corpus=step(Stage.CORPUS_LOAD,end,budget,loader::load);
+        // C policy is opt-in by a server-selected C read route; never reinterpret legacy DB facts as Vault assets.
+        final Set<String> domains=requestedDomains;
+        final boolean legacyAssets=bounded&&domains==null&&corpus.documents().stream().anyMatch(d->d.metadata().get("domain").equals("custody"));
         step(Stage.INDEX_ACTIVE,end,budget,()->{if(!store.active(corpus.fingerprint()))throw new AiFailure("AI_INDEX_NOT_READY");return true;});
         if(bounded)step(Stage.EMBEDDING_BUDGET,end,budget,()->remaining(end));
         // Recompute immediately before calling dependencies: diagnostic I/O must not grant extra time.
@@ -76,15 +79,16 @@ public class AuthorizedKnowledgeRetrieval {
         if(domains!=null || bounded)step(Stage.CANDIDATE_BUDGET,end,budget,()->remaining(end));
         var candidates=step(Stage.CANDIDATE_SEARCH,end,budget,()->domains!=null
                 ? store.searchForScope(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),domains,remaining(end))
-                : !bounded
+                : legacyAssets?store.searchLegacyAssets(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),remaining(end)):!bounded
                 ? store.search(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity())
                 : store.searchForRole(corpus.fingerprint(),vector,Math.max(40,p.topK()*8),p.minimumSimilarity(),principal.role(),remaining(end)));
         var hits=step(Stage.FILTER_RESULTS,end,budget,()->{
         var ranked=new java.util.ArrayList<KnowledgeHit>();
         var identifiers=IdentifierQuery.terms(question);
-        if(!identifiers.isEmpty())ranked.addAll(store.searchIdentifiers(corpus.fingerprint(),vector,identifiers,principal.role(),domains,remaining(end)));
+        if(!identifiers.isEmpty())ranked.addAll(legacyAssets?store.searchLegacyIdentifiers(corpus.fingerprint(),vector,identifiers,principal.role(),remaining(end)):store.searchIdentifiers(corpus.fingerprint(),vector,identifiers,principal.role(),domains,remaining(end)));
         ranked.addAll(candidates);
-        var selected=EvidenceSelector.select(ranked,p.topK(),2);
+        var selected=EvidenceSelector.select(ranked,p.topK(),Set.of("custody").equals(domains)?p.topK():2);
+        if(legacyAssets&&selected.stream().anyMatch(h->corpus.documents().stream().anyMatch(d->d.path().equals(h.path())&&d.metadata().get("domain").equals("custody"))))throw new AiFailure("AI_DOMAIN_FILTER_INVALID");
         // Defense in depth; primary protection is SQL before top-K.
         if (principal.role() == UserRole.USER && selected.stream().anyMatch(h -> !"USER".equals(h.role())))
             throw new AiFailure("AI_ROLE_FILTER_INVALID");

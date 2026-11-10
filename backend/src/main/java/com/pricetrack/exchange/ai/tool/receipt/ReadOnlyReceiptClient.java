@@ -26,6 +26,14 @@ public final class ReadOnlyReceiptClient implements ReceiptReader, AutoCloseable
     private final HttpClient http;
     private final Duration budget;
     private final AtomicLong ids = new AtomicLong();
+    private final AtomicLong reads = new AtomicLong();
+    /** Optional payload-free diagnostics. Disabled by default; does not alter deadlines or retry. */
+    public interface TimingObserver { void record(long operation,String stage,String phase,long startedNs,long elapsedNs,String code); }
+    private volatile TimingObserver timing;
+    public ReadOnlyReceiptClient observeTiming(TimingObserver observer){this.timing=observer;return this;}
+    private long begin(long op,String stage){long n=timing==null?0:System.nanoTime();emit(op,stage,"START",n,0,"NONE");return n;}
+    private void end(long op,String stage,long n,String code){emit(op,stage,"END",n,n==0?0:System.nanoTime()-n,code);}
+    private void emit(long op,String stage,String phase,long n,long elapsed,String code){var observer=timing;if(observer!=null)try{observer.record(op,stage,phase,n,elapsed,code);}catch(RuntimeException ignored){/* Diagnostics cannot replace the read result. */}}
 
     public ReadOnlyReceiptClient(BlockchainProperties blockchain, BlockchainReconciliationProperties reconciliation,
                                  ContractEventParser parser, ObjectMapper json) {
@@ -37,6 +45,12 @@ public final class ReadOnlyReceiptClient implements ReceiptReader, AutoCloseable
         this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).followRedirects(HttpClient.Redirect.NEVER).build();
     }
     @Override public ObjectNode read(ReceiptInput input) {
+        long op=timing==null?0:reads.incrementAndGet(),started=begin(op,"RECEIPT_TOTAL");String code="ERROR";
+        try{var value=readInternal(input,op);code="OK";return value;}
+        catch(ToolFailure f){code=f.code();throw f;}
+        finally{end(op,"RECEIPT_TOTAL",started,code);}
+    }
+    private ObjectNode readInternal(ReceiptInput input,long op) {
         ObjectNode data = json.createObjectNode().put("orderId", input.orderId()).put("databaseStatus", input.databaseStatus())
                 .put("dbReadAt", input.dbReadAt().toString());
         if (input.type() == null) return data.put("linkStatus", "NOT_LINKED").put("receiptStatus", "UNKNOWN");
@@ -44,16 +58,19 @@ public final class ReadOnlyReceiptClient implements ReceiptReader, AutoCloseable
         if (input.txHash() == null) return data.put("linkStatus", "LINKED").put("receiptStatus", "TX_HASH_UNAVAILABLE");
         if (!input.txHash().matches("0x[0-9a-fA-F]{64}")) throw new ToolFailure("INCONSISTENT_LINK");
         long deadline = System.nanoTime() + budget.toNanos();
-        JsonNode receiptJson = rpc("eth_getTransactionReceipt", List.of(input.txHash()), deadline);
+        JsonNode receiptJson = rpc("eth_getTransactionReceipt", List.of(input.txHash()), deadline,op);
         data.put("linkStatus", "LINKED").put("txHash", input.txHash()).put("rpcReadAt", Instant.now().toString());
         if (receiptJson.isNull()) return data.put("receiptStatus", "NOT_FOUND");
         try {
+            long mapping=begin(op,"RECEIPT_MAPPING");
             if (!receiptJson.isObject() || !receiptJson.path("transactionHash").asText().equalsIgnoreCase(input.txHash())
                     || !receiptJson.path("blockNumber").asText().matches("0x[0-9a-fA-F]+")
                     || !receiptJson.path("blockHash").asText().matches("0x[0-9a-fA-F]{64}")) throw unavailable();
             TransactionReceipt receipt = json.treeToValue(receiptJson, TransactionReceipt.class);
             BigInteger block = receipt.getBlockNumber();
-            JsonNode latestJson = rpc("eth_blockNumber", List.of(), deadline);
+            end(op,"RECEIPT_MAPPING",mapping,"OK");
+            JsonNode latestJson = rpc("eth_blockNumber", List.of(), deadline,op);
+            long validation=begin(op,"BLOCK_NUMBER_VALIDATION");
             if (!latestJson.isTextual() || !latestJson.asText().matches("0x[0-9a-fA-F]+")) throw unavailable();
             BigInteger latest = new BigInteger(latestJson.asText().substring(2), 16);
             BigInteger confirmations = latest.subtract(block).add(BigInteger.ONE).max(BigInteger.ZERO);
@@ -62,45 +79,53 @@ public final class ReadOnlyReceiptClient implements ReceiptReader, AutoCloseable
                     .put("blockHash", receipt.getBlockHash()).put("confirmationObservedAt", Instant.now().toString())
                     .put("confirmations", confirmations.toString()).put("requiredConfirmations", reconciliation.requiredConfirmations());
             String match = "UNKNOWN";
+            end(op,"BLOCK_NUMBER_VALIDATION",validation,"OK");
             if (execution.equals("SUCCESS")) {
+                long eventStarted=begin(op,"EVENT_VALIDATION");
                 try {
                     var event = parser.parse(receipt, input.type(), blockchain.exchangeVaultAddress(), input.senderAddress(), input.expectedInput());
                     match = "MATCH";
                     data.putObject("event").put("inputWei", event.inputAmount().toString()).put("outputWei", event.outputAmount().toString())
                             .put("feeWei", event.fee().toString()).put("priceE8", event.priceE8().toString());
                 } catch (RuntimeException e) { match = "MISMATCH"; }
+                end(op,"EVENT_VALIDATION",eventStarted,match);
             }
             return data.put("eventValidation", match); // Never settles or modifies persisted state.
         } catch (ToolFailure e) { throw e; }
         catch (Exception e) { throw unavailable(); }
     }
-    private JsonNode rpc(String method, List<String> params, long deadline) {
+    private JsonNode rpc(String method, List<String> params, long deadline,long op) {
         long id = ids.incrementAndGet();
+        String stage="RPC_"+method,code="ERROR";long started=begin(op,stage);
         CompletableFuture<HttpResponse<byte[]>> call = null;
         try {
             long remaining = deadline - System.nanoTime();
             if (remaining <= 0) throw new ToolFailure("TOOL_TIMEOUT");
+            long build=begin(op,"REQUEST_BUILD");
             ObjectNode request = json.createObjectNode().put("jsonrpc", "2.0").put("id", id).put("method", method);
             request.set("params", json.valueToTree(params));
             var uri = URI.create(blockchain.rpcUrl());
             if (!Set.of("http", "https").contains(uri.getScheme()) || uri.getUserInfo() != null) throw unavailable();
             var httpRequest = HttpRequest.newBuilder(uri).timeout(Duration.ofNanos(remaining))
                     .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofByteArray(json.writeValueAsBytes(request))).build();
-            call = http.sendAsync(httpRequest, response -> new BoundedBody());
+            end(op,"REQUEST_BUILD",build,"OK");
+            call = http.sendAsync(httpRequest, response -> {emit(op,stage,"HEADERS",started,started==0?0:System.nanoTime()-started,response.version().name()+"_"+response.statusCode());return new BoundedBody();});
             var response = call.get(Math.max(1, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+            emit(op,stage,"BODY_COMPLETE",started,started==0?0:System.nanoTime()-started,"RECEIVED");
             if (response.statusCode() != 200) throw unavailable();
+            long validation=begin(op,"RPC_RESPONSE_VALIDATION");
             JsonNode root = json.readTree(response.body());
             if (root == null || !root.isObject() || !root.path("id").isIntegralNumber() || root.path("id").longValue() != id
                     || !root.path("jsonrpc").asText().equals("2.0") || root.has("error") || !root.has("result")) throw unavailable();
-            return root.get("result");
-        } catch (TimeoutException e) { throw new ToolFailure("TOOL_TIMEOUT"); }
-        catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new ToolFailure("TOOL_TIMEOUT"); }
+            end(op,"RPC_RESPONSE_VALIDATION",validation,"OK");code="OK";return root.get("result");
+        } catch (TimeoutException e) { code="TOOL_TIMEOUT";throw new ToolFailure("TOOL_TIMEOUT"); }
+        catch (InterruptedException e) { code="TOOL_TIMEOUT";Thread.currentThread().interrupt(); throw new ToolFailure("TOOL_TIMEOUT"); }
         catch (ExecutionException e) {
-            if (e.getCause() instanceof HttpTimeoutException) throw new ToolFailure("TOOL_TIMEOUT");
+            if (e.getCause() instanceof HttpTimeoutException){code="TOOL_TIMEOUT";throw new ToolFailure("TOOL_TIMEOUT");}
             throw unavailable();
-        } catch (ToolFailure e) { throw e; }
+        } catch (ToolFailure e) { code=e.code();throw e; }
         catch (Exception e) { throw unavailable(); }
-        finally { if (call != null && !call.isDone()) call.cancel(true); }
+        finally { if (call != null && !call.isDone()) call.cancel(true);end(op,stage,started,code); }
     }
     private static ToolFailure unavailable() { return new ToolFailure("TOOL_UNAVAILABLE"); }
     @Override public void close() { http.shutdownNow(); }

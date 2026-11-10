@@ -1,5 +1,6 @@
 import { label, number, time } from './state.js';
 import { futuresEvidenceSummary } from './ai-futures-evidence.js';
+import { aiFailureMessage } from './ai-feedback.js';
 
 /** Text-only DOM construction: no API/model value ever becomes HTML, a URL or executable markup. */
 export function node(tag, text = '', className = '') {
@@ -56,6 +57,7 @@ export function renderDiagnosis(container, response) {
   container.append(node('p', '읽기 전용 분석입니다. 거래·잔고를 수정하거나 주문을 재전송하지 않습니다.', 'notice'));
   if (response.approvalStatus) container.append(node('p', '현재 문서 승인을 확인할 수 없어 정책 해석이 숨겨졌습니다.', 'notice warning'));
   if (response.error) container.append(node('p', `처리 안내: ${response.error}`, 'notice warning'));
+  for (const code of response.uncertainties || []) { const guidance=aiFailureMessage(code); if(guidance) container.append(node('p',guidance,'notice warning')); }
   const futures = futuresEvidenceSummary(response);
   if (futures) {
     const section = node('section', '', 'ai-futures-evidence');

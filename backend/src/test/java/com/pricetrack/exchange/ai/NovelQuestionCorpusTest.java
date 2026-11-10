@@ -91,7 +91,8 @@ class NovelQuestionCorpusTest {
             }
             for(var name:row.path("tools"))tools.add(name.asText());
         }
-        assertThat(tools).isEqualTo(ToolRegistry.NAMES);
+        var legacyTools=new java.util.HashSet<>(ToolRegistry.NAMES);legacyTools.removeAll(Set.of("getCAccount","getCPosition"));
+        assertThat(tools).isEqualTo(legacyTools); // frozen novel30 explicitly excludes C Vault coverage
         assertThat(usedSkills).containsExactlyInAnyOrderElementsOf(SkillRegistry.ceilings().stream().map(SkillRegistry.Definition::id).toList());
     }
     @Test void optionalEvidenceExportIsNewFileOnlyAndExplicitlyNotRetrieval() throws Exception {

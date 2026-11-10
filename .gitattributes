@@ -3,3 +3,9 @@ deployment/*.sh text eol=lf
 
 # Frozen AI evaluation bytes must keep their approved SHA on Windows checkouts.
 backend/src/test/resources/ai/novel-*.json text eol=lf
+backend/src/test/resources/ai/pilot-acceptance-v1.json text eol=lf
+docs/ai/ingest-manifest-pilot.json text eol=lf
+deployment/ai-pilot-budget-v2.json text eol=lf
+deployment/ai-pilot-execution-v2.json text eol=lf
+# Fixed upstream sandbox profile has a raw-byte SHA checked before Docker use.
+deployment/pilot-linux-image/chromium-seccomp.json text eol=lf

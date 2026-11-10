@@ -30,7 +30,8 @@ class OpenAiProviderTest {
     @AfterEach void stop(){server.stop(0);}
     OpenAiProvider provider() {
         return new OpenAiProvider(new AiProperties(true,"jdbc:postgresql://127.0.0.1:1/test","test","test",".",".","secret",
-                "http://127.0.0.1:"+server.getAddress().getPort()+"/","text-embedding-3-small","gpt-5.6-terra",800,60,5,.3,1),json);
+                "http://127.0.0.1:"+server.getAddress().getPort()+"/","text-embedding-3-small","gpt-5.6-terra",800,60,5,.3,1),json)
+            .budget(UnpaidLoopbackBudget.forBase("http://127.0.0.1:"+server.getAddress().getPort()+"/"));
     }
     @Test void embeddingsValidateDimensionsAndRestoreBatchOrder() throws Exception {
         body=json.writeValueAsString(Map.of("data",List.of(Map.of("index",1,"embedding",AiFixtures.vector(1)),

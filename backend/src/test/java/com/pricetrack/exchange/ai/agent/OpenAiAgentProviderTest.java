@@ -27,12 +27,16 @@ class OpenAiAgentProviderTest {
     OpenAiAgentProvider provider(){
         var p=new AiProperties(true,"jdbc:postgresql://127.0.0.1:1/test","test","test",".",".","fake-test-key",
             "http://127.0.0.1:"+server.getAddress().getPort()+"/","text-embedding-3-small","gpt-5.6-terra",1200,60,5,.25,20);
-        return new OpenAiAgentProvider(new OpenAiProvider(p,json),json);
+        return new OpenAiAgentProvider(new OpenAiProvider(p,json).budget(com.pricetrack.exchange.ai.UnpaidLoopbackBudget.forBase(p.apiBase())),json);
     }
     void output(Object data) throws Exception {
         body=json.writeValueAsString(Map.of("status","completed","usage",Map.of("input_tokens",21,"output_tokens",9),
             "output",List.of(Map.of("content",List.of(Map.of("type","output_text","text",json.writeValueAsString(data)))))));
     }
+    JsonNode evidence(){return json.createObjectNode().setAll(Map.of(
+        "knowledge",json.valueToTree(List.of(Map.of("id","knowledge-1"))),
+        "tools",json.valueToTree(List.of(Map.of("evidenceId","tool-1","data",Map.of("status","PENDING_ONCHAIN"))))));}
+    Map<String,Object> citations(String status,List<String> policies,List<String> tools){return Map.of("status",status,"policyIds",policies,"toolIds",tools);}
     @Test void closedPlanDisablesStorageAndArbitraryToolsAndRecordsActualUsage() throws Exception {
         output(Map.of("route","MIXED","subject","ORDER"));
         var result=provider().plan("왜 대기?",Subject.ORDER,Duration.ofSeconds(5));
@@ -44,19 +48,51 @@ class OpenAiAgentProviderTest {
         assertThat(request.path("max_output_tokens").asInt()).isEqualTo(400);
         assertThat(request.path("instructions").asText()).contains("실행 조건·위험·실패 이유", "무엇을 실행할지 대신 결정", "정책 설명으로 분류한다");
     }
+    @Test void policyAndFalsePremiseInstructionsStayDistinctFromMissingPersonalTarget() throws Exception {
+        output(Map.of("route","KNOWLEDGE","subject","NONE"));
+        var result=provider().plan("내 반대편 주문이 없으면 발행도 안 되는 정책인가요?",Subject.NONE,Duration.ofSeconds(5));
+        assertThat(result.route()).isEqualTo(Route.KNOWLEDGE);
+        assertThat(json.readTree(requested).path("instructions").asText()).contains(
+            "거래 구조·체결 상대·발행/소각의 일반 정책", "주문이나 체결이라는 단어만으로 개인 상태 조회로 분류하지 않는다",
+            "특정 주문이 실제 체결됐는지 확인하는 요청", "후자는 target이 없으면 CLARIFY/NONE을 유지한다",
+            "상대방 주문을 찾아주거나 거래를 실행하라는 요청");
+        output(Map.of("route","CLARIFY","subject","NONE"));
+        assertThat(provider().plan("내 주문이 실제로 체결됐어?",Subject.NONE,Duration.ofSeconds(5)).route()).isEqualTo(Route.CLARIFY);
+    }
     @Test void sixFieldSynthesisParsesEvidenceAndRejectsUnexpectedFields() throws Exception {
         Map<String,Object> generated=new LinkedHashMap<>(Map.of("status","ANSWERED","interpretation","출처 근거 설명",
-            "citationIds",List.of("knowledge-1","tool-1"),"facts",List.of(Map.of("evidenceId","tool-1","pointer","/status","value","PENDING_ONCHAIN")),
+            "citations",citations("ANSWERED",List.of("knowledge-1"),List.of("tool-1")),"facts",List.of(Map.of("evidenceId","tool-1","pointer","/status","value","PENDING_ONCHAIN")),
             "uncertainties",List.of(),"recommendedNextCheck",List.of()));
         output(generated);
-        var result=provider().synthesize("왜?",Route.MIXED,json.createObjectNode(),Duration.ofSeconds(10));
+        var result=provider().synthesize("왜?",Route.MIXED,evidence(),Duration.ofSeconds(10));
         assertThat(result.status()).isEqualTo("ANSWERED");assertThat(result.facts()).hasSize(1);
+        assertThat(result.citationIds()).containsExactly("knowledge-1","tool-1");
         assertThat(result.usage().outputTokens()).isEqualTo(9);
         assertThat(json.readTree(requested).path("max_output_tokens").asInt()).isEqualTo(1600);
         assertThat(requested).contains("/data 접두사를 붙이지 않는다", "/data/status");
         generated.put("role","ADMIN");output(generated);
-        assertThatThrownBy(() -> provider().synthesize("왜?",Route.MIXED,json.createObjectNode(),Duration.ofSeconds(10)))
+        assertThatThrownBy(() -> provider().synthesize("왜?",Route.MIXED,evidence(),Duration.ofSeconds(10)))
             .hasMessage("INVALID_AGENT_EVIDENCE");
+    }
+    @Test void schemaRequiresSelectedPolicyAndToolButAllowsHonestInsufficiency()throws Exception {
+        var response=new LinkedHashMap<String,Object>(Map.of("status","ANSWERED","interpretation","근거 설명",
+            "citations",citations("ANSWERED",List.of("knowledge-1"),List.of("tool-1")),"facts",List.of(),"uncertainties",List.of(),"recommendedNextCheck",List.of()));
+        output(response);provider().synthesize("설명",Route.MIXED,evidence(),Duration.ofSeconds(10));
+        var branches=json.readTree(requested).at("/text/format/schema/properties/citations/anyOf");
+        assertThat(branches).hasSize(2);
+        assertThat(branches.get(0).at("/properties/policyIds/minItems").asInt()).isEqualTo(1);
+        assertThat(branches.get(0).at("/properties/toolIds/minItems").asInt()).isEqualTo(1);
+        assertThat(branches.get(0).at("/properties/policyIds/items/enum")).isEqualTo(json.valueToTree(List.of("knowledge-1")));
+        assertThat(branches.get(1).at("/properties/policyIds/maxItems").asInt(-1)).isZero();
+        for(var invalid:List.of(citations("ANSWERED",List.of(),List.of("tool-1")),
+                citations("ANSWERED",List.of("forged"),List.of("tool-1")),
+                citations("ANSWERED",List.of("tool-1"),List.of("knowledge-1")),
+                citations("INSUFFICIENT_EVIDENCE",List.of(),List.of()))){
+            response.put("citations",invalid);output(response);
+            assertThatThrownBy(()->provider().synthesize("설명",Route.MIXED,evidence(),Duration.ofSeconds(10))).hasMessage("INVALID_AGENT_EVIDENCE");
+        }
+        response.put("status","INSUFFICIENT_EVIDENCE");response.put("citations",citations("INSUFFICIENT_EVIDENCE",List.of(),List.of()));output(response);
+        assertThat(provider().synthesize("설명",Route.MIXED,evidence(),Duration.ofSeconds(10)).citationIds()).isEmpty();
     }
     @Test void unknownPlanEnumAndZeroBudgetFailClosed() throws Exception {
         output(Map.of("route","EXECUTE_SQL","subject","ORDER"));
@@ -71,8 +107,8 @@ class OpenAiAgentProviderTest {
         output(Map.of("route","MIXED","subject","QUOTE","skillId","settlement-debugging"));
         assertThatThrownBy(() -> provider().planWithSkills("진단",Subject.QUOTE,List.of("signed-quote-diagnosis"),Duration.ofSeconds(5))).hasMessage("INVALID_AGENT_PLAN");
     }
-    @Test void productionSynthesisKeepsMeasuredSuffixAndScopesUncertaintiesWithoutChangingSchema()throws Exception {
-        output(Map.of("status","ANSWERED","interpretation","관측 범위 설명","citationIds",List.of(),
+    @Test void productionSynthesisKeepsMeasuredSuffixAndNewClosedCitationContract()throws Exception {
+        output(Map.of("status","ANSWERED","interpretation","관측 범위 설명","citations",citations("ANSWERED",List.of(),List.of()),
             "facts",List.of(),"uncertainties",List.of(),"recommendedNextCheck",List.of()));
         provider().synthesize("관측 설명",Route.KNOWLEDGE,json.createObjectNode(),Duration.ofSeconds(10));
         var payload=json.readTree(requested);String instructions=payload.path("instructions").asText();
@@ -87,7 +123,11 @@ class OpenAiAgentProviderTest {
         assertThat(base).doesNotContain("과거 원인·실시간 공급자 상태는 uncertainties에 남긴다", "실제 숫자는 facts를 가리킨다");
         assertThat(base).contains("정책으로 설명할 수 있는 부분", "서버가 PARTIAL로 표시", "핵심에 답할 근거가 전혀 없을 때만");
         assertThat(HexFormat.of().formatHex(digest.digest(base.getBytes(StandardCharsets.UTF_8))))
-            .isEqualTo("8ead79f27c0ebf6ce47bf3bfab820f7a2f75541e31117f43c80266b15674b664");
+            .isEqualTo("7e2357b55c10447a130ae037ad5a57950fd075c8f5da9ea669c21d5f2d4bb873");
+        assertThat(base).contains("amountRelation.inputIncludesFee=true","quotedTotalDebit","includedFee","hasMore/scope");
+        assertThat(base).contains("waitingSecondsApplied=true", "false이면 반환된 기본값을 적용된 조회 조건으로 설명하지 않는다");
+        assertThat(base).contains("현재 로그인 계정 확인", "이전 연결과 데이터 폐기", "generation", "본인 REST 재조회", "노출 시각·화면 경로", "타 계정에 로그인하거나");
+        assertThat(base).contains("과거 자산 이전의 발생·부재를 증명하지 않는다", "비공개 식별자로 모델에 전달되지 않는다", "제공된 hasMore/scope", "지원된 WAITING_LONG 별도 조회", "발행/소각 설명도 본문에 포함");
         assertThat(payload.path("max_output_tokens").asInt()).isEqualTo(1600);
         assertThat(payload.at("/text/format/schema/properties/facts/maxItems").asInt()).isEqualTo(20);
         assertThat(payload.path("text").path("format").path("strict").asBoolean()).isTrue();

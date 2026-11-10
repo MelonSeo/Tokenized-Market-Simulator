@@ -1,5 +1,7 @@
 name: Linux product read gate
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [melon-init]
 permissions:
@@ -9,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   read-gate:
-    if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && github.ref == 'refs/heads/melon-init'
+    if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && (github.ref == 'refs/heads/melon-init' || (github.event_name == 'pull_request' && github.head_ref == 'ci/ai-unpaid-readiness-20261031' && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:

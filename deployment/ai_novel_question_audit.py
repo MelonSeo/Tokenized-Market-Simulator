@@ -170,7 +170,7 @@ def audit(root=ROOT):
     return {"status": "UNPAID_DESIGN_AUDIT_PASS_NOT_LIVE_QUALITY_PASS",
             "datasetSha256": digest, "historicalQuestions": len(old), "historySha256": old_hash,
             "cases": rows, "categories": dict(Counter(c["category"] for c in cases)),
-            "corpusDocuments": 9, "sourceAnchors": len(data["atoms"]),
+            "corpusDocuments": len(json.loads((root/"docs/ai/ingest-manifest.json").read_text(encoding="utf-8"))["documents"]), "sourceAnchors": len(data["atoms"]),
             "providerCalls": 0, "budgetProposal": proposal(cases)}
 
 

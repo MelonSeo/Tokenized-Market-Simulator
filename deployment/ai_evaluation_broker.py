@@ -136,9 +136,11 @@ def live_sender(folder, meta, approval_path):
     return _https_sender(folder, permit, key)
 
 
-def _https_sender(folder, permit, key):
+def _https_sender(folder, permit, key, *, connection_factory=None):
     """Shared bounded HTTPS transport; caller must already verify its permit."""
     def send(path, raw, timeout):
+        if path not in {"responses", "embeddings"} or not 0 < timeout <= 60:
+            raise GuardError("UPSTREAM_REQUEST_INVALID")
         if time.time() >= permit["expiresAt"] or (folder / "STOP").exists():
             raise GuardError("RUN_STOPPED")
         # A fresh connection; no implicit SDK retry, redirect, proxy or token refresh.
@@ -147,19 +149,27 @@ def _https_sender(folder, permit, key):
         attempt = uuid.uuid4().hex
         connection = None
         phase, status = "CONNECTION_SETUP", None
-        def record(code):
-            _transport_event(folder, attempt, path, phase, code, started, timeout, status)
+        def record(code,failure=None):
+            _transport_event(folder, attempt, path, phase, code, started, timeout, status,failure)
         try:
             record("STARTED")
-            connection = http.client.HTTPSConnection("api.openai.com", 443, timeout=timeout)
+            connection = (connection_factory(timeout) if connection_factory else
+                          http.client.HTTPSConnection("api.openai.com", 443, timeout=timeout))
             def remaining():
                 left=deadline-time.monotonic()
                 if left<=0:raise TimeoutError()
                 if connection.sock:connection.sock.settimeout(left)
                 return left
+            connection.timeout=remaining()
+            phase = "CONNECT_TLS_BEGIN"
+            record("STARTED")
+            connection.connect() # Previously implicit inside request(); same single deadline/attempt.
+            connection.auto_open=0 # Never reconnect implicitly after the observed TLS connection.
+            phase = "CONNECT_TLS_RETURNED"
+            record("OK")
+            connection.timeout=remaining()
             phase = "REQUEST_CALL_BEGIN"
             record("STARTED")
-            connection.timeout=remaining()
             connection.request("POST", "/v1/" + path, body=raw,
                                headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
             phase = "REQUEST_CALL_RETURNED"
@@ -192,7 +202,7 @@ def _https_sender(folder, permit, key):
             return result
         except Exception as failure:
             code = "UPSTREAM_TIMEOUT" if isinstance(failure, TimeoutError) else "UPSTREAM_CONNECTION_FAILURE" if isinstance(failure, OSError) else "UPSTREAM_RESPONSE_INVALID" if isinstance(failure, (ValueError, TypeError)) else "UPSTREAM_UNCERTAIN"
-            record(code)
+            record(code,failure)
             raise
         finally:
             if connection is not None:
@@ -200,9 +210,9 @@ def _https_sender(folder, permit, key):
     return send
 
 
-def _transport_event(folder, attempt, path, phase, code, started, timeout, status):
+def _transport_event(folder, attempt, path, phase, code, started, timeout, status,failure=None):
     """Private best-effort allow-list. A phase is local observation, never proof of remote billing/completion."""
-    phases = {"CONNECTION_SETUP", "REQUEST_CALL_BEGIN", "REQUEST_CALL_RETURNED", "RESPONSE_HEADERS", "RESPONSE_BODY", "PAYLOAD_DECODED"}
+    phases = {"CONNECTION_SETUP", "CONNECT_TLS_BEGIN", "CONNECT_TLS_RETURNED", "REQUEST_CALL_BEGIN", "REQUEST_CALL_RETURNED", "RESPONSE_HEADERS", "RESPONSE_BODY", "PAYLOAD_DECODED"}
     codes = {"STARTED", "OK", "UPSTREAM_TIMEOUT", "UPSTREAM_CONNECTION_FAILURE", "UPSTREAM_RESPONSE_INVALID", "UPSTREAM_UNCERTAIN"}
     try:
         if not re.fullmatch(r"[0-9a-f]{32}", attempt) or phase not in phases or code not in codes:
@@ -215,6 +225,14 @@ def _transport_event(folder, attempt, path, phase, code, started, timeout, statu
                  "elapsedMillis": max(0, int((time.monotonic()-started)*1000)),
                  "timeoutMillis": max(0, int(timeout*1000)), "observedAt": time.time(),
                  "httpStatus": status if type(status) is int and 100 <= status <= 599 else None}
+        if failure is not None:
+            allowed={"TimeoutError","OSError","ConnectionResetError","ConnectionRefusedError","BrokenPipeError",
+                     "SSLError","SSLCertVerificationError","gaierror","RemoteDisconnected","JSONDecodeError","ValueError","TypeError","GuardError"}
+            name=type(failure).__name__
+            event['failureClass']=name if name in allowed else 'OTHER'
+            number=getattr(failure,'errno',None)
+            event['osErrno']=number if type(number) is int and -4096<=number<=65535 else None
+            event['remoteDelivery']='UNKNOWN' # No diagnostic is authority to refund or retry.
         with target.open("a", encoding="utf-8") as output:
             output.write(json.dumps(event, separators=(",", ":"))+"\n")
     except Exception:
@@ -241,7 +259,8 @@ def offline_sender(fixture):
             if "skillId" in body["text"]["format"]["schema"].get("properties", {}):
                 output["skillId"] = "NONE"
         if name == "agent_interpretation":
-            output = {"status": "INSUFFICIENT_EVIDENCE", "interpretation": "offline fixture", "citationIds": [],
+            output = {"status": "INSUFFICIENT_EVIDENCE", "interpretation": "offline fixture",
+                      "citations": {"status": "INSUFFICIENT_EVIDENCE", "policyIds": [], "toolIds": []},
                       "facts": [], "uncertainties": [], "recommendedNextCheck": []}
         return {"status": "completed", "service_tier": "default", "usage": {"input_tokens": 1, "output_tokens": 99999 if fixture == "breach" else 1},
                 "output": [{"content": [{"type": "output_text", "text": json.dumps(output)}]}]}

@@ -51,6 +51,8 @@ test('new UI calls existing Agent, order and observation contracts without ident
     await api.agent('진단', { quoteId: '0x' + '1'.repeat(64) }, 'signed-quote-diagnosis'); await api.order(153); await api.observation();
     assert.equal(calls[0][0], '/api/ai/agent/answers'); assert.deepEqual(Object.keys(JSON.parse(calls[0][1].body)), ['question', 'target', 'skillId']);
     assert.equal(calls[0][1].headers.Authorization, 'Bearer fake-token'); assert.equal(calls[1][0], '/api/orders/153'); assert.equal(calls[2][0], '/api/ai/observability');
+    await api.agent('이 조건의 범위를 설명',null,null,{filter:'WAITING_LONG',limit:5,waitingSeconds:120});
+    assert.deepEqual(JSON.parse(calls[3][1].body),{question:'이 조건의 범위를 설명',abnormal:{filter:'WAITING_LONG',limit:5,waitingSeconds:120}});
     api.clearToken(); assert.equal(api.token, null);
   } finally { globalThis.fetch = previous; }
 });

@@ -57,7 +57,8 @@ class DirectLinux(unittest.TestCase):
   self.assertIn('contents: read',w);self.assertIn('productDirectCiClasses',w);self.assertNotIn('secrets.',w)
  def test_workflow_job_matches_trigger_without_widening_repository_or_cleanup(self):
   w=(ROOT/'.github/workflows/product-direct-linux.yml').read_text()
-  self.assertIn("if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && (github.ref == 'refs/heads/melon-init' || github.ref == 'refs/heads/feat/c-owner-direct-integration')",w)
+  self.assertIn("if: github.repository == 'MelonSeo/Tokenized-Market-Simulator' && (github.ref == 'refs/heads/melon-init' || github.ref == 'refs/heads/feat/c-owner-direct-integration' || (github.event_name == 'pull_request' && github.head_ref == 'ci/ai-unpaid-readiness-20261031' && github.event.pull_request.head.repo.full_name == github.repository))",w)
+  self.assertIn('pull_request:\n    branches: [main]',w)
   self.assertNotIn('pull_request_target',w);self.assertNotIn('workflow_dispatch',w)
   for required in ['timeout-minutes: 30','cancel-in-progress: false','retention-days: 1','python3 -B deployment/product-read-linux.py cleanup','python3 -B deployment/product-direct-linux.py cleanup']:
    self.assertIn(required,w)

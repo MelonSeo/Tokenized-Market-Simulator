@@ -1,0 +1,47 @@
+{
+  "version": "tms-pilot-execution-v2",
+  "status": "OFFLINE_PREPARATION_NOT_EXECUTION_APPROVAL",
+  "ciProductSha": "4913acc994a89a424b974f55f20a0135f9a52ed9",
+  "localDocumentsSha": "d52b29fe57de338074bfd0c87bd4175a20bf5cee",
+  "protectedMainSha": "9abf3dbc30701032d5cdd6b9346b1111e2c3d686",
+  "budgetFile": "deployment/ai-pilot-budget-v2.json",
+  "frozen": {
+    "backend/src/test/resources/ai/pilot-acceptance-v1.json": "08c034ac7f50ecffbbc3d0f6ae9da0c7e611b4c948a0849533fddbe21983e3cb",
+    "backend/src/test/resources/ai/novel-30-v2.json": "8666064a7f9be316204bcdb6045e59a7e99f95676dd0eafafa86605abe9aaa40",
+    "backend/src/test/resources/ai/novel-30-v2.lock.json": "e4c2080b3d13cfc478f4597fd88ddde2d40fe367ad76f711857c6f58cfe1983e",
+    "docs/ai/ingest-manifest-pilot.json": "13d64f3e3cadd7446e30015c2cb2054e2c0046d543df0a3ebbc28fd67e2a5191"
+  },
+  "corpora": [
+    {"id":"legacy9","manifest":"docs/ai/ingest-manifest.json","documents":9,"chunks":88,"evaluation":"NOVEL30_AND_TARGETED_LEGACY"},
+    {"id":"pilot10","manifest":"docs/ai/ingest-manifest-pilot.json","documents":10,"chunks":93,"evaluation":"C_CASES_AND_PILOT_SEPARATE_RESULT_GROUP"}
+  ],
+  "indexStrategy": {
+    "approvedVectorsCopiedFromPriorRuns": false,
+    "legacyFreshBatches": 6,
+    "pilotFullFreshBatches": 6,
+    "fullReindexBatchesPlanned": 12,
+    "unchangedVectorReuseImplemented": false,
+    "reason": "Full reindex of both frozen corpora is safer than assuming unimplemented vector-copy publication; 12 index plus 57 query calls = 69 within cap70. No diagnostic embedding or comparison synthesis."
+  },
+  "phases": [
+    {"id":"INDEX_LEGACY","corpus":"legacy9","requests":0,"llm":0,"embedding":6,"cases":[]},
+    {"id":"SAFETY_LEGACY","corpus":"legacy9","requests":6,"llm":8,"embedding":6,"cases":["PF1a","PF1b","PA2a","PA2b","PC4a","PC4b"]},
+    {"id":"NOVEL30","corpus":"legacy9","requests":30,"llm":51,"embedding":30,"cases":["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5","C1","C2","C3","C4","C5","D1","D2","D3","D4","D5","E1","E2","E3","E4","E5","F1","F2","F3","F4","F5"]},
+    {"id":"INDEX_PILOT","corpus":"pilot10","requests":0,"llm":0,"embedding":6,"cases":[]},
+    {"id":"SAFETY_C","corpus":"pilot10","requests":3,"llm":3,"embedding":3,"cases":["PCa","PCb","PCc"]},
+    {"id":"LATENCY","corpus":"legacy9","requests":12,"llm":18,"embedding":12,"cases":["A1","A1","A1","A1","A1","A1","PF1b","PF1b","PF1b","PF1b","PF1b","PF1b"]},
+    {"id":"WEB_PILOT","corpus":"pilot10","requests":6,"llm":12,"embedding":6,"cases":["PA2a","PF1b","PCa","PA2a","PF1b","PCa"]},
+    {"id":"EMBEDDING_HEADROOM","corpus":"none","requests":0,"llm":0,"embedding":1,"cases":[]}
+  ],
+  "pilot": {"accounts":2,"requestsPerAccount":3,"llmReserved":12,"embeddingReserved":6,"kind":"AUTOMATED_WEB_E2E_NOT_HUMAN_SATISFACTION","accountDailyMaximum":20,"accountMinuteMaximum":5},
+  "evaluation": {"accountDailyMaximum":100,"accountMinuteMaximum":5,"extraRetrievalProbes":false,"twoClauseComparisons":false,"autoRetry":false,"duplicateReplay":false,"perPhaseQuotaRequired":true,"phaseQuotaRefunds":false},
+  "requestBinding": {"symbolicTargetMappingOnlyInRunner":true,"serverJwtPrincipalRequired":true,"foreignMissingControlPaidCalls":0,"expectedAnswersInModelInput":false,"advanceOnlyAfterEvidenceReview":true},
+  "fixtures": {"legacyOwnerAndQuoteInput":"75000","legacyIncludedFee":"75","legacyFeeMustBeObservedNotConfiguredToPass":true,"bothPilotAccountsNeedOwnQuotesAndProvedCWallets":true,"legacyAdverseDtosExplicitlyLabeled":true,"cClaimsEnumerationSupported":false,"cFixture":"NEW_PUBLIC_RECIPE_NOT_USER_CHECKPOINT"},
+  "requiredEnvironment": {"platform":"linux","minimumRamMiB":1920,"minimumDiskGiB":2,"loopbackOnly":true,"freshOwnedTradePg":true,"freshOwnedAnvil":true,"freshOwnedAiPgvector":true,"sameOriginWeb":true,"readOnlyAfterFixtureFreeze":true,"userPrivateKeyInApp":false,"separateCorpusIdentities":true,"singleSharedBudgetAuthority":true},
+  "stopConditions": ["EXPLICIT_APPROVAL_MISSING","SOURCE_OR_FROZEN_HASH_DRIFT","RESOURCE_GUARD_BLOCKED","OWNERSHIP_OR_ISOLATION_UNVERIFIED","PRICE_OR_MODEL_ACCESS_UNVERIFIED","BUDGET_OR_PHASE_QUOTA_EXHAUSTED","UNKNOWN_USAGE_OR_UNCERTAIN_TRANSPORT","WRONG_FEE_RELATION","FOREIGN_DATA_EXPOSURE","UNAPPROVED_POLICY","INVENTED_EXECUTION_SUCCESS","FINANCIAL_FINGERPRINT_CHANGED","C_LEGACY_SCOPE_CONFUSION"],
+  "executionAdapter": {
+    "status":"NOT_IMPLEMENTED_OR_UNPAID_VERIFIED",
+    "required":"Normal OpenAiProvider -> shared PgProviderBudget -> strict v2 evaluation guard -> single HTTPS dispatch. Corpus-specific knowledge stores must not duplicate the budget. Actual legacy and C fixtures, frozen cases, phase quotas, browser six submissions and reconciliation need one verified coordinator.",
+    "legacyCommandsAreNotAdapters":["deployment/ai_live_run_prepare.py","deployment/ai_latest_final_run.py","LatestAiNovelAcceptance"]
+  }
+}

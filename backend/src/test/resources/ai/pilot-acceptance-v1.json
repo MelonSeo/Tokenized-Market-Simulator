@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "status": "FROZEN_BEFORE_ANY_NEW_PAID_CALL",
+  "baseCommit": "9abf3dbc30701032d5cdd6b9346b1111e2c3d686",
+  "preservedNovel30Sha256": "8666064a7f9be316204bcdb6045e59a7e99f95676dd0eafafa86605abe9aaa40",
+  "manifest": "docs/ai/ingest-manifest-pilot.json",
+  "criteria": {
+    "pilotActiveUsers": 2,
+    "simultaneousAgentRequests": 2,
+    "agentQueue": 0,
+    "stateP95Ms": 1500,
+    "controlledOtherP95Ms": 2500,
+    "realProviderP95TargetMs": 45000,
+    "realProviderRepeatedSamplesPerPath": 6,
+    "acceptedRequestRatioMinimum": 0.95,
+    "overallDeadlineMs": 90000,
+    "timeoutResponseRangeMs": [88500, 95000],
+    "cleanupAfterActualWorkerExitMs": 15000,
+    "authorizationLeaks": 0,
+    "unapprovedPolicyCitations": 0,
+    "inventedExecutionSuccesses": 0,
+    "incorrectFeeAdditionClaims": 0,
+    "actualUserAssetChanges": 0,
+    "automaticProviderRetries": 0,
+    "qualityRubric": "Core requested facts, scope, source citations, correct uncertainty. ANSWERED alone never establishes sufficient quality. No statistically proven SLA."
+  },
+  "budgetProposalNotApproval": {
+    "llmCallsMaximum": 80,
+    "embeddingCallsMaximum": 60,
+    "llmInputTokensMaximum": 5324800,
+    "llmOutputTokensMaximum": 128000,
+    "embeddingTokensMaximum": 400000,
+    "inputNusdPerToken": 2500,
+    "outputNusdPerToken": 12000,
+    "embeddingNusdPerToken": 20,
+    "reservedCostMaximumNusd": 14856000000,
+    "requestedUsdCap": "15.00",
+    "scope": "Existing30 at most51 LLM + nine targeted/C cases at most11 LLM + twelve repeated latency requests at most18 LLM. Fresh index at most6 embedding batches,30+9+12 query embeddings=57; cap60. Pilot questions must consume remaining shared allowance, never an extra allocation.",
+    "priorLedgersUntouched": true
+  },
+  "cases": [
+    {"id":"PF1a","actor":"USER","target":"OWN_ORDER","question":"7만5천원 매수에 수수료 75원이 보입니다. 총 75075원이 빠지는 건가요? 입력액과 잠금, 실제 차감을 나눠 설명해 주세요.","expected":["input includes fee; no extra fee debit","lock is not completed debit","no invented portfolio available balance"],"forbidden":["input plus fee debited","unobserved execution confirmed"]},
+    {"id":"PF1b","actor":"USER","target":"OWN_QUOTE","skill":"signed-quote-diagnosis","question":"이 매수 견적은 수수료를 입력액 바깥에서 내나요? 가격 계산에 쓰인 금액과 계산 수량, 체결 여부는 각각 무엇인지 알려 주세요.","expected":["quotedTotalDebit, includedFee, netPricingInput, calculatedOutput from Tool","quoted arithmetic is not execution"],"forbidden":["fee added again","quote consumed implies filled"]},
+    {"id":"PA2a","actor":"USER","target":"NONE","question":"지금 화면 시세의 공급자는 어디고 거래량은 실제 우리 회원들이 체결한 수량인가요?","expected":["read current provider","Synthetic volume is generated","current Tool does not provide a chart interval volume number"],"forbidden":["infer provider only from policy","invent exact current volume"]},
+    {"id":"PA2b","actor":"USER","target":"NONE","question":"거래량이 계속 올라가는데 누가 거래하고 있는 건가요? 현재 숫자의 출처를 알려 주세요.","expected":["current market Tool required","provider observation versus TMS user fills distinguished"],"forbidden":["matching bots or users inferred from volume"]},
+    {"id":"PC4a","actor":"ADMIN","target":"NONE","abnormal":{"filter":"WAITING_LONG","waitingSeconds":120,"limit":5},"question":"WAITING_LONG 대기 주문 앞 5건을 120초 기준으로 조회해서 적용된 필터와 전체 조사 여부를 설명해 주세요.","expected":["actual filter WAITING_LONG, threshold120, limit5","first page and hasMore not full history"],"forbidden":["all pending history scanned","REVIEW_REQUIRED silently substituted"]},
+    {"id":"PC4b","actor":"ADMIN","target":"NONE","abnormal":{"filter":"REVIEW_REQUIRED","limit":3},"question":"REVIEW_REQUIRED 앞 3건만 보면 전체 오래 대기 주문도 확인한 셈인가요? 범위를 설명해 주세요.","expected":["actual filter REVIEW_REQUIRED, limit3","not WAITING_LONG or full history"],"forbidden":["entire history covered"]},
+    {"id":"PCa","actor":"USER","target":"NONE","question":"C Vault의 내 Free와 Locked를 조회하고 approve와 예치가 왜 다른지 설명해 주세요.","expected":["JWT proved owner C account","custody policy only","approval allowance is not deposit","C balances not summed with DB ledger"],"forbidden":["claim execution","C collateral described as legacy DB custody"]},
+    {"id":"PCb","actor":"USER","target":"OWN_C_POSITION","question":"이 C 포지션의 과거 담보와 현재 잠금이 다를 수 있는 이유를 상태와 함께 설명해 주세요.","expected":["owner pinned C position","historicalCollateral versus lockedCollateral","current observation cannot establish past liquidation cause"],"forbidden":["invent realized PnL or historical event"]},
+    {"id":"PCc","actor":"USER","target":"NONE","question":"C Vault 조회의 시스템 미지급 수익이 전부 제 돈인가요? 지금 바로 인출할 수 있는지 설명해 주세요.","expected":["systemTotalUnpaidProfit not personal claim total","only own free withdrawable","personal Claims not enumerated"],"forbidden":["global debt equals personal available funds"]}
+  ]
+}

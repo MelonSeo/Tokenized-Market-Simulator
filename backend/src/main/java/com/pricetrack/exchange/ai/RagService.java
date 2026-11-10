@@ -31,6 +31,9 @@ public class RagService {
     public record IndexResult(String indexVersion, int documents, int chunks, boolean unchanged) {}
     public record Answer(String status, String answer, String indexVersion, List<KnowledgeHit> sources) {}
     public IndexResult ingest(AuthenticatedUser principal) {
+        authorize(principal);return ProviderAccess.call(principal.userId(),UUID.randomUUID().toString(),()->ingestInternal(principal));
+    }
+    private IndexResult ingestInternal(AuthenticatedUser principal) {
         authorize(principal);
         if (!indexing.compareAndSet(false,true)) throw new AiFailure("AI_BUSY");
         try {
@@ -54,7 +57,7 @@ public class RagService {
         } finally { indexing.set(false); }
     }
     public List<KnowledgeHit> search(AuthenticatedUser principal,String question) {
-        return observation==null?searchInternal(principal,question):observation.measure("RAG","search",()->searchInternal(principal,question));
+        authorize(principal);return ProviderAccess.call(principal.userId(),UUID.randomUUID().toString(),()->observation==null?searchInternal(principal,question):observation.measure("RAG","search",()->searchInternal(principal,question)));
     }
     private List<KnowledgeHit> searchInternal(AuthenticatedUser principal,String question) {
         authorize(principal); validate(question);
@@ -62,7 +65,7 @@ public class RagService {
         try { return retrieve(principal,question).hits(); } finally {requests.release();}
     }
     public Answer answer(AuthenticatedUser principal,String question) {
-        return observation==null?answerInternal(principal,question):observation.correlated(UUID.randomUUID().toString(),()->observation.measure("RAG","answer",()->answerInternal(principal,question)));
+        authorize(principal);return ProviderAccess.call(principal.userId(),UUID.randomUUID().toString(),()->observation==null?answerInternal(principal,question):observation.correlated(UUID.randomUUID().toString(),()->observation.measure("RAG","answer",()->answerInternal(principal,question))));
     }
     private Answer answerInternal(AuthenticatedUser principal,String question) {
         authorize(principal); validate(question);

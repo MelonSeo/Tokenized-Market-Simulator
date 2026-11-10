@@ -9,7 +9,8 @@ import product_read_linux_support as linux
 
 ROOT=Path(__file__).resolve().parents[1]
 LOCK=json.loads((ROOT/'deployment/product-read-ci-lock.json').read_text())
-HELPERS=['ProductReadGate','ProductReadDriver','ProductReadDriverRpcTest','ProductReadConnection','ProductReadConnectionTest','ProductReadFixture','FullAppReadGate','FullAppReadDriver','FaucetSchemaFixtureBridge','ConditionalSchemaFixtureBridge','CDirectBrowserPipe','CAnvilContractGate','CAnvilRiskClaimsScenario']
+HELPERS=['ProductReadGate','ProductReadDriver','ProductReadDriverRpcTest','ProductReadConnection','ProductReadConnectionTest','ProductReadFixture','FullAppReadGate','FullAppReadDriver','FaucetSchemaFixtureBridge','ConditionalSchemaFixtureBridge','CDirectBrowserPipe','CAnvilContractGate','CAnvilRiskClaimsScenario','ProductAiCReadGate','ProductAiCReadDriver']
+AI_C_MODE=os.environ.get('AI_C_READ_GATE')=='true'
 FLAGS=['-Djdk.httpclient.disableRetryConnect=true','-Djdk.httpclient.enableAllMethodRetry=false','-Djdk.httpclient.redirects.retrylimit=1','--add-opens=java.net.http/jdk.internal.net.http=ALL-UNNAMED']
 need=linux.need
 def save(p,value):
@@ -23,7 +24,7 @@ def sources():
  paths=[p for folder in ['backend/src/main','contracts/src','tools/websocket-test-client/src'] for p in (ROOT/folder).rglob('*') if p.is_file()]
  paths += [ROOT/'deployment'/(name+'.java') for name in HELPERS]
  paths += [ROOT/'deployment'/n for n in ['product-read-linux.py','product_read_linux_support.py','product_read_resources.py','product_read_network.py','c_gate_network.py','product-read-ci.gradle','product-read-ci-lock.json','test_product_read_linux.py','product_read_tools.py','test_product_read_tools.py']]
- paths += [ROOT/n for n in ['.github/workflows/product-read-linux.yml','backend/build.gradle','backend/gradle/wrapper/gradle-wrapper.properties','contracts/foundry.toml','tools/websocket-test-client/index.html','tools/websocket-test-client/package.json','tools/websocket-test-client/package-lock.json']]
+ paths += [ROOT/n for n in ['.github/workflows/product-read-linux.yml','.github/workflows/ai-c-read-linux.yml','backend/build.gradle','backend/gradle/wrapper/gradle-wrapper.properties','contracts/foundry.toml','tools/websocket-test-client/index.html','tools/websocket-test-client/package.json','tools/websocket-test-client/package-lock.json']]
  paths += [ROOT/'tools/websocket-test-client/scripts'/n for n in ['product-read-browser.mjs','cdp-boundary.mjs','c-live-browser-smoke.mjs','browser-executable.mjs']]
  paths += [ROOT/'tools/websocket-test-client/test/browser-executable.test.mjs']
  return {str(p.relative_to(ROOT)):linux.sha(p) for p in sorted(set(paths))}
@@ -38,12 +39,14 @@ def prepare():
  artifacts=fixture/'artifacts';artifacts.mkdir();contracts=linux.artifact_fixture(ROOT,artifacts)
  for name in ['ProductReadGate','ProductReadDriverRpcTest','ProductReadConnectionTest','ProductReadFixture']:
   command(['java','-Xmx128m','-cp',os.pathsep.join(map(str,[fixture/'helpers',fixture/'classes',fixture/'jars/*'])),name,'--self-test'],20)
+ if AI_C_MODE:command(['java','-Xmx128m','-cp',os.pathsep.join(map(str,[fixture/'helpers',fixture/'classes',fixture/'jars/*'])),'ProductAiCReadGate','--self-test'],20)
  need(sources()==before,'SOURCE_DRIFT')
- save(out/'prepared.json',{'status':'PREPARED_NOT_LIVE','source':before,'sourceHash':hashlib.sha256(json.dumps(before,sort_keys=True).encode()).hexdigest(),'contracts':contracts,'files':{str(p.relative_to(fixture)):linux.sha(p) for p in fixture.rglob('*') if p.is_file()}})
+ save(out/'prepared.json',{'status':'PREPARED_NOT_LIVE','aiCReadMode':AI_C_MODE,'source':before,'sourceHash':hashlib.sha256(json.dumps(before,sort_keys=True).encode()).hexdigest(),'contracts':contracts,'files':{str(p.relative_to(fixture)):linux.sha(p) for p in fixture.rglob('*') if p.is_file()}})
  print(str(out.relative_to(ROOT)))
 def run(path):
  need(sys.platform=='linux','LINUX_ONLY');out=(ROOT/path).resolve();need(out.is_relative_to((ROOT/'deployment/runtime/product-read-linux').resolve()),'PREPARE_SCOPE')
  record=json.loads((out/'prepared.json').read_text());fixture=out/'fixture'
+ need(record.get('aiCReadMode',False)==AI_C_MODE,'MODE_IDENTITY')
  need(sources()==record['source'] and record['files']=={str(p.relative_to(fixture)):linux.sha(p) for p in fixture.rglob('*') if p.is_file()},'IDENTITY_DRIFT')
  need(not (out/'RUN_CLAIM').exists(),'CLAIM_USED')
  observer=resources.Observer(out/('resources-'+uuid.uuid4().hex[:12]+'.jsonl'),linux.memory,lambda:shutil.disk_usage(ROOT).free)
@@ -104,17 +107,17 @@ def run(path):
   actorenv.update({'READ_RUN_ID':run_id,'READ_TEST_KEY_A':keys['userA'],'READ_TEST_KEY_B':keys['userB']})
   # FULL_READ_JWT_SECRET is kept separate from TEST_PASSWORD and both user keys.
   env=live/'actor.private.env';env.write_text('\n'.join(k+'='+v for k,v in actorenv.items())+'\n');env.chmod(0o600)
-  stage='BOOTSTRAP';java_actor('bootstrap','ProductReadDriver',['bootstrap'],[(live/'fixture-public','/fixture',False),(live/'config','/gate-config',False),(live/'bootstrapEvidence','/evidence',False)],env)
+  stage='BOOTSTRAP';java_actor('bootstrap','ProductAiCReadDriver' if AI_C_MODE else 'ProductReadDriver',['bootstrap'],[(live/'fixture-public','/fixture',False),(live/'config','/gate-config',False),(live/'bootstrapEvidence','/evidence',False)],env)
   observer.sample('BOOTSTRAP_COMPLETE')
   stage='APP'
-  app=launch('app',images['java'],['--memory=768m','--user',str(os.getuid())+':'+str(os.getgid()),'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--tmpfs','/tmp:rw,nosuid,size=32m,mode=1777','--mount',mount(fixture,'/app-fixture'),'--mount',mount(live/'config','/gate-config'),'--mount',mount(live/'control','/gate-control'),'--mount',mount(live/'appEvidence','/gate-evidence',False),'--entrypoint','java'],['-Xms32m','-Xmx256m','-XX:MaxMetaspaceSize=192m','-cp','/app-fixture/helpers:/app-fixture/classes:/app-fixture/jars/*','ProductReadGate','/gate-config/application.properties','/gate-control','/gate-evidence'])
+  app=launch('app',images['java'],['--memory=768m','--user',str(os.getuid())+':'+str(os.getgid()),'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--tmpfs','/tmp:rw,nosuid,size=32m,mode=1777','--mount',mount(fixture,'/app-fixture'),'--mount',mount(live/'config','/gate-config'),'--mount',mount(live/'control','/gate-control'),'--mount',mount(live/'appEvidence','/gate-evidence',False),'--entrypoint','java'],['-Xms32m','-Xmx256m','-XX:MaxMetaspaceSize=192m','-cp','/app-fixture/helpers:/app-fixture/classes:/app-fixture/jars/*','ProductAiCReadGate' if AI_C_MODE else 'ProductReadGate','/gate-config/application.properties','/gate-control','/gate-evidence'])
   deadline=time.monotonic()+120
   while time.monotonic()<deadline:
    if (live/'appEvidence/ready.json').exists():break
    need(docker('inspect',run_id+'-app','--format','{{.State.Running}}')=='true','APP_EXIT');time.sleep(.5)
   else:need(False,'APP_READY')
   observer.sample('APP_READY');stage='ACTUAL_HTTP'
-  java_actor('verify','ProductReadDriver',['verify'],[(live/'fixture-public','/fixture',True),(live/'config','/gate-config',True),(live/'verifyEvidence','/evidence',False)],env,timeout=65)
+  java_actor('verify','ProductAiCReadDriver' if AI_C_MODE else 'ProductReadDriver',['verify'],[(live/'fixture-public','/fixture',True),(live/'config','/gate-config',True),(live/'verifyEvidence','/evidence',False)],env,timeout=65)
   observer.sample('HTTP_COMPLETE');stage='BROWSER'
   bridge=linux.Bridge(app['NetworkSettings']['Networks'][run_id+'-network']['IPAddress'],plan['subnet']);bridge.start()
   chrome=shutil.which('google-chrome') or shutil.which('chromium');need(bool(chrome),'CHROME_MISSING')

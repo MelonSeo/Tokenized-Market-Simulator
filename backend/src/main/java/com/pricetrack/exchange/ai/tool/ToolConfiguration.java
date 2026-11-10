@@ -24,7 +24,11 @@ public class ToolConfiguration {
     }
     @Bean(destroyMethod = "close") ToolDispatcher toolDispatcher(ToolProperties p, ToolRegistry registry,
             ToolReadFacade reads, ReceiptReader receipts, ToolAudit audit, ObjectMapper json,com.pricetrack.exchange.ai.observability.AiObservability observation,
-            org.springframework.beans.factory.ObjectProvider<com.pricetrack.exchange.ai.tool.read.FuturesToolReader> futures) {
-        return new ToolDispatcher(p, registry, reads, receipts, audit, json).observe(observation).futures(futures::getIfAvailable);
+            org.springframework.beans.factory.ObjectProvider<com.pricetrack.exchange.ai.tool.read.FuturesToolReader> futures,
+            org.springframework.beans.factory.ObjectProvider<com.pricetrack.exchange.ai.tool.read.CVaultToolReader> custody) {
+        return new ToolDispatcher(p, registry, reads, receipts, audit, json).observe(observation).futures(futures::getIfAvailable).custody(custody::getIfAvailable);
     }
+    @Bean @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="app.c-futures.enabled",havingValue="true")
+    com.pricetrack.exchange.ai.tool.read.CVaultToolReader cVaultToolReader(com.pricetrack.exchange.custody.auth.CWalletProofService wallets,
+        com.pricetrack.exchange.custody.runtime.CCustodyRpcReader reads,ObjectMapper json){return new com.pricetrack.exchange.ai.tool.read.CVaultToolReader(wallets,reads,json);}
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class AiObservability {
     private static final Logger log=LoggerFactory.getLogger(AiObservability.class);
     private static final Set<String> STAGES=Set.of("AGENT","RAG","RETRIEVAL","LLM","EMBEDDING","TOOL","VALIDATION");
-    private static final Set<String> NAMES=Set.of("UNKNOWN","answer","search","index","call","evidence","approval","KNOWLEDGE","STATE","MIXED","CLARIFY","UNSUPPORTED","ERROR",
+    private static final Set<String> NAMES=Set.of("UNKNOWN","answer","search","index","call","evidence","evidenceReason","approval","KNOWLEDGE","STATE","MIXED","CLARIFY","UNSUPPORTED","ERROR",
         "getOrder","getQuote","getBlockchainTransaction","getReceiptSummary","getMarketStatus","getCurrentReferencePrice","getPortfolio","listAbnormalOrders");
     private static final Set<String> CODES=Set.of("OK","ANSWERED","PARTIAL","UNSUPPORTED","NEEDS_CLARIFICATION","INSUFFICIENT_EVIDENCE","LIVE_DATA_REQUIRED","AI_BUSY","AGENT_BUSY","AGENT_TIMEOUT",
         "SYNTHESIS_UNAVAILABLE","PLAN_UNAVAILABLE","RAG_UNAVAILABLE","KNOWLEDGE_APPROVAL_UNVERIFIED","AGENT_CONTEXT_LIMIT","INVALID_AGENT_EVIDENCE","INVALID_AGENT_PLAN","RESOURCE_NOT_FOUND",
@@ -19,7 +19,9 @@ public class AiObservability {
         "TOOL_DISABLED","TOOL_FORBIDDEN","TOOL_NOT_FOUND","TOOL_TIMEOUT","TOOL_BUSY","TOOL_NOT_ALLOWED","TOOL_UNAVAILABLE","INVALID_TOOL_ARGUMENTS",
         "AI_INPUT_LIMIT","AI_PROVIDER_UNAVAILABLE","AI_PROVIDER_RESPONSE_INVALID","AI_API_KEY_MISSING","AI_PROVIDER_CALL_LIMIT","AI_PROVIDER_CONFIG_INVALID",
         "AI_INDEX_NOT_READY","AI_APPROVAL_MISMATCH","AI_QUERY_TIMEOUT","AI_ROLE_FILTER_INVALID","AI_DOMAIN_FILTER_INVALID","AI_KNOWLEDGE_INVALID",
-        "AI_CITATION_INVALID","AI_VECTOR_INVALID","AI_DATABASE_UNAVAILABLE","OTHER_FAILURE");
+        "AI_CITATION_INVALID","AI_VECTOR_INVALID","AI_DATABASE_UNAVAILABLE","OTHER_FAILURE",
+        "EVIDENCE_RESPONSE_CONTRACT","EVIDENCE_STRUCTURE","EVIDENCE_FEE_MEANING","EVIDENCE_UNKNOWN_CITATION","EVIDENCE_POLICY_CITATION_MISSING",
+        "EVIDENCE_TOOL_EVIDENCE_MISSING","EVIDENCE_FACT_REFERENCE","EVIDENCE_FACT_VALUE","EVIDENCE_KNOWLEDGE_FACTS","EVIDENCE_EXECUTION_CLAIM");
     private final ConcurrentHashMap<String,Counter> counters=new ConcurrentHashMap<>();
     private final ThreadLocal<String> correlation=new ThreadLocal<>();
     private final String startedAt=java.time.Instant.now().toString();

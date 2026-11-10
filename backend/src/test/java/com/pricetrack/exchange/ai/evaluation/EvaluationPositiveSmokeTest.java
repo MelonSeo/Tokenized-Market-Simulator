@@ -137,7 +137,7 @@ class EvaluationPositiveSmokeTest {
                 String skill=switch(i){case 8->"settlement-debugging";case 9->"signed-quote-diagnosis";case 10->"market-availability-diagnosis";case 11,15->"futures-liquidation-diagnosis";default->null;};
                 if(skill!=null)body.put("skillId",skill);if(i==15)f.unverified.set(true);
                 var result=agent.answer(i==7||i==8?f.admin:f.user,json.writeValueAsBytes(body));results.add(result);
-                assertThat(result.httpStatus()).as("Q%d",i+1).isEqualTo(200);
+                assertThat(result.httpStatus()).as("SAFE_SMOKE_Q%d_CODE_%s_ROUTE_%s_HTTP_%d",i+1,result.error()==null?"NONE":result.error(),result.route(),result.httpStatus()).isEqualTo(200);
                 assertThat(result.status()).as("Q%d",i+1).isIn("ANSWERED","PARTIAL");
                 assertThat(result.uncertainties()).as("Q%d",i+1).doesNotContain("SYNTHESIS_UNAVAILABLE","RAG_UNAVAILABLE");
                 assertThat(EvaluationVerdict.classify(result,true,false).correctness()).isEqualTo("REVIEW_REQUIRED");
