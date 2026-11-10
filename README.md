@@ -1,5 +1,7 @@
 # 삼성전자 가격 추종 토큰 거래소 (Price-Tracking Token Exchange)
 
+> **AI 최종 통합 현황(2026-11-10):** 인증된 본인 상태와 승인 정책을 연결하는 읽기 전용 RAG/Agent를 구현했습니다. PostgreSQL+pgvector, 12 Tool(legacy10+C조회2), Skill4, 정책9문서/88Chunk 및 별도 C포함10문서/93Chunk, 결정적 STATE 경로, 근거 검증·실패 fallback·영속 비용 예약을 사용합니다. AI에는 거래 실행·서명 권한이 없으며 C/legacy 자산 정본을 합산하지 않습니다. 기존 실제57평가는30PASS/12PARTIAL/13FAIL/기술2로 **서비스 품질PARTIAL**입니다. 수정 후 표적 재인수·CI와 원57결과는 구분합니다. [아키텍처](docs/ai/AI_ARCHITECTURE.md), [평가·알려진 한계](docs/ai/EVALUATION_REPORT.md), [실행 설정](backend/README.md)을 참고하세요. 사람 사용성·장기SLA·전체 C진단·운영배포를 완료했다는 의미가 아닙니다.
+
 > **2026-10-24 통합 현황:** 기존 현물/시장·legacy 선물, B-v2 사용자 승인/감사, C ERC-20/Vault/owner-direct, P0·AI·C 통합 웹 소스를 함께 보존했습니다. 소스 통합과 전체 기능 LIVE READY는 다릅니다. C 제품 자동청산 Worker·전체 자산 감사·relayer 복구·C AI 및 일체형 인수는 남아 있습니다. [오늘 발표 큐시트](docs/presentation/DEMO_CUE_2026-10-24.md), [실제 검증과 서비스 상태](claude-docs/presentation-integration-2026-10-24.md)를 먼저 확인하세요. 아래 A 방식 설명은 기존 현물/legacy 장부 범위이며, 별도 opt-in C Vault의 사용자 소유권과 혼합하지 않습니다.
 
 Ethereum ERC-20 기반으로 **삼성전자 기준 가격을 추종하는 교육용 합성자산 토큰(mSEC)**을 모의 원화(mKRW)로 매수·매도하는 **현물 모의 거래소**. 안드로이드 앱 · Spring Boot 백엔드 · 스마트 컨트랙트를 연동한 종합 프로젝트.
