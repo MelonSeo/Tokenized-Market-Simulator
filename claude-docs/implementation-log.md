@@ -1,5 +1,74 @@
 # 구현 로그 — Phase 0: 모노레포 뼈대
 
+## 2026-11-06: 남은 Linux Chrome6 인수 — 연결 PASS, 실제 모델 NOT_RUN
+
+종료검토: 최종재검토2추가필수수정없음, 검토자직접Python19/Node7/diff및실제6/JWT/Sandbox/driverSHA/금융·C/SQLite/RAM·snapshotSHA를대조했다. 실제6독립재실행은아니다. terminal stop wrapper135CLI/120grace/no자동재시도는Mock2최종회귀로구분했다. 실제제품394파일이실행소스SHA와같고동결5SHA/HEAD/staged0을확인했다. root25HEAD/보호8미커밋목록/수정시각은보존됐으나이전메모리의8개내용SHA기준을못불러와새전후내용SHA증명을주장하지않는다. 검토중합성시험체인원문도구출력이있었으며실제키/API사용은없지만관측최소화한계로기록한다. 원문은문서에복사하지않았다.
+
+### 구현·결정
+
+기존 HTTP51/C3/반복12를 반복하지 않고 소유 시험 eeb…의 정지 PG를 readonly 복제했다. 원래125예약/allocation/WEB phase와 동결본문은 유지했다. 이후 모든 복구는 같은 복제 SQLite/PG를 사용하며 재복제·단계 조작·STOP 초기화가 없다. 별도 Java/Node driver source/class SHA를 기록해 원래 제품/coordinator 소스와 구분했다. 최종ecb…/attempt-7deb1cff682a4143에서2USER×PA2a/PF1b/PCa 6DOM 성공이다.
+
+Docker 기본 seccomp에 막혔던 user namespace는 고정 공식 Playwright 프로필의 최소 namespace 지원으로 해결했다. nonroot1000/defaultERRNO·기본 Chrome Sandbox·내부망·무추가cap 유지다. Chrome156 표시명은 Layer1Sandbox=Namespace여서 동등 parser를 추가했다. capability와 실제같은파일럿browser의4보안층/renderer권한 확인을 분리했다. Sandbox 해제/privileged/hostIPC/전역설정 변경은 기각했다.
+
+### 실제 장애·수정 근거
+
+- 독립 검토가 start만 차단한 Worker도 market event.signal로 시작 중 작업할 수 있음을 발견했다. BPP가 노출 전에 close하고 init start도 제거하며 실제signal 무동작을 검증했다. 테스트만의 writer 봉쇄이며 제품 금융 정책은 바꾸지 않았다.
+- 타인Quote의503/504를 차단 성공으로 오인할 수 있던 검사를 ownSUCCESS+foreign 정확한404/RESOURCE_NOT_FOUND로 고쳤다. 장애와 권한 거절을 분리했다.
+- JDBC URL의 기존 connectTimeout2/socketTimeout5를 새 검증기가 잘못 거절했다. 기존옵션만 정확하게 보존하고 외부호스트·추가옵션·중복은 금지했다.
+- attached CDP의 close가 Browser.close까지 호출해 파일럿을 종료했다. 관측자는 자기탭만 닫고 socket.dispose로 분리했다. Node 양쪽 연결 정리 실패회귀도 추가했다.
+- LOGIN 대기에서 세션 종료를 의심했지만 실제 인증 요청0으로 가설을 수정했다. DOM요소 존재는 module handler 준비가 아니었다. 문서complete/onclick/onsubmit 대기 후 실제login200×2와6요청이 통과했다. 제품 JWT·Timeout을 바꾸지 않았다.
+- 이번 복제 Anvil의 출력 state EOF는 확인했으나 잘림 순간/원인은 미확정이다. 원본·잘린파일을 보존하고 원본읽기전용입력과신규Linux출력을 분리했다. 새빈출력만 UID1000/0700, 실제쓰기확인, 최종정상종료exit0 및snapshot135764955byte 보존이다.
+- private grep에서 생성 시험JWT키1건이 도구 출력에 포함돼 후속시도마다 새 시험키를 발급했다. 실제 사용자/공급자키 접근과 공개Git 반영은 없고 원본보호설정은 보존했다. 값은 문서에 옮기지 않는다.
+
+### 검증·한계
+
+실환경JUnit1PASS/0SKIP, HTTPAgent200×6/로그인·me각2, SQL·RPC·USER Tool/RAG·DOM본문/인용/불확실성·로그아웃/전환 초기화 PASS. 실제 캡처6확인. 금융9table와C값SHA동일, PG/SQLite134 OBSERVED/UNKNOWN0(원래125+LLM6/Embedding3) matching, 실제공급자비용0. 기존51/C3/12는 복사이력으로유지했으며 재실행아니다. 새표적Python17/Node7 PASS, JavaNoWriter/정확한권한거부3PASS와최종driver21컴파일 성공이다.
+
+Windows기동전RAM2841.36/2425.30/2265.78MiB/종료1974.77MiB, Linux1920/디스크2GiB Guard유지. 새소유자원모두정지/원본원장SHA일치/과거실패보존. 상세실행별근거·새파일·상태파일SHA는 EVALUATION_REPORT 최상단에 연결한다. 최종독립재검토2 결과는후속기록한다.
+
+무과금연결은PASS이나실제모델품질/공급자지연/사람파일럿은NOT_RUN이므로전체서비스PARTIAL이다. 이번전용런처는UNPAID한정이고기존PAID는localhost보호를유지하므로유료진입에는별도승인과지원접속경로확인이필요하다. paid활성화/main/원격/배포/Git변경은없고다른개발을자동시작하지않는다.
+
+## 2026-11-06: 혼합 Receipt 회귀와 독립 Sandbox Chrome 연결
+
+종료검증은Python103(96+clone7)/Java표적13/Node7 PASS·diffPASS, HEADd52b29f/staged0다. Native최종재검토2추가필수수정없음: 직접native10/Node7/diff·실제RAM/C/LATENCY/fingerprint/sourceSHA를대조했으나Chrome6/원장전체/Docker실상태는독립실행검증아니다. 구현자실측잔류실행0/6Exited+extractCreated를분리기록한다. PARTIAL은Chrome의객관적RAM차단과실제모델NOT_RUN때문에유지하며검토통과로미완료를덮지않는다.
+
+최종eebfad036324d31e는 시각 변경 후 실제두fixture LIQUIDATED/VERIFIED·C smoke·HTTP51·C3·반복12·금융/C fingerprint·이중원장125예약대조 PASS다. Trace636/Receipt최대23.113ms, 역사Timeout미재현이다. Chrome 직전RAM1428.6523MiB(부족491.3477)로 Guard가 Node/Chrome시작전 차단하여6요청NOT_RUN/FULL JUnitFAIL/전체PARTIAL이다. 실제모델품질/키/과금0이며 반복실행을더하지않는다. 소유자원6Exited+extract미기동Created/Nativehandle종료확인, 상태와증거보존. Java표적13/Python96/Node7PASS 및 최종회귀는 보고서에 분리한다. fixture 최종재검토2추가필수수정없음/직접Linux14·diffPASS, Native최종검토는Chrome미실행한계를포함해기록한다. 자세한 결과는 EVALUATION_REPORT최상단이다.
+
+기존 Receipt 사건의 후속이다. 단독32회/Agent초기6의 정상 결과만으로 과거 혼합 장애를 해결했다고 말할 수 없어 기존 C_LATENCY51요청에 단계 Trace를 연결했다. a58bab662f8841d9는 C3/반복12/JUnit1·금융9테이블/C value fingerprint/PG↔SQLite124예약 대조 PASS다. Trace636에서 Receipt전체 최대19.42ms이며 과거3020/3022ms를 재현하지 못했다. 제품 Timeout·재시도·RPC·금융 계산은 고치지 않았고 역사적 원인은 미확정이다. 실제 모델이 아닌 통제 공급자 연결 결과다.
+
+broker startup 실패의 inner cause가 당시 저장되지 않은 한계를 보완했다. 안전한 클래스/코드 cause chain과 private stderr를 보존하며 예외 메시지/SQL/키는 보고하지 않는다. RO 감사에서 Windows bind source hash/preflight/workload 합계가 기존10초 경계를 넘는 조건을 관측했다. 같은 공개 소스의 Linux-local 복사에서는 짧아졌지만 n1/캐시 미통제로 인과·성능 보장을 하지 않는다. 선택적 --local-source와 staged 전파일 SHA 검증을 채택했고 Deadline 증가를 기각했다.
+
+Linux Chromium의 namespace EPERM은 제품 Agent 장애와 분리했다. 새 프로필의 Windows Chrome default Sandbox를 소유 앱의 loopback 전용 raw TCP 중계로 연결했다. DB/RPC는 Linux 내부 주소 유지, 응답 주입/Fetch interception/권한 확장/기존 프로필 접근은 없다. 활성 renderer restricted NT token·low/untrusted integrity capability를 확인했지만 Sandbox 전체 감사로 확대하지 않는다. 독립 검토에서 발견한 최종ACK 조기 종료와 mutable source 실행을 완료marker 및 staged host/Node 실행으로 수정했다.
+
+첫 NativeFULL b285와ceba는 fixture 청산100초에서 실패했다. RO 감사와 새 Trace를 분리해 보존했다. ceba는 observed가 chain보다1~2초 앞서 기존 observed<=chain 조건이 계속 차단됨을 확인했다. fixture Worker.signal만으로 해결되지 않았다. 새빈체인 genesis를 Linux 프로세스 시작시에 정하고 이후 host timestamp 재설정을 제거했다. block1/60초grace/100초await/시세가격/TTL/금융 assertion은 유지하며 과거체인에는 손대지 않았다. Worker 내부 미발행 원인을 모두 규명했다고 주장하지 않는다. fixture wakeup 검증은 자동 scheduler liveness 검증과 다르다.
+
+관련 파일: deployment/ai_pilot_linux.py·inner.py·broker_audit.py·native_bridge.py·native_probe.py·fixture_audit.py, PilotV2LiveHttpTest/PilotFixtureWait/PilotV2FailureCodes, native-sandbox-evidence/ai-pilot-v2-browser. 구체적 수치·실행별 결과·미검증 경계는 docs/ai/EVALUATION_REPORT.md 최상단 이력에 연결한다. 새 유료 호출/키/예산 활성화/Git commit·push·merge는 하지 않는다. 최종 Native 실행 및 검토 결과는 후속 기록으로 남긴다.
+
+## 2026-11-05: Receipt timeout 후속 — 계측·cold 복제 진단 / 원인 미확정
+
+### 후속: 원래 Agent/private control 경로까지 최소 연결
+
+최종재검토2추가필수수정없음/검토자직접Linux11·clone7·diffPASS이며실환경·private원장은정제근거대조다. 원본25/보호8/기존평가4SHA최종동일,HEADd52b29f/staged0/ignore유지다. owned22개중20Exited/2extract미기동Created이며모두비실행으로보존했다. cleanup의STOPPED분류를全컨테이너실행후종료로과장하지않는다. 현재완료는계측·최소재현·확인된런처/검증결함수정이며원래간헐Timeout의원인해결은미완료다.
+
+직접Tool만으로Agent실패를진단할수없다는한계때문에RECEIPT_AGENT를추가했다. 기존phase와새UNPAID이중원장으로INDEX_LEGACY→SAFETY_LEGACY6만실행/정지했다. PF1b직전180초유휴는보존로그의약178초gap을근거로하며HTTP/claim/deadline밖이다. 전체30/C12/Chrome반복/신규질문/예산추가는없다.
+
+첫1ef6…는셸JDK불일치로BUILD차단/컨테이너0,명령프로세스만JAVA_HOME21로지정했다. e8c0…는실제Spring/JWT/Agent/privateDTO/PG+SQLite/Tool/RAG/통제모델연결로6/6strictgate/JUnit1PASS다. HTTP1046/838/582/592/721/574ms,Receipt Tool83/23ms였다. trace124개에서ReceiptDB+DTO15.90ms/privatecontrol15.14ms/receiptRPC20.78ms/blockRPC2.34ms/client전체66.78ms최대를관측했다. DB58.97ms는모든Tool32쿼리집계다. 새원장RO집계19예약(LLM7/Emb12)전부OBSERVED/UNKNOWN0/shadow401884400nUSD,PG대조일치/금융9table·두C계정value불변이다. 새7컨테이너정지/증거보존,WindowsRAM2744623104byte/디스크46046498816byte로Guard통과다.
+
+이연결마일스톤독립검토에서AfterEach의trace저장예외가금융대조를생략시키는지적을받아finalizeEvidence로양쪽검사실행/금융예외primary+trace suppressed/trace단독실패도실패반환으로수정했다. 실패주입Java3/0SKIP·컴파일성공,재검토1추가필수수정없음/검토자직접Linux11·diffPASS다. 실제prefix는구현자결과다. 최종Python76+7=83PASS이며이전Receipt/Tool17PASS도구분해유지한다.
+
+원래전체혼합부하·소켓/자원조건을동일하게만들지는못했다. 실패state복제는직접Tool,Agentprefix는새fixture라는차이를남긴다. 원래3020/3022msTimeout은미재현/미해결로원인확정하지않는다. 정상정책을유지하고단순전체반복을더하지않았다. 관측확보와장애해결은다르며전체PARTIAL/ChromeNOT_RUN/유료미실행이다. 이절의후속은아래직접Tool진단이후에수행한것이다.
+
+11-04 C/반복 사건의 후속이며 새로운 AI 기능 개발이 아니다. 사용자 승인은 정상 정책을 유지한 원인 분석/수정/재검증까지 확대됐다. 원래 실패3020/3022ms와 원장·STOP은 보존했다.
+
+- 목적/구조: `ToolReadFacade`의 authorized DB 읽기→immutable ReceiptInput→`ReadOnlyReceiptClient`의 receipt/block RPC→매핑/이벤트 검증 중 지연을 구분한다. 기본 OFF TimingObserver, test-only DB query proxy/DTO facade/worker·Hikari·TCP metadata 관측을 추가했다. timing은 bounded memory에 쌓고 응답 후 private 파일로 기록한다. payload/인증정보/SQL은 timing에 기록하지 않는다.
+- 실제 시도: 새 시험b5eb…에서 직접 Tool16회 성공. 실패6e8f의 정지 PG volume을 RO mount로 새 빈 volume에 cold copy하고139MB Anvil state/시험 주문을 복사했다. 원본 서버/원장 재개 없이 동일 Receipt를 읽었다. 첫clone95a…는app1536MiB가Linux1920MiB guard와 충돌해 Spring 이전 차단됐다. app상한만기존2560MiB로 맞춘c8e…는16회 성공했다. Timeout 정책을 완화한 것이 아니다.
+- 측정/판단: 복제본 DB/DTO최대33.45ms, receiptRPC42.68ms, blockRPC3.45ms, Receipt전체128.84ms였다. 원래 지연은 재현되지 않았다. DB질의/매핑/네트워크 누수를 확정하지 않는다. 과거로그의약3분유휴와 이번65초, Agent/private DTO control과직접Tool경로의차이를 남긴다. `--state`는load/exit dump이므로정기snapshot원인설정변경은 채택하지 않았다. HTTP BODY_COMPLETE는Future반환시점이며정확한subscriber종료시점과다르다.
+- 대안/선택: timeout증가/재시도/같은전체30재실행 대신 최소 계측과 데이터 복제를 선택했다. 금융 데이터를 임의 수정하거나 전체 Gate의 Tool SUCCESS assertion을 완화하지 않았다. 정상 직접Tool 결과만으로 원래Agent 문제를 해결했다고 주장하지 않는다. 다음 실제Agent지연trace는미완료다.
+- 검증: compile-only Gradle 성공, standalone Receipt/Tool17 PASS/0SKIP, Pythonpilot75+clone7=82 PASS. 두 실환경 직접Tool각16성공/금융fingerprint동일. clonePG 최초기동후/서버종료후9table동일, 원본state전후SHA동일이다. 원래반복12와Chrome6는이번미실행이며기존실패/한계유지다.
+- 독립 검토: 최초 및 재검토2까지 수행. 로그 수집 예외가owned정지를 막는 지적을수정하고log timeout/write/개별stop실패회귀로확인했다. 최종추가필수지적없음이나검토자private실환경직접검증은없다. 그후실행에서발견한app메모리상한수정은자체7회귀로확인했으며마지막설정delta의별도검토는미완료로남긴다.
+- 보존: root25worktree/보호8SHA와기존A2증거4SHA불변,HEADd52b29f/staged0. 원본PG미기동/RO복사,기존SQLite/STOP수정0. 새15컨테이너중14Exited/1미기동Created,volume/state보존. 실제provider/키/유료활성화/Commit/Push/Merge0.
+- 원리/면접: 계측완료와결함해결의차이, 단조시간과UTC의용도,Future반환/소켓응답/worker회수의차이,정상소표본으로긴꼬리지연을배제할수없는이유,RO cold-copy의데이터보존경계,cgroup상한과물리RAM Guard의차이를설명할수있다. 기업용운영에서는원래요청상관관계/취소/장기연결관측이추가로필요하지만이번에검증한것처럼과장하지않는다. 상세수치와미완료는평가/준비문서최상단,회고는로컬ignored인덱스에연결했다.
+
 ## 2026-10-24: 발표 전 B-v2/C/통합 웹/AI 소스 선별 통합
 
 - 기존 미커밋 원본은 d595375에 보존하고 별도 후보에서 최신 B-v2 감사·RPC, C 계약·Vault, P0/AI/C 웹을 선별했다. 원본 worktree와 사용자 체크포인트는 수정하지 않았다.
@@ -3270,3 +3339,716 @@ readiness 시험에 한정해 제품 기본값인 simulated/1000ms 갱신/1000ms
 최종보고/학습은 EVALUATION_REPORT의 후속절과READINESS_PLAN에정리했다. 새실제모델인수와사용자파일럿은NOT_RUN/전체PARTIAL. 예산초안v1의파일럿잔여의존을확인해v2는파일럿6요청최대12LLM도예약한US18/LLM92/Embedding70으로산정했다. 최대토큰6123520/147200/4659200, 최고단가보수예약US17.168384이며아직승인아님. 문항/기준JSON은고정유지하고미승인v1예산을사용하지않는다. 기존비용원장을합치거나초기화하지않고새승인경계에서중단한다.
 
 최종 문서 및 v2 예산 독립 검산도 필수 지적 없음이다. 호출 분해/토큰 상한/US17.168384 계산과 미승인·실모델NOT_RUN 구분을 대조했다. 결과 추기는 문서3개만 로컬 커밋으로 보존하고 Push하지 않는다. 이는 원격의 시험완료 소스4913acc를 유지하고 문서 기록만으로 두 전체 CI를 다시 생성하지 않기 위한 선택이다. 로컬 문서 커밋과 원격 검증 SHA를 완료 보고에서 구분한다. main/원본 worktree·데이터는 변경하지 않는다.
+
+# 최종 AI 실모델 인수 사전 감사 — 실행 연결 결손 확인 / PARTIAL
+
+> 갱신: 2026-10-31. 유료 승인 전 공개 코드·계획과 순수 시험만 확인했다.
+
+## 관측과 원인
+
+원격 CI4913acc와 로컬d52b29f를 대조하자 문서3개만 차이였으며 main9abf도 불변이었다. 과거 예산 계산과 제품 guard 단위/PG 시험은 통과했지만, 실제 유료 하네스를 읽으니 `EvaluationTransport`가 normal provider의 PgProviderBudget 분기를 지나지 않았다. 기존 runner는9manifest 고정/과거 승인policy만 지원하며 자동 검색·분해 비교도 수행한다. 기존 C-read 런처는 의도적으로 외부모델과index API를 차단한다. 이들은 단순 기능flag를 켜서 하나의 v2 실사용 인수로 합칠 수 없다.
+
+이 사실은 유료 실험이나 과금 사고에서 발생한 것이 아니다. 승인 전 경로 대조로 확인했다. 최초 문서의 계산이 틀렸다고 하거나 제품 비용 guard가 전혀 없다고 하지 않는다. 서로 다른 시험 계층의 PASS가 전체 연결 PASS를 의미하지 않는 것이 원인이다.
+
+## 이번 변경과 검증
+
+기존 문항/기대/해시/원장/STOP을 바꾸지 않고 별도 `ai-pilot-budget-v2.json`·`ai-pilot-execution-v2.json`과 읽기 전용 `ai_pilot_preflight.py`를 작성했다. $18/92/70·최대예약$17.168384는 미승인 제안으로 고정한다. 벡터 복사 구현이 없으므로9/88와10/93을각6batch총12batch로 계산해57질의+여유1로70안에 배정했다. 파일럿6/12LLM/6Embedding도 따로 배정한다. 비용 상한을 늘린 변경은 아니다.
+
+신규16/기존readiness16/문항감사9/guard30 순수 총71PASS. 실제Java/웹/계약소스변경0으로 동일소스의 이전Linux348PASS35SKIP/웹238/PG·Chrome 결과는 재실행하지 않았다. preview 상한 경계는 결정적 시험이며 실제 전송이나 DB 연결을 대체하지 않는다. CLI는준비미완료를자동화가오인하지않도록exit2/readyfalse를반환한다. 승인 파일·키·신규 비용원장 생성도없다.
+
+## 판단과 미완료
+
+구형 승인파일과policy를 덮어써 실행하는 방법은 과거 이력/서버예산경계를 보존하지 못하므로 채택하지 않았다. 두corpus별 별도$18을 부여하는 방식도 총상한 우회라서 제외했다. 선택한 방향은 단일budget authority와strictv2guard를 공유하는 별도coordinator이지만 **아직 구현/실환경검증되지 않은 후속 무과금 과제**다. 제품 금융/인증을 변경할 이유는 발견하지 못했다. 실행adapter가 없는데 예산승인만 받으면 된다고 안내하지 않는다.
+
+독립 검토에서는 실제 경로 결손과 가격 산술을 대조했고, 신규 계획 검사에서 phase별corpus/환경/요청binding/STOP/fixture 경계 음성검사를 권고해 보완했다. 최종 별도 검토 결과는 아래 추기에 남긴다. 개인 회고는ignored로컬index에만 연결한다. 기업용쟁점은 전송경로의 보안통제, 다중서비스 예산권한 단일화, durable reservation과 승인 증적, 제한된모의검증과실제운영품질의 구분이다.
+
+최종 별도 검토 `review_pilot_v2_preflight`: v2계획고정·무과금감사범위에서 발견된 필수 수정 없음. 신규16개를 검토자가 직접PASS했고 문서3곳/가격·phase·hash·준비PARTIAL을 독립 대조했다. 전체71개는 구현자 실행이며 검토자가 Java/서비스/실모델을 새로 실행한 것으로 표시하지 않는다. v2실행coordinator/공유이중guard/실제fixture·웹6연결의 미구현·미검증은 사용자전체목표의 미완료로 남는다.
+
+최종 보존 대조에서25worktree의HEAD목록,root dirty8상태·SHA와rootHEAD가실행전후동일했다. 새공개후보8파일의제한패턴검사에서비밀키/JWT탐지0,경로1건은HEAD에도있던기존의도적거부canary기록임을값을가린상태로분류했다. 신규실사용자경로를추가하지않았다. Stage0/Commit0/Push0이며개인회고index는Gitignore대상이다. 검사0건을무유출보증으로해석하지않는다.
+
+# AI 인수 v2 실행 연결 — 무과금 컴포넌트 검증 / 전체 준비 PARTIAL
+
+> 갱신: 2026-11-01. 서버·Docker·Chrome·공급자/metadata·키 접근 없이 승인된 연결 코드와 시험만 수행했다.
+
+## 목적과 확인된 결손
+
+앞선 사전 감사에서 발견한 EvaluationTransport의 PG 우회, corpus별 중복 예산 가능성, 단계 quota 및 실제 fixture/브라우저 연결 부재를 보완한다. 계획이 PASS라는 것과 실제 실행 경로의 보안 통제가 강제된다는 것은 별개다. HEAD d52b29f/원격 CI4913acc/main9abf를 재확인했고 원격과 다른 worktree는 수정하지 않는다.
+
+## 변경과 기술적 판단
+
+- 제품 변경은 `OpenAiProvider`의 별도 `forReservedEvaluation` factory와 정상 reserve 이후 private callback 분기다. 기존 PG 구현을 대체하지 않고 concrete `PgProviderBudget`을 고정해 평가 transport가 서버 예약을 건너뛰지 못하도록 했다. 일반 HTTPS/기존 평가의 동작은 유지한다. 신규 helper/config는 test classpath에서만 opt-in한다.
+- 새 `ai_pilot_coordinator.py`는 immutable allocation/source/fixture/정책 identity, 단일 SQLite, 단계별 quota, 전역18/92/70 및 토큰 상한을 전송 전에 검사한다. UNKNOWN을 먼저 영속화하고 timeout/누락/과다 사용량·PG대조 불일치는 중단한다. PG와 SQLite는 분산 atomic commit이 아니므로 PG-only 예약이 남을 수 있다. 자동 refund/replay로 과금 불확실성을 숨기는 대신 가용성을 희생하고 운영자 대조가 필요한 상태로 남긴다.
+- 실제 Agent worker 시작 안에서 actor/run UUID를 바인딩한다. HTTP ThreadLocal을 worker로 전달한다고 가정하는 대안은 사용할 수 없었다. 물리 work body의 finally 종료 확인 전에는 ticket을 완료하지 않는다. private channel은 직렬화하며 lock wait도 deadline을 소비한다. 이 때문에 병렬 모델 수용능력이 늘었다고 주장하지 않는다.
+- 기존 broker의 controlled supplier를 재사용하되 server-authorized target을 계획 schema에 맞게 보존한다. 답변은 의도적 INSUFFICIENT_EVIDENCE이며 실제 분류/검색/자연어 품질 증거가 아니다. 실모델 sender/approval 활성화는 추가하지 않았다.
+- `PilotV2Runtime/TestConfiguration/DtoReads/BudgetSnapshot`, fixture binder, authenticated loopback adapter, frozen HTTP schedule 및 browser private protocol을 추가했다. 본인 Quote 75,000/포함 fee75를 실제 DTO로 검사하며 구형1000 fixture는 거절한다. C는 JWT/EIP-191 proof, pinned 관측과 배포 identity, 양방향 foreign404를 대조한다. 기존 DB·chain을 수정하거나 owner 숫자를 동일인으로 합치지 않는다.
+- 웹은 owner3/other3의 실제 DOM 제출→Agent HTTP body/response 관측을 준비했다. 고정 브라우저 성공 응답 주입은 없다. UI logout/계정 전환 청소와 private host 검토/worker 종료/원장대조를 거친다. 실제 6요청을 실행한 것은 아니다. source identity에는 제품·승인 corpus/manifest·동결 문항·실행 helper와 직접 의존성을 포함한다.
+
+## 검증과 남은 한계
+
+Python v2/preflight44 + 기존 guard30/readiness16/문항감사9 =99 PASS. Node 순수3 PASS와 browser syntax PASS. Java offline compileTestJava 및 표적21 PASS/0SKIP(PilotV2Connection7, OpenAiProvider7, ProviderBudget5, CallDeadline2). Java는 실제 Python 자식/SQLite와 연결하지만 PG reserve는 Mock이며 실제 PostgreSQL의 transaction/재시작 검증은 아니다. Gradle sandbox의 cache lock 접근 실패는 escalated offline 실행으로 해결했고 전역 설정은 변경하지 않았다.
+
+실제 PG/Anvil/Spring HTTP/Chrome·새 시험 데이터 생성과 EIP-191·실제 Embedding/LLM은 NOT_RUN. HTTP 금융 POST 차단은 background FuturesWorker/정산 scheduler 동결을 의미하지 않는다. 신규 owned fixture supervisor에서 writer 중지·읽기 권한과 전후 금융 fingerprint를 검증해야 한다. 서버 실행 entrypoint와 owned 데이터 준비를 실제로 연결·기동하기 전에는 완전 준비라고 안내하지 않는다. preflight는 flag를 올리지 않고 여전히 exit2/readyfalse다.
+
+독립 검토 `review_pilot_v2_preflight` 최초 구현 검토에서 이 무과금 컴포넌트 범위의 발견된 필수 수정 없음. 검토자 직접 Python44/Node3 PASS, Java는 소스만 확인했으며 구현자의 Java 실행을 검토자 실행이라고 표시하지 않는다. 실제 runtime과 유료 활성화는 검토로 완료되지 않는다. source identity 및 종료 처리의 최종 소규모 보완은 재검토에 포함한다.
+
+## 학습과 후속 경계
+
+면접 쟁점은 reserve-before-send, durable UNKNOWN, PG row lock와 SQLite BEGIN IMMEDIATE, 분산 이중 기록의 partial failure, request correlation의 thread 경계, cancellation과 실제 작업 종료 차이, 기능/품질/실환경 인수의 증거 수준이다. 이 사건은 실제 과금 사고가 아니라 승인 전 연결 결손 분석과 무과금 재현 사례다. 로컬 회고 인덱스의 기존 사건 후속으로 연결했으며 공개 대상이 아니다.
+
+현재 전체 준비 PARTIAL. 정책/질문/합격 기준/이전 원장·STOP은 불변이고 paid activation은 false다. 후속은 신규 격리 PG/Anvil 및 Spring/Chrome의 무과금 실환경 연결 검증이며 이를 통과하기 전에는 단순 $18 승인을 요청하지 않는다. 이번에 Stage/Commit/Push/Merge/배포는 수행하지 않는다.
+
+최종 소규모 재검토1회도 발견된 필수 수정 없음. 검토자가 직접 source/STOP 표적1·Node syntax/3을 추가 확인했고, 마지막 Java21/Python44는 구현자가 재실행해 PASS했다(기존55 포함 Python99). 이후 변경은 이 결과 기록뿐이다. 전후25worktree HEAD/branch 목록, root HEAD·dirty8목록 및8파일SHA가 모두 같았다. 공개 후보29파일의 제한 비밀 signature 검사0, git diff --check PASS, staged0이며 개인회고는ignore대상이다. 이 패턴 검사0건은 무유출 보증이 아니다. 원격·사용자 DB/Anvil·과거 ledger/STOP은 변경하지 않았다.
+
+# AI 인수 v2 실환경 연결 — 2026-11-01 후속
+
+## 목적과 구조
+
+전회 Mock/component 연결을 신규 owned PG/Anvil/Spring/Chrome에서 검증한다. 통제 모델·합성 벡터와 실제 HTTP/DB/체인을 연결하는 시험이지 실모델 품질 인수가 아니다. 과거 원장/STOP·사용자 자산은 사용하지 않고 v2 frozen 정책/질문을 보존한다. 모든 변경은 CI worktree 미커밋 상태이며 원격/다른 worktree를 수정하지 않는다.
+
+## 발견과 변경
+
+- 실제 PG10 PASS로 PG COMMIT→Python 거절에서 UNKNOWN/STOP 유지·전송0, 재시작·글로벌70/잔여1경합을 검증했다. PG-only 예약은 외부 전송0과 별개로 자동 refund하지 않는다.
+- 신규 C fixture/helper, 실제 JWT/F1 견적·FILLED 주문/EIP-191 proof 및 replay409를 생성했다. 별도 authenticated binder가 두 계정의 본인 견적/고정 C 관측을 검사했고, 타인 Quote 양방향404도 실제 확인했다. 기존 완료 거래는 timeout 복구 목적으로 다시 보내지 않았다.
+- Windows Docker internal bridge가 published host port를 제공하지 않는 것을 관측해 신규 소유 NAT bridge+127.0.0.1 바인딩으로 보완했다. PG readiness는 pg_isready뿐 아니라 SELECT1을 요구한다. test datasource H2 driver 상속과 explicit C wallet schema 설치 누락도 실제 실패 후 수정했다. 제품 금융·인증·C RPC allowlist는 바꾸지 않았다.
+- 정지 중 host/시험 chain 시각 차이를 기존 manual_clock의 wall alignment와 상태/receipt 보존 검사로 보완했다. legacy liquidation이 실제 진행됐으며 기존 genesis가 바뀌었다는 가설은 동일 해시로 기각했다. Report TTL·가격 규칙을 늘리는 방법은 사용하지 않았다.
+- Gradle/Python/Docker에서 간헐 Windows bind10014/Bad address를 관측했다. 직접 Python/.NET bind 성공 및 포트 고갈/해당 port exclusion 부재도 관측해 전역 원인은 미확정이다. 빌드 후 실환경은 동일 JUnit selector를 직접 JVM으로 실행해 추가 Gradle daemon을 제거했다. 이전 JUnit XML을 이번 실패 실행의 결과로 복사하던 관측 결함도 수정했다.
+- 한 회차 RAM1,919.85MiB는 기준 미달로 JVM 전 차단했다. 기준을 낮추지 않고 소유 자원을 정상 정지한 후 재측정해 진행했다. 사용자 앱 종료나 시스템 재설정은 없었다.
+- 미래 paid 경계는 새로운 permit의 identity와 두 guard COMMIT을 확인한 뒤 lazy key/기존 단일 HTTPS transport로 연결하도록 추가했다. 이번에는 실제 permit파일·키·유료 sender를 사용하지 않았고 양성검증은 메모리 double만 사용했다. UNPAID allocation 승격·unknown refund/replay는 없다.
+
+## 실제 도달 단계와 남은 검증
+
+full-cafe 계열의 단계별 failed result는 별도 보존한다. 현재 실제 INDEX_LEGACY9/88·표적6·NOVEL30/30·INDEX_PILOT10/93이 통과했지만 PCa에서 `eth_chainId` RPC3초 timeout으로 503/TOOL_UNAVAILABLE이 발생했다. assertion을 완화하지 않고 중단했으며 latency12/Chrome6·최종 금융 fingerprint는 아직 NOT_RUN이다. OOMfalse/exit0, 상태파일 약110MB를 관측했으나 snapshot I/O가 원인이라는 가설은 아직 확인되지 않았다. bounded read-only RPC 진단으로 확인한다. 전체 완료/독립 검토/보존 대조는 후속에 누적한다.
+
+## 학습 쟁점
+
+Mock 통제와 실제 transport/SQL/schema 부트스트랩은 다른 검증이다. port publication·bind·TCP·HTTP/RPC·제품 snapshot 검증을 구분해야 한다. deadline을 늘리는 것과 원인을 해결하는 것도 다르다. source identity가 있는 시험의 실패 원장/STOP을 삭제하고 재시도하면 증거와 비용 통제가 깨진다. 금융회사의 경우 permit 서명/불변감사/다중인스턴스 reconciliation이 추가 과제이며 이번에 완료한 것으로 주장하지 않는다. 로컬 career index는 기존 사건 후속에만 연결한다.
+
+## 후속 최종 판정 — PARTIAL
+
+legacy9/88 색인·표적6·고정30의 실제HTTP assertion 및 pilot10/93 색인은 통과했다. PCa503은 eth_chainId3초C_RPC_TIMEOUT이며 C후속2/latency12/Chrome6/최종금융fingerprint는 NOT_RUN이다. 전체 인수나 paid 준비를 PASS로 올리지 않는다. 실제 HTTP 소스hash와 최종 Python 소스가 다르므로 마지막 cleanup/진단/paid Linux 조건까지 실환경PASS했다고도 주장하지 않는다.
+
+Anvil 단독100읽기 중7실패를 처음 요약에서7timeout이라 부른 것은 잘못이었다. 보존된 원본을 다시 분류하면 startup RemoteDisconnected3/OSError3/Timeout1이다. 1timeout은110MB 상태 쓰기와 겹쳤다. 별도 no-periodic100회는 startup3/WinError10014가13, timeout0, 최대32ms였다. 원본 시험state SHA가 같았고 기존state를 덮어쓰지 않았다. 대형주기쓰기만 제거하고 정상종료state/history보존은 유지했으나 Windows 소켓 결함은 남아 전체 Gate를 무의미하게 반복하지 않았다. Linux 내부에서 Windowsportproxy를 피하는 재검증이 최소 후속 후보이며 전역시스템복구/재시작은 수행하지 않았다.
+
+독립 최초검토는 create응답timeout후cleanup생략과 taskkill실패가후속finally를끊는 두경계를 mock으로 재현했다. stop_owned_container/stop_child를 분리해 exact name/label/image 확인, UNCONFIRMED 기록 및 후속자원별 정리 계속을 구현했다. runner6개는 소유권거절·전체삭제set사전검증도 포함한다. Java21(0SKIP), Python113(기존55+v2기존44+paid8+runner6), Node3 및 web build/testsource compile PASS다. 실제 PG10은 별도 earlier-source 실행으로 구분하며 상속7개를 Java21과 합산하지 않는다. 실제 permit/키/TLS/유료 모델은 미실행이다.
+
+시험이소유한정지임시컨테이너12개만삭제하고 PG/최종Anvil2개정지·PGvolume·4state(258835298bytes와SHA)·모든실패/비용증거를보존했다. 원본root dirty8내용SHA와25worktree HEAD/branch는전후동일하며, 개인원격main9abf3db/CI4913acc도새조회에서같았다. Stage/Commit/Push/Merge0이다. 과거원장/STOP을읽거나변경하지않았다. 유료실행준비도PARTIAL이라예산승인요청은하지않는다. 재검토결과는아래에추가한다.
+
+최종 재검토1회 `review_pilot_v2_preflight`: 발견된 필수 수정 없음. 검토자는 paid8/runner6 순수14개를 직접PASS했고 최초cleanup2건 해결과 최종PARTIAL/미완료표현을 확인했다. 실제PG/Anvil/개인runtime원본/Java·나머지Python은 검토자가 실행하지 않았으며 제공된 정제근거만 대조했다. 구현자는 마지막 v2전체58+기존55=Python113을 실행했고 Java21/Node3도 별도로PASS했다. 검토 이후 코드는 변경하지 않고 이 결과만 누적한다.
+
+공개후보38파일 제한패턴 검사에서 새 private-key/JWT/API-key signature나 새 개인절대경로는 발견되지 않았다. 유일한 경로canary1은 HEAD에도 있는 기존 의도적 거부 기록이며 새diff에추가되지 않았다. 검사0이무유출보증은아니다. runtime/career index ignore 및 staged0을 확인했다. 공급자0/키접근0은 이번시험의 UNPAID mode·controlled supplier·환경allowlist·실제permit미생성 및 전송경계시험의 근거이며 호스트전체네트워크감청으로다른사용프로그램까지검증했다는뜻은아니다.
+
+# 2026-11-04 AI v2 Linux 내부 통신 검증 재개 — 기동 전 차단
+
+기존PARTIAL과HEADd52b29f/미커밋변경을재확인했다. 목표는Windows포트중계없는새Linux환경에서남은C Agent/Chrome검증이며제품/금융기능변경은아니다. 원본25worktree/dirty8보존기준을새로수집했고과거runtime/원장/STOP은입력으로열지않았다.
+
+WindowsRAM측정1277.02→1233.09MiB후강제Guard실제판정은2026-11-04 01:53:48 KST에1183.27MiB/부족736.73MiB,디스크44.73GiB,RAM_LOW였다. 작은ignored JSONL에enforced=true와원시bytes를보존했다. 새컨테이너/빌드/서버/Chrome/RPC요청은실행하지않았다. 이결과는기존10014/snapshot현상의새재현이아니다.
+
+동결질문/정책SHA와미승인preflight exit2유지, resource순수22PASS. 기존전체회귀는동일소스를근거없이반복하지않았고Linux E2E는NOT_RUN이다. 최소이식에test-only JDBC내부alias검사및Linux실행도구구성이필요함을소스로확인했으나RAM차단상태에서미검증런처를추가하지않았다. 제품/테스트/런처코드변경은없고평가·계획·구현로그3문서만추기한다. 동작변경없는상태기록이므로새독립코드검토는실행하지않았다.
+
+전체PARTIAL유지,유료승인요청보류. 기동조건충족후신규Linux내부연결구성및단일RPC부터재검증해야한다. 사용자프로그램강제종료/전역Docker·WSL재시작/설정변경/기존자산접근/Commit/Push/Merge/유료호출/키접근은없다.
+
+최종보존대조에서root HEAD/dirty목록·25worktree HEAD/branch·원본미커밋8파일SHA가이번시작전기준과모두같았다. 작업HEADd52b29f/staged0/diff--check PASS,측정증거ignore,실행중Docker컨테이너0을확인했다. 기존미커밋코드는그대로이며이번수정은위3문서의상태기록뿐이다.
+
+# 2026-11-04 AI v2 Linux 내부 통신 이식 — 무과금 연결 PARTIAL
+
+## 목적과 기존 구조
+
+Windows loopback 중계에서 관측한10014/RPC timeout을 새 Linux 내부 경계와 분리한다. Windows는Docker CLI제어만하고 Backend→PG/Anvil은internal service alias로통신한다. 동일컨테이너내Java/Python/웹/Chromium으로검증하도록구성했으며이전Windows경로는유지한다. 새무과금allocation만사용하고기존원장/STOP/사용자자산은사용하지않는다.
+
+## 실제 변경과 선택
+
+- `ai_pilot_linux.py/linux_inner.py`, 최소tool-only Dockerfile, `PilotV2LinuxSmoke`를추가했다. allowlist 소스/build만새runtime에복사하며기존runtime/.env/private자료는마운트하지않는다. PG/Anvil/Backend는새소유network·volume만사용하고호스트포트는없다. 시험용JDBC검사에Linux+UNPAID+명시opt-in일때정확한pg:5432만추가했다. paid/external/Windows허용범위는늘리지않았다.
+- 첫C seed는기존JDK redirect retry옵션누락을기존검사가차단했다. 원래요구값1을추가하고제품transport정책을유지했다. bare getCAccount가STATE분류가아니라는실패뒤smoke질문만기존C STATE표현으로고쳤으며동결문항은바꾸지않았다.
+- 실제997a의A2 rate-limit실패에서PG current_timestamp와budget writer JVM시각의약3초차이를확인했다. test-only pacing을같은JVM Instant.now기준으로바꿨지만 c222에서재실패했다. 실행class도javap로확인했다. 최초owner예약→A2완료는58.116초여서보호정책거절은정상이며대기문제가미해결이다. sleep전후단조시계/budget clock계측전에는역행등원인을확정하지않는다. 제품분당5제한·금융시계·deadline·assertion은완화하지않는다.
+- 4785의wallet/link assertion실패는당시오류응답이보존되지않아원인미확정이다. test-only로HTTP/code/시각만기록했고c222의두계정은200이었다. 재현되지않은것을해결성과로표현하지않는다.
+- Chromium helper누락은확인해공식chromium-sandbox를설치했다. 새image에서도nonroot/defaultsandbox/no-network진단이namespace EPERM/SIGABRT로실패했다. cap/seccomp중원인은더구분하지않았다. --no-sandbox/privileged/보안프로필확장으로우회하지않았다. 설치PASS와브라우저웹인수는서로다르다.
+
+## 실제 검증 및 한계
+
+신규C 배포/Receipt/identity, 첫제품eth_chainId와C STATE Agent HTTP200/getCAccount SUCCESS/model0/328ms, 두계정JWT·EIP-191 link200/replay409, legacy F1 75000/포함fee75·소유권binder와타인차단, legacy9/88색인·표적6·A1이통과했다. c222의A2는HTTP200이지만rate-limit/근거0로FAIL이다. 고정C3/latency12/Chrome6/최종금융fingerprint/전체원장대조는NOT_RUN이다. 기존11-01에완료한실제PG 이중guard10개를이번새Linux회차의재실행결과로합산하지않는다.
+
+최종표적Java24 PASS/0SKIP, Python119 PASS, Node3/syntax 및전체testsource컴파일PASS다. 무과금순수시험이실모델품질/실제Chrome성공을대체하지않는다. 최초독립검토+재검토2회는필수수정없음이며최종검토자직접Linux순수6/Node3/syntax PASS다. 검토자는private runtime을열지않고정제근거만대조했다. 최종결과기록외후속동작변경은없다.
+
+## 보존과 남은 작업
+
+HEADd52b29f/원본25worktree와root dirty8내용SHA를보존했다. 기존미커밋OpenAiProvider변경은승계했으며이번제품src/main·금융/계약/웹src수정0이다. 새5namespace의정지임시helper/app/probe23개만전체소유권검사후제거했다. PG/Anvil10개·volume·state·실패증거·새shadow원장을남겼고원본자원은변경하지않았다. 유료전송/키/activation/Stage/Commit/Push/Merge0이다.
+
+한probe는RAM809.59MiB로Guard차단됐고이후3264.26MiB회복시재검증했다. 자원회복과kernel namespace오류를구분한다. 전체PARTIAL이며$18승인요청단계가아니다. 다음에는실제pacing관측및sandbox지원Linux브라우저실행경계를해결해야한다. 제품수정필요시먼저근거/변경안을보고한다. 상세단계/실패경계는READINESS_PLAN/EVALUATION_REPORT최상단,원시근거는ignored신규pilot-linux namespace다. 면접용후속사건은로컬career index에만연결한다.
+
+## 기술 원리와 면접 활용
+
+서비스DNS/포트중계/제품RPC deadline을분리해서관측해야하며환경을Linux로옮기는것만으로모든timeout이해결되지않는다. 분당quota의wall-clock창과단조sleep은다르고DB/JVM의시각출처를섞으면검증하네스도실패한다. 이번의첫수정은결정적산술시험을통과했지만실환경에서실패했으므로해결완료가아니다. container USER nonroot와browser sandbox작동도다른조건이다. 금융회사에서는시각동기·분산quota·예약원장대조·최소권한런타임·불변실행증거가추가운영조건이며이번에운영SLA를검증했다고표현하지않는다.
+
+최종공개후보45파일의제한signature검사는0건이며무유출보증은아니다. root HEAD/status/25worktree/dirty8내용SHA의최종대조도전부같았다. staged0/ignore/동결hash/paid activation=false를확인했다. 실제c222와최종소스fingerprint가sandbox패키지수정으로다르므로현재전체E2E를PASS로표현하지않는다. 새followup요약은ignored c222 runtime에원시결과와분리해구현자기록임을표시했다. 독립검토후동작변경없이최종결과만누적했다.
+
+# 2026-11-04 A2 후속 — UTC quota와단조대기의경계보완
+
+## 목적·기존 구조와 원본 조사
+
+사용자가A2만집중하도록범위를고정했다. 제품quota/금융/인증은변경하지않고기존d52b29f/dirty·실패증거를유지한다. c222의A2는owner USER1이고실제시장Tool조회후Embedding PG예약에서AI_ACCOUNT_RATE_LIMIT가발생했다. HTTP200이어도PARTIAL/근거0이므로인수성공이아니다. Legacy4 owner요청+A1=5가있었고ADMIN표적2/색인은별도actor다. 22공급자예약을8개의request와혼동하지않았다.
+
+과거시험PG만Guard/소유권확인후BEGIN READ ONLY로읽었다. 요청별UTC/9LLM·13Embedding과원장fingerprint전후동일을확인하고다시정지했다. SQLite는mode=ro로dispatch activity/요청매핑만확인했다. 과거개별reservation·COMMIT·callback진입·pacing의절대단조시각은저장되지않았으므로정확한기록인것처럼복원하지않는다. A2거부는02:45:38.832까지관측됐지만최초owner창은02:45:40.742611까지차있어정책거부가정상이다.
+
+## 대안과 최소 변경
+
+waitMillis산술/단위변환이아니라한번계산→sleep→즉시전송하는전제가취약했다. wall UTC기반창과monotonic sleep경과를동일시하면UTC보정/진행차이를놓친다. 단순히대기를더길게상수로늘리는대신wake후현재창재조회방식을택했다. 제품분당5/60초,기존60.5초보수margin과기존Agent deadline은유지한다. test-only150초단조상한/SELECT5초한계/취소·계측실패시중단을추가했으며미확정예약환불/전송재시도는없다. 이계산은quota예약자체가아니므로마지막안전경계는계속PG guard다.
+
+변경파일은PilotV2Pacing/LiveHttpTest.pace와신규PacingTest/A2Probe/ai_pilot_a2_probe.py다. LiveHttpTest는pacing CHECK/WAKE의actor·JVM UTC·관측DB UTC·단조경과·요청대기량을새runtime에저장한다. 제품src/main변경0이며기존OpenAiProvider미커밋은승계한다. 무관한Chromium작업은하지않았다.
+
+## 검증과 해석 한계
+
+새Linux PG2개에서quota컴포넌트만실행했다. 각probe의3case는동일새shadow정책18/92/70을공유한다. 통제UTC2.384초후퇴에서기존one-shot은거부/후속단계0,재확인방식은남은2383ms추가후예약허용이었다. 실제시계에서도재확인방식이통과했다. 각probe는새예약68/UNKNOWN0을확인했고이는실제유료호출이나기존승인액사용이아니다.
+
+실제단조첫sleep경과60.342/60.341초에UTC는59.893/59.917초만진행했다. 처음wake의quotaage는60.056/60.085초라hard60초는이미만료됐고남은것은60.5초보수margin440/411ms다. 따라서자연시계에서원래rate-limit실패를재현했다고보고하지않는다. 원래거부기전은명시적통제rollback에서재현했고실제측정은clock영역차이의증거다. c222과거정확한OS/WSL/NTP원인은미확정이며두표본을운영SLA로과장하지않는다.
+
+최종Java17 PASS/0SKIP(신규pacing7/기존주소3/budget5/deadline2), Python64 PASS, runner AST PASS다. Windows초기Gradle Bad address:listen은기존IPv4실행환경을적용해분리했고제품실패로세지않았다. 최종source/class SHA와probe결과를새runtime에보존했다. 두probe의PG/Java4개정지·새volume/기존실패로그/원장은보존했고이번container/volume삭제0이다. 무과금단일PG quota재현PASS와수정후A2 Agent HTTP/full30 NOT_RUN을구분한다. 전체준비도PARTIAL/Chromium미해결/유료승인요청보류다.
+
+## 독립 검토 및 학습
+
+A2작업최초독립검토는필수수정없음이다. 검토자는신규stop함수를무서버mock6경계로직접검증했고잘못된name/label/image에서는stop0을확인했다. 최종공개소스SHA3개도직접대조했다. Java/실제PG결과는구현자제공정제요약대조이며검토자가private runtime을직접열거나실환경을실행하지않았다. 문서의자연표본/통제재현/미검증구분을확인했고추가필수지적은없다.
+
+면접쟁점: UTC와monotonic의역할,영속quota와재시작가능성,한request의여러예약계수,원자적인PG check-and-reserve와시험pacing의TOCTOU차이,소표본의인과추론한계다. 실제로선택한것은wake재조회이며제품quota시계전면변경이나분산rate limiter도입은검토·구현하지않았다. 기존로컬career index의시계사건후속으로연결한다.
+
+최종보존대조: root HEAD/status·25worktree와보호8파일SHA가모두시작전과같았다. c222의기존응답/실패로그/SQLite/결과4파일SHA도같고, 기존제품OpenAiProvider미커밋내용은그대로다. 이번공개변경은하네스5파일/기록3파일이며새private증거와career index는ignore다. 기존v2예산·계획및동결4개SHA/activation=false를재확인했고staged0/diff--check PASS/실행중컨테이너0이다. 유료요청·키·commit/push/merge·이번삭제0이며A2 Agent HTTP/full30 미실행을유지한다.
+
+# 2026-11-04 A2 실제 HTTP 후속 — pacing/연결 PASS, 답변 인수 PARTIAL
+
+## 목적과 최소 실행 범위
+
+전회PG quota컴포넌트를실제JWT→Agent HTTP로연결하는별도후속이다. 기존Linux런처와검증fixture를재사용하고명시적`--a2-http`/A2_PREFIX만추가했다. defaultFULL의C smoke/51HTTP/Chrome6 및기존시간상한·assertion은그대로다. prefix는Legacy6+A1+A2 질문8개뒤종료하며나머지28문항은실행하지않는다. 새PG/Anvil/합성자산·시험EOA만사용하고기존DB·체인·원장은재사용하지않았다. 제품Rate Limit/예산/RPC/OracleTTL/금융/인증코드는변경하지않았다.
+
+## 관측과 실제 결과
+
+신규b2b7453d33844ee8에서USER1의PG최근5request가PF1a/PF1b/PA2a/PA2b/A1 응답runId와정확히같고60초내있는것을assert했다. 첫owner예약04:34:36.207686Z,A2전검사04:34:41.579595875Z다. 수정pacing은한번의대기후잔여267ms를재확인하고추가대기했다. A2실제HTTP시작04:35:36.747183620Z,첫예약04:35:36.998022Z로최초owner예약후60.790336초다. 정책상한을늘리거나예약row를지워통과하지않았다.
+
+A2는HTTP200/608ms,MIXED/getCurrentReferencePrice SUCCESS/SIMULATED/GENERATED_NOT_USER_FILLS였다. Embedding1/Synthesis1예약모두OBSERVED,retrieval1·USER출처5/색인version·PGSQLitematching이통과했고rate-limit/RAG장애는없었다. 금융9table fingerprint도읽기전후같았다. 평가용pacing약55.383초와HTTP608ms는분리하며통제모델시간을실제모델성능으로해석하지않는다. 새전체shadow는9request/24예약(LLM10/Embedding14)/536306100nUSD이며실제유료사용은0이다.
+
+## 기대 기준과 미완료 구분
+
+HTTP200/PARTIAL은완전PASS가아니다. 동결필수atom(volume/pool)은출처5개중0/2였고최종본문은provider/가격만설명했다. 합성거래량과사용자체결/수요/거래상대방의핵심설명은충족하지않았으며MODEL_EVIDENCE_INSUFFICIENT/citation0이었다. 고정불충분통제모델과unit벡터를그대로유지했으므로이를실제의미검색성능회귀나실모델답변품질성공으로단정하지않는다. 제품생성/검색코드를바꾸거나정답을공급자에주입해PASS로만들지않았다.
+
+판정은pacing/실제HTTP연결PASS,동결답변충분성PARTIAL,실모델품질NOT_RUN이다. 전체30의무과금연결회귀는기술적으로재개가능하지만실제품질인수를대체하지않고이번에는진행하지않는다. 전체준비PARTIAL/Chromium별도미해결/유료승인요청보류를유지한다. 한회차성공을상시안정성이나과거OS시계원인해결로확대하지않는다.
+
+## 검증·검토·보존
+
+Java17 PASS/0SKIP/전체test·helper컴파일PASS,Python65PASS다. prefix실환경JUnit1 PASS/0SKIP에는scope를명시해전체시험성공으로오해하지않도록했다. source fingerprint ee5537f03629191d4f1f381781a51ebc5ea1b3ae65b67623c02cc655c77c8abc를보존했다. 독립검토는필수수정없음이며검토자직접Linux7/preflight16/diff검사PASS다. 실제HTTP/private원본은구현자결과를정제요약으로만대조했다. 후속코드변경없이최종사실기록만추가했다.
+
+새소유7컨테이너모두STOPPED/PGvolume·Anvilstate·원장·모든증거보존이다. PGpostaudit는이번새PG에만READ ONLY로읽고다시정지했다. 유료API/키/승인활성화/Stage/Commit/Push/Merge/원본삭제는없다. 로컬career index는기존시계문제의HTTP후속근거로연결하고공개하지않는다. 기술쟁점은컴포넌트와HTTP의증거차이,200과품질PASS의차이,같은문서와정확한근거chunk의차이,일관된비용예약과읽기불변성이다.
+
+최종전후대조에서root HEAD/status·25worktree·보호dirty8SHA는모두같았다. 기존c222응답/SQLite와87e7 PG재현결과SHA,기존제품OpenAiProvider미커밋SHA도같았다. 이번변경은기존하네스4파일/공개기록3파일과ignored career후속이며새공개파일추가0이다. 동결문항·계획·예산SHA와activation=false/readyfalse/정적감사exit2,staged0/diff--check/비공개증거ignore를보존했다. 독립검토이후코드변경없이최종사실만추기했다.
+
+# 2026-11-04 A2 필수 근거 분류와 동결30 무과금 연결 회귀
+
+## 목적·문제와 원인 분석
+
+pacing 완료 이후 A2 필수 Chunk0/2와 PARTIAL만 조사했다. 기존 b2b 시험PG의 소유권과 Guard를 확인한 뒤 BEGIN READ ONLY로 활성9문서/88Chunk를 읽었다. index fingerprint 전후 동일이며, 필수volume/pool Chunk는 USER의 market/architecture 문서에 실제 존재했다. USER후보78개 모두cosine1/전체distinct vector1이었다. 필수근거는30/34위로 후보40에는 있으나 최종5에서 제외됐고 기존응답의5개ID와 일치했다. 새 실행의 실제 질의/후보/최종선택 추적도 같은 결과였다. 추측했던 index누락·권한·threshold탈락은 관측되지 않았다. 통제벡터가 의미구분을 없앤 결과와 실제 Embedding 품질을 구분했다.
+
+## 대안과 최소 변경
+
+필수근거를 강제주입하거나 TopK/threshold를 조정하면 시험에 맞춘 품질PASS가 되므로 채택하지 않았다. 제품검색·금융·인증·비용코드는 변경하지 않고 test-only PgKnowledgeStore/retrieval observer를 추가했다. super검색결과를 그대로 반환하며 query/role/domain/유사도/후보순위/선택을 ignored private JSONL에 기록하고 vector는hash만 남긴다. 실패를 숨기지 않도록 기록실패도 시험실패다.
+
+Linux런처에 NOVEL30 명시scope를 추가해 기존 Legacy6+동결30까지만 실행하고 C/Chrome 전에서 종료했다. FULL과A2_PREFIX는 그대로다. 신규 읽기전용 connection_report는 HTTP/Route/Tool/RAG/정확atom/답변상태를 분리하며 ANSWERED/200을 품질PASS로 간주하지 않는다. 동결문항·정답·합격기준·예산정책·pacing은 변경하지 않았다.
+
+이번 변경: PilotV2RetrievalTrace(신규), PilotV2Runtime/LiveHttpTest, ai_pilot_linux/inner와Linux시험, 신규retrieval_audit/connection_report/report시험, 계획·평가·이로그다. 제품src/main의 기존OpenAiProvider 미커밋은 승계했으며 이번 수정0이다.
+
+## 실제 검증과 한계
+
+새 d8dd2140107bf1ab에서 Windows 가용 RAM4600.86MiB/디스크45GiB이상, App직전3923.40MiB로Guard통과 후 internal network/미공개포트 PG·Anvil·Spring을 실행했다. 시험 EOAs/모의자산fixture와JWT/EIP-191 owner/other 연결·재사용409가 실제통과했다. 사용자지갑거래나원본자산은 사용하지 않았다.
+
+Legacy6+동결30의36질문HTTP를 완료했고Linux JUnit1 PASS/0SKIP이다. 동결30의예상HTTP30/30,Route29/30(D3 FAIL),12문항의28개Tool SUCCESS/별도D5보호Tool거부1,RAG28개정상이다. RAG필수근거는전부확보0/28,일부3/28,0개25/28이다. 상태는INSUFFICIENT_EVIDENCE17/PARTIAL11/ANSWERED1/예상404ERROR1이며 실모델품질PASS를 주장하지 않는다. A2는HTTP200/591ms/시장Tool/RAG성공,필수0/2/최종PARTIAL/인용0이다.
+
+D3는고정KNOWLEDGE통제Planner로인한경로불일치이며다른회원데이터는없었다. 미지원조회명확화는본문에없어충분성해결로기록하지않는다. C5는본인getCAccount/고정블록/모델0을관측했으나동결당시C Tool미지원기대와현재기능의차이가있다. 기대를바꾸거나전체답변인수PASS로승격하지않는다. 새C표적3/반복12/Chrome6은이번scope에서NOT_RUN이다. 기존Chromium sandbox namespace EPERM은별도미해결이다.
+
+원장대조/금융9table fingerprint불변PASS,신규shadow LLM52/Embedding40/92예약모두OBSERVED/2,305,872,920nUSD보수예약이다. 실제유료비용0이며과거승인액·원장·STOP은보존했다. 공급자키없는UNPAID경로/internal network로실행했고호스트전체네트워크감사를했다는의미는아니다. 실행source fingerprint d5b1f9df63e69b2d4f30a3f799d3e1aa89d8a9c7e979d749c2ecec666112c009다.
+
+Python관련73PASS,전체test/helper컴파일-only Gradle BUILD SUCCESSFUL이다. 별도Windows JUnit17개성공뒤Gradle후반Bad address:bind는미해결환경실패로분리하며그실행전체를PASS로계수하지않는다. 기존Linux성공이이번소스의미실행항목을대체하지않는다.
+
+## 독립 검토·보존·다음 범위
+
+최초독립검토에서DENIED metrics누락을0으로간주하던집계결함1건을발견했다. 명시적정수0인모델/검색계측만허용하고누락/None/False/문자열/nonzero는승격하지않도록수정했다. 재검토1에서report6개(8경계포함)를검토자가직접PASS했고추가필수수정없음이었다. 이후Tool거부집계도같은명시적계측을요구하는표적시험을추가해report7PASS다. 최종문서/실행결과대조는후속기록한다. private원본을검토자가직접열지않은경우실환경직접검증으로표현하지않는다.
+
+root HEAD/status·25worktree/보호8파일SHA,기존A2/c222증거4개SHA는전후동일이다. 새7소유컨테이너는모두정상STOPPED,volume/state/원장/실패증거를보존했고삭제0이다. HEADd52b29f/기존미커밋을보존하며Stage/Commit/Push/Merge/activation0이다. 로컬career인덱스에후속사건을연결하고공개하지않는다. 전체준비PARTIAL/실모델NOT_RUN을유지한다. 다음에는재실행30을피하고단일예산·소스/fixture identity를지키는C표적전용재개경로를먼저확인한뒤10/93색인/C3/금융대조를실행해야한다. Chrome은sandbox지원환경확인후별도6DOM요청이며안전정책완화는대안이아니다.
+
+## 기술 원리와 면접 쟁점
+
+문서존재→역할/도메인허용→후보순위→TopK선택→최종답변의각경계는별개다. 동일벡터의cosine동점은SQL의보조정렬을재현할뿐의미검색을검증하지못한다. Mock연결시험에서검색품질실패를관측해도제품retriever결함이라고곧바로결론내릴수없다. 또한측정누락을0으로대체하면안전거부가거짓PASS가되므로계측의부재도불확실성으로남겨야한다. 질문:어느단계에서근거가빠졌는지어떻게증명했는가? 왜TopK를늘리지않았는가? 같은문서Hit와정확Chunk recall은어떻게다른가? 품질인수와연결시험을왜나누는가? 동결기대와지원기능변화가충돌하면어떻게보고하는가? 이번선택은관측개선과정직한PARTIAL이며새검색기술을도입한사례가아니다.
+
+최종 재검토2는 발견된 추가 필수 수정 없음이다. 검토자는 report7/Linux8/preflight16 및diff검사를 직접PASS했고, 동결JSON과공개문서30행의atom분모오류0/Tool합계28/응답상태합계/예약산술을대조했다. private실환경원본은열지않고제공된정제요약만대조했으므로검토자직접E2E실행으로기록하지않는다. 이번12개공개변경후보의제한민감서명검사0건이며무유출보증은아니다. 원본보존대조/비공개ignore/staged0/diff--check를확인했다. 이후코드변경없이이최종검토사실만추기했다.
+
+# 2026-11-04 C 연결 완료와 반복 Receipt timeout 재현 — PARTIAL
+
+## 목적·구조와 최소 변경
+
+A2/pacing/제품RAG를건드리지않고잔여C3/반복12/Chrome6을검증하는후속이다. D3실제응답Tool0/일반근거부족본문에타인정보는없었으나Route불일치는그대로다. C5의동결당시C Tool미지원기대와현재기능차이는자료수정없이구분했다.
+
+기존단일원장phase순서를건너뛰거나과거원장을고치지않도록새UNPAID회차에서기존prefix→INDEX_PILOT→SAFETY_C→LATENCY를실행하는C_LATENCYscope를추가했다. 새PilotV2CTailChecks/Test는C Tool/assetModel/deployment/pinned관측/USER정책5chunk/Claims미열거·담보필드를요구한다. gate실패시LATENCY로진행하지않는다. LiveHttpTest는단계별DB9table와두계정C API value fingerprint를비교하고AfterEach에서실패시에도최종대조를기록한다. 변하는block metadata는금융상태hash에서제외했다. 정상C연결과통제자연어PARTIAL은구분한다.
+
+변경범위는ai_pilot_linux/inner/test_linux,LiveHttpTest,신규CTailChecks/Test/sandbox_probe와계획·평가·이로그다. 제품src/main/금융/인증/RPC/Oracle/Deadline/동결문항변경0이다. 기존OpenAiProvider미커밋은승계한다. 새sandbox_probe는USER1000/기본권한/none network/about:blank만실행하며키나서비스포트가없다.
+
+## 실제 실행·문제·검증
+
+새6e8fefeb66dbfe8a와b3babe2d8a28fc2f는같은source4168f27470d532703e5d24ab5ab9bccf4eedf07ac79667469634ca0c33ec4eec다. 각각새PG/Anvil/시험EOA/JWT를사용하고C10/93을새로색인했다. 두계정EIP-191/replay409/타인Quote·Cposition차단을binder로실제확인하고C PCa/b/c의MIXED,Tool성공,USER C정책5chunk,고정관측과자산모델분리를통과했다. PCa/c는account,PCb는position이며3답변모두MODEL_EVIDENCE_INSUFFICIENT/PARTIAL이다. approve·예치관계등완전한자연어인수는NOT_RUN실모델과별개로남긴다.
+
+첫회차LATENCY의A1 6개는연결성공했으나첫PF1b가HTTP200/3670ms/Receipt TOOL_TIMEOUT으로기존assertion에서실패했다. 앞선동일Receipt경로성공이있어독립동일소스재현을선택했다. 이는수정후PASS를만든것이아니다. 두번째는A1 6개와첫PF1b649ms를통과한뒤다음PF1b3608ms에서같이실패했다. 각각6 PASS/1 FAIL/5 NOT_RUN과7 PASS/1 FAIL/4 NOT_RUN,standalone JUnit각1FAIL/0SKIP이다. 12요청완료나전체PASS를주장하지않는다.
+
+정확한오류는Tool audit/응답의TOOL_TIMEOUT이며각3020/3022ms다. Skill요약의일반TOOL_UNAVAILABLE를최초정확한오류로오인하지않는다. 첫가설은일시적지연가능성이었지만재현되어원인이해결됐다고결론내리지않았다. 다만두번째직전동일PF1b성공때문에항상잘못된입력/단순유휴연결이라고단정할수도없다. DB/DTO/private channel/receiptRPC/blockRPC/파싱중어디인지관측부족이다. orchestration1500초timeout이나기존Windows10014/Csnapshot으로확정하지않는다. 금융및C상태는두회차모두종료시COMPLETE/전후동일이었다.
+
+변경없이다시전체실행하는방법은더채택하지않았다. 다음에는ReadOnlyReceiptClient하위단계의무민감관측이필요하며제품observer추가가필요하면사용자에게근거/범위를먼저보고한다. timeout증가/자동재시도/assertion제거는이번방법으로채택하지않았다. 이번제품수정0이다.
+
+## 브라우저·원장·회귀·보존
+
+새de80a13061ccc33d의기본Sandbox는namespaceEPERM/exit134다. 검사한WSLUbuntu24에는Chromium/Node가없었다. Sandbox비활성화/privileged/광역권한은사용하지않았고Chrome6은NOT_RUN이다. 이는모든Linux실행환경이불가능하다는주장이아니다.
+
+두새PG를소유name/label/image·Guard확인후사후READ ONLY로읽고다시정지했다. PG/SQLite예약은120개와121개정확일치/모두OBSERVED/UNKNOWN0이다. shadow69LLM+51Embedding/70LLM+51Embedding은각각상한내이며이전유료승인과연결하지않는다. 실패제출은LATENCY에서각1개미완료로남기고환불·재전송·수동완료하지않았다. 실제유료/API키/승인활성화0이다.
+
+compile-only Gradle성공,새Java3/0SKIP과Python74PASS다. 최초독립검토필수지적없음/검토자직접Linux9와diffPASS,AfterEach포함재컴파일및Java3도성공했다. 최종실행증거재검토는후속기록한다. 14개시험컨테이너+probe1개STOPPED,새volume/state/원장/기존실패증거를보존한다. HEADd52b29f와25worktree/보호8파일/과거원장·STOP은그대로이며Commit/Push/Merge/삭제0이다. 개인career인덱스는ignored로만갱신한다.
+
+## 기술 원리·한계·면접
+
+200/PARTIAL,단계연결,Tool timeout,전체시험성공을구분해야한다. 외부호출뿐아니라Tool내부DB/RPC에도서로일관된deadline과취소전파가필요하다. 이번에는취소/유보와거래불변성을관측했지만내부작업의정확한자원회수시각은직접계측하지않았다. 소표본A1의median/p95는첫591.5/663ms와둘째661.5/684ms이나실모델SLA가아니다. 같은유형PF1b의성공과실패가함께있어야긴꼬리지연을숨기지않는다. 기업용운영에서는method별관측·DBpool/worker/HTTP단계와거래실패경계를추가로분리해야한다. 질문:왜재현1회후같은전체실행을멈췄는가? 왜timeout을늘리지않았는가? 읽기실패와정산실패는무엇이다른가? 블록metadata를금융fingerprint에서왜분리했는가? Sandbox실패를권한확대로해결하면무슨위험이있는가? 전체판정은PARTIAL이며남은사용성/운영조건을완료로바꾸지않는다.
+
+최종 재검토1은 추가 필수 수정 없음이다. 검토자는 Linux9/diff검사와n6 median/p95·요청완료/실패/미실행·예약 산술을 직접확인했다. private실환경/PG원본은정제요약만대조했으므로검토자직접E2E로표현하지않는다. 원본root HEAD/status/25worktree/보호dirty8SHA 및기존A2/c222증거4SHA는최종대조동일이다. 현재제품src/main 미커밋SHA도작업전동일이며staged0/비공개ignore를확인했다.
+
+추가읽기전용source감사에서host native fingerprint10fb…와Linux4168…차이를발견했다. 소스변경으로추측하지않고동일상대경로의구성요소/대소문자구분정렬을메모리에서재현해호스트와실행copy모두4168f27470d532703e5d24ab5ab9bccf4eedf07ac79667469634ca0c33ec4eec임을확인했다. WindowsPath와PosixPath의정렬차이라는기존hash이식성한계이며코드·identity·기존원장수정은없다. 유료실행은기존Linux한정검증을유지한다. 같은정규화소스가같은identity인지와OS native ordering을분리해야한다는후속학습근거다. 이후동작변경없이최종검토/관측사실만추기했다.
+
+# 2026-11-07 PAID v2 실행 경계 준비 — PARTIAL
+
+## 목적·문제·판단
+
+기존 무과금51/C3/반복12/Chrome6를 반복하지 않고 승인 전 준비만 진행했다. UNPAID Linux의pg:5432/내부network/통제sender/자동연결판정을 PAID에 단순 전환할 수 없음을 코드로 확인했다. 기존 PAID permit 및 PG→SQLite COMMIT 경계를 유지하면서 앱의 PG namespace 공유와 고정 CONNECT relay를 선택했다. PAID JDBC 허용 주소 확대·앱 전체 internet 연결·과거 원장 전환은 채택하지 않았다.
+
+## 구현
+
+Python 평가 전용 paid_transport/egress/paid_environment/paid_schedule과 표적 시험·일회 Linux topology probe·작은 보존 manifest를 추가했다. 공통 broker는 optional connection factory를 통해 기존 직접 HTTPS 동작을 보존한다. PAID sender만 새 고정 relay를 사용한다. 새 파일도 source fingerprint/staging allowlist에 포함했다. 제품 Java/웹/금융/인증/Timeout/PG 비용 정책과 동결 질문/JSON 변경0이다. 기본 relay는403/no dial, 제한2연결·헤더4096·터널60초·종단TLS·단일시도다. 원문 payload·임의예외·JWT·대형state를 새 출력에 포함하지 않는다.
+
+## 검증·실제 관측
+
+새 topology 진단cdc5634f21f99140에서 실제PG SQL SELECT1, 같은namespace localhostPG protocol응답, relay CONNECT403, publishedport0/internalnetwork, 소유3컨테이너 STOPPED를 확인했다. 새 빈 시험PG 볼륨·증거는 보존했다. RAM 시작3010.90/생성전3010.06/종료3011.88MiB·디스크38GiB로 기존1920/2GiB Guard를 유지했다. 외부network/keymount/모델/Embedding/메타데이터 요청0이다. 첫7347…는CREATE에서 실패했으나 원래stderr미보존으로 정확원인은미확정이다. 기존route/subnet선택기를 적용한 후속이통과했다는사실과주소풀고갈가설을구분한다.
+
+PAID 일정 메모리시험6, 새 전송/relay/topology17, 기존 sender8, coordinator16, HTTPplan2, Linux14, 공통broker15=78 PASS, 환경값보완관련기존unpaid_live6포함84 PASS다. 실제 Spring/Chrome PAID 재인수나 실제모델품질 시험이 아니다. 과거 실제 무과금 PASS는보존하고반복하지않았다. 새원장은 임시 double뿐이며 기존 비용원장/STOP/활성화는접근·수정하지않았다.
+
+독립초기검토는DNS무제한/예산재부여1건을가짜150msDNS→dial(.01)실제156ms로재현했다. 소유child DNS/timeout시kill·reap/monotonic잔여connect로수정하고실제provider없이dummychild종료·잔여.25초·만료connect0을시험했다. 응답을assertion/검토전0600배타파일+fsync로보존해실패증거유실도방지했다. 새실험질문이나모델호출을추가하지않았다.
+
+## 한계·남은 작업·검토
+
+전체PAID서버/DOM adapter 및 전체supervisor 결박은아직미완료다. blueprint의PREPARED는실행명령이아니고 ready=false/exit2/activationAllowed=false를유지한다. 실제DNS/TLS/모델권한/현행가격은승인전NOT_RUN이다. 동결제안US$18/92LLM/70Embedding·최대예약17.168384를그대로표시하되승인만받으면즉시전체실행가능하다고주장하지않는다. 상세근거와면접질문은docs/ai/PAID_EXECUTION_BOUNDARY_2026-11-07.md. 독립검토는최종범위로요청후결과를추기한다. Commit/Push/Merge/배포0, 로컬개인회고는공개대상에서제외한다.
+
+최종독립재검토1은발견된필수수정없음이다. 검토자직접새경계17/schedule6/diffPASS, DNS child종료·connect잔여·실패응답보존·환경이름열거후허용값조회보완을대조했다. 실제Docker/공급자/PG원장/TLS재실행은없었다. 구현자신규Linuxprobe와독립코드/단위검증을구분한다. 보호25HEAD/원본dirty8SHA는새durable manifest전후일치, staged0이다. 키파일/저장소접근과제외env값materialize최소화는구분하며불필요원문출력개선이과거로그삭제나절대무유출을뜻하지않는다.
+
+# 2026-11-07 PAID 전체 런처·실제 Spring/DOM 연결 — READY_FOR_APPROVAL
+
+## 목적과 기존 구조
+
+이전PaidSchedule은adapter callback만있고Linux실행은UNPAID고정이었다. 새paid_launcher/inner/adapter/PilotPaidServer로prepare→최소probe→명시permit의PAID경계를연결했다. 고정평가/제품금융/인증/Oracle/RPC/Timeout/비용정책은변경하지않았다. 목표는유료평가준비이며실제모델인수는아니다.
+
+## 구현·판단
+
+- 검증된정지UNPAID자료를읽기전용cold-copy한다. 신규시험PG/Anvil상태만소유label/image/name으로관리하며기존SQLite/승인/STOP을재사용하지않는다. 새PAID권한DB와두AI DB는빈상태로따로준비한다. 복제본의기존시험C identity를명시하고새계약배포라고보고하지않는다.
+- 앱은PG network namespace로기존PAIDlocalhost JDBC범위를유지한다. actualSpring은시험classpath/private control파일만추가하고JWT·본인/타인Quote/C조회·C/Legacy분리를대조한다. FuturesWorker는노출전종료,나머지writer/direct/synthetic/RPC설정은원래조건을assert한다. 새거래/사용자서명은없다.
+- BrowserAdapter는기존DOM/CDP/Sandbox증명을재사용하며브라우저성공응답을주입하지않는다. 응답/의미검토결정을fsync보존하고PAID는동결기대값·답변SHA에묶인기술평가기록없이는다음으로진행하지않는다. 단순200/PARTIAL은품질PASS가아니다.
+- network-none/key없는Linux gate가source/compiledartifact/image/fixture/PG authority/path/permit를검증한뒤에만새PAID원장·relay·키mount로진행한다. 현재이분기는실행하지않았다. 실제전송은기존PG→SQLite COMMIT→PaidSender순서를그대로사용한다. 현재모델/단가확인기록도없으면전송전에거절한다. 선택소스와worktree가다르면기존후보실행을막고기존실패자료는보존한다.
+
+## 실제 문제와 원인 분석
+
+1. b410…의첫probe는입장RAM1805.90/114.10부족으로실행전차단됐다. 프로그램/설정변경없이3009.55로회복후진행했으며회복기전은미확정이다.
+2. b410…후속은색인뒤snapshotDB scope IAE였다. 64byte시험DB명이실제PG에서63byte로절단됐음을READ ONLY SQL로확인했다. scope검사를완화하지않고식별자63사전검사/짧은p_이름/63·64경계회귀를추가했다. PostgreSQL lexical structure공식문서와관측이일치했다. 기존원장·실패설정을덮어쓰지않았다.
+3. 974…는LinuxGuard에서Chrome전차단됐다. 당시샘플미기록으로host/cgroup선택원인은확정할수없다. 관측파일을추가하고시험cgroupcap만2560→3072MiB로조정했다. JVM384+metaspace256에1920여유를더하면이미2560이며native/cache여유가없다는예산분석이다. 실제성공시사용694.66MiB/새headroom2377.34/host4955.36을확인했다. 같은사용량을2560에서빼면1865.34다. 이는설정근거이며과거미측정치를추정확정한것이아니다. WindowsGuard/전역WSL/사용자앱은유지했다.
+4. 독립검토에서private ACK10초와의미검토300초충돌·watchdog불일치,relay기동예외정리누락,browser정리예외의후속차단을찾았다. 실제유료장애가아닌코드/무과금주입발견이다. 검토직후ACK/단일제어시간JSON/독립finalizer로수정했다. cleanup불명을정상CLI로보고하던경우도실패처리했다. 제품HTTP/AgentTimeout은늘리지않았다.
+
+## 실제 검증과 한계
+
+최종de2444432a1a7605/probe-52457f62027754cd에서source4ef7aabf9fab6b20fb23052432512bc1440ae6c38fe997e2fec6a802c1b44794의준비·probe각JUnit1PASS/0SKIP,실제ChromePF1b1DOM/HTTP200/Tool/RAG/인용·불확실성DOM/로그아웃clear·같은브라우저Sandbox·Linux파이프framing/deadline·금융9table/C fingerprint·PG/SQLite가통과했다. 기존51/C3/12/Chrome6는재실행하지않았다. 기존변경없는6DOM계정전환코드의이전증거와Node회귀를재사용하며새실제6요청/의미품질성공으로합산하지않는다.
+
+shadow LLM1/Embedding7/UNKNOWN0/STOPPED/예약0.068900220USD이며실제청구0이다. PAID DB3개는비시스템테이블0·새PAID session없음·activationfalse다. Windows입장3267.19/앱3162.27/브라우저2614.74MiB는1920기준을지켰다. 종료1890.74는기준미만의비강제관측이며추가자원을기동하지않았다. 연속최소RAM/SLA를주장하지않고실제실행직전다시확인한다. 소유자원모두정지,최종Anvilexit0/OOMfalse·snapshot138,856,153byte/SHA c93dd3f777ae815554e184e185783d1cb190d3b1f3dd7a8e8acd91abf3b8a0f4를Linuxvolume/private사본으로보존했다. 원문출력은없다.
+
+표적Python46PASS/Windowspipe1SKIP(adapter18+schedule6+Linux14+sender8),Node4PASS,Java21시험서버컴파일PASS다. API Guardianannotation64warning은기존compileclasspath한계이며compile실패나testskip을숨긴것이아니다. 실제Linuxpipe는별도self-proof이고Windowsunittest를실행했다고바꾸지않는다. 모든수치는통제공급자연결검증이며실제LLM/의미Embedding/사용자만족도/운영SLA는NOT_RUN이다.
+
+## 검토·남은 승인·학습
+
+최초독립검토지적을수정했고재검토1필수지적없음,최종재검토2도발견된필수수정없음이다. 검토자직접Python46PASS/Windows파이프1SKIP·Node4PASS·diff검사를실행했다. 실제source2124파일/compiled1509파일SHA·image identity·Linux정렬fingerprint·Spring/Sandbox1DOM·금융/C·PG/SQLite·PAID미활성·25HEAD/원본8파일보존을증거로대조했다. state는원문없이streamingSHA만검증했다. 독립실환경재기동/공급자/키접근은없으며실제Linux파이프self-proof와WindowsSKIP을구분한다. US$18/92LLM/70Embedding·보수최대17.168384는여전히미승인이다. 현재모델/단가/계정권한확인과사용자명시승인없이는실제키·공급자를사용하지않는다. Commit/Push/Merge/배포0,main/원본보호파일/과거원장/STOP은보존한다.
+
+근거:docs/ai/PAID_LAUNCHER_RUNBOOK.md와EVALUATION_REPORT최상단,신규private owner/probe의작은JSON·source/artifact manifest·PG paid DB미활성기록·state archive proof다. 회고는기존로컬인덱스에만연결한다. 면접쟁점:DB물리식별자제약과연결identity검증,전체deadline과운영자검토/브라우저제어시간의분리,독립정리와최초실패보존,cgroup headroom과Windows가용RAM차이,네트워크capability와비용authorization의분리,연결PASS와모델품질PASS의구분이다.
+
+# 2026-11-07 PAID 승인 후 사전점검과 자원 차단 — PARTIAL
+
+## 목적·사실·원인
+
+사용자승인US$18/92LLM/70Embedding/57요청을받아실행전가격·소스·자원·보호경계를확인했다. 공식Terra uncached2.00/output12.00,cachewrite1.25배와Embedding0.02달러/백만token을확인했고기존2500/12000/20nUSD예약상한은낮추지않았다. 모델계정권한확인경로가없던평가전송기결손은PG→SQLite예약후첫POST전고정2모델metadata GET으로보완했다. 전체deadline공유·TLS검증·모델일치·자동retry0·예약불명전액보존을유지한다. 실제GET/키/과금은아직없다.
+
+PREPARE중두입장차단과설정변경없는물리RAM자연회복을확인했다. 소스고정뒤4796…PREPARE는실제PASS였으나probe0bab…는Windows브라우저직전1564.43MiB(355.57부족)로차단됐다. Linux2377.19MiB/디스크35.46GiB는충족했다. 사용자앱종료·시스템설정변경·Guard완화는없다. WSL캐시등회복기전을실측하지않았으므로확정하지않는다.
+
+## 수정·검증·한계
+
+독립검토에서metadata원예외가coordinatorUNKNOWN으로가려지는문제를발견해allowlist사유/모델/HTTP상태/elapsed만보존했다. 초기필수1건수정후재검토1필수지적없음이다. 그뒤실제Guard차단에서부모가거절응답전예외를던져child최종fingerprint/JUnit/cleanup파일이완성되지않는제어경로를확인했다. 자원거절allowed=false를먼저전달하고최대75초내원래정리경로를기다리도록수정했다. 이는제품Timeout을바꾼것이아니고소유하네스정리제어다. 안전조건을통과시킨것도아니다.
+
+Environment21+Sender8+Adapter20=Python49PASS/Windows파이프1SKIP. 첫unittest모듈직접실행은import경로오류였고정규discover로고쳐실행했다. 새shadow index6 OBSERVED/UNKNOWN0·PF1b미완료·기존작성STOP·소유정지를확인했다. STOP덮어쓰기방지assertion이작동해수동추가시도는쓰기전중단했고원장은읽기전용집계만했다. 원본/과거원장은변경하지않는다. 실제probe최종fingerprint는미작성으로NOT_RUN이고이최종제어수정의실환경재시험도NOT_RUN이다. source가달라진후보/실패기록은재사용·초기화하지않는다.
+
+실모델57/F1/A2/C4/C/유료Chrome6·현실공급자권한/TLS/지연은NOT_RUN. 유료전송·키읽기·신규PAID배분0,승인18달러미사용이다. 전체서비스PARTIAL이며기존무과금PASS를유료인수로바꾸지않았다. Commit/Push/Merge/배포0. 다음엔브라우저직전1920MiB를충족하는자원환경에서최종소스준비/probe가먼저필요하다.
+
+최종독립재검토2는발견된필수수정없음이다. 검토자직접Environment21/Sender8/Adapter20PASS·Windows파이프1SKIP·diffPASS를확인했다. elevated socket시험WinError10014는환경권한별실패로남기고동일소스기본권한21PASS와구분했다. small실행증거와보호집계25HEAD/root8내용/기존제품dirtySHA/원본시험4SHA불변을대조했다. 검토자실환경재기동/키/API접근은없다. 종료idle RAM2324.65MiB/디스크35.45GiB와실행중브라우저직전부족을구분하며자연회복이나상시최소치를추측하지않는다. 마지막검토후에는이기록만추기했고실행코드는변경하지않았다.
+
+## 기술 학습
+
+예약승인은계정모델권한을증명하지않고,모델metadata200도실제품질을증명하지않는다. cache-write를포함한가격envelope와실사용단가를구분한다. 자원Guard거절도프로세스간제어메시지이며부모예외가child의STOP/증거보존을가로막을수있다. 실패의최초원인·후속취소·불완전증거를분리해야한다. 면접질문:왜metadataGET을두예약뒤첫POST전에배치했나? 응답을못받았는데예약을왜환불하지않나? guard기준을유지하면서정상종료를보장하는방법은? cgroup여유와Windows물리RAM이왜다른가? 확인되지않은캐시회복가설과실측RAM을어떻게구분하나?
+
+# 2026-11-07 RAM 확보 후 실제 PAID 첫 요청과 운영자 검토 기한 초과 — PARTIAL
+
+## 목적·기존 구조
+
+기존US$18/92LLM/70Embedding·동결57계획승인을유지해실제모델인수를진행했다. RAM3967.02MiB/디스크35.46GiB에서시작,최종sourcef44771b…/owner56ce…의PREPARE와probe7133…(실제Spring/PG/Anvil/같은SandboxChrome1DOM·금융C·예산대조)를통과했다. 기존51/C3/12/Chrome6는전체반복하지않았다. 공개실행코드추가수정은없고직전검토최종소스를그대로사용했다.
+
+## 실제 문제·관측·원인
+
+PAID입장RAM1898.28MiB로21.72부족인한회차는배분/키/서버전차단됐다. 원장·authorized·paid실행folder가없음을확인하고작은resource파일을별도이름으로이동해SHA동일증거를남겼다. 메모리3259.80회복후같은승인/후보로진행했으며예산을재부여하지않았다.
+
+고정relay종단TLS와계정의두모델metadataGET200/id일치를1851ms에확인한뒤실제색인6Embedding과PF1a를실행했다. PF1a는MIXED/ANSWERED,실제모델2·Tool4·검색1,Agentmetrics10839ms였다. 75000에수수료75포함/추가차감0/가격입력74925·잠금과차감구분·실제FILLED/CONFIRMED/ReceiptSUCCESS/MATCH를설명해내용은PASS다. 전체인수나동결30의F1성공은아니다.
+
+그러나private검토helper의Path.read_text()가Windows기본cp949로UTF-8검토JSON을읽어실패했다. UTF-8로수정한뒤검토·decision기록까지운영자처리가지연돼요청UTC06:26:33.168262→결정06:32:36.719165(363.550903초)였다. source의time.monotonic300초검토게이트는V2_SEMANTIC_REVIEW_REQUIRED로STOP했다. provider/제품AgentTimeout이아니며늦은accepted=true를기한내승인으로바꾸지않는다. 도구실행대기와분석·복구시간의기여율을분리계측하지않았으므로특정요인하나로363초전체를단정하지않는다.
+
+## 실제 대안·수정·선택
+
+privatehelper의파일읽기와stdout을명시UTF-8로수정하고,metadata증거가실제로session에있는데paid-execution에서찾던표시경로도고쳤다. 같은실제답변pending/status를읽어검증했으며새유료질문은보내지않았다. STOP삭제/oldsession강제재시작/새18달러발급/완료질문재전송은기존한도·증거보존에어긋나므로하지않았다. 제품Timeout이나의미검토300초도늘리지않았다. 재개하려면원래예약과완료PF1a를승계하는통제프로토콜이필요하며현재코드에는없다. 이를이미구현한기능처럼표현하지않는다.
+
+원래PAID JUnit1FAIL과final-fingerprint UNKNOWN을확인했다. JWT만료가능성을조사했으나실제설정은default3600000ms로이5~6분기한초과만으로JWT만료라고확정할수없다. 원래관측실패의세부원인은남은불확실성이다. 대신새키없는내부망감사에서기존PREPARE경로의동일기준read-only금융9테이블/C hash와JUnit1PASS/0SKIP를확인했다. 이는원래실패를재작성하거나PAID모델을재실행한것이아니다.
+
+## 사용량·검증·보존
+
+실제2LLM/7Embedding,관측토큰5134input/727output/24281Embedding. 보수예약토큰22781/2000/79763,총82547760nUSD(0.082547760달러)다. 별도PG읽기전용SQL과SQLite mode=ro의9예약id/kind/cost/state를대조해일치·OBSERVED/UNKNOWN0을확인했다. 남은승인액17.917452240달러·90LLM/63Embedding은예약차감기준이며환불/새예산이아니다. 관측토큰에보수단가를적용한22044620nUSD(0.022044620달러)는invoice가아니고상한추정이다. 캐시별사용상세와실청구서는확인하지않았다.
+
+후속 감사 두 개는 PAID SQLite/STOP SHA 전후 불변, 추가 공급자/키/재전송 0, 소유 PG/Anvil/egress/app 정지를 확인했다. 이전 실패 자료와 신규 성공/실패 파일은 별도로 보존했다. 이번에는 기존 순수49PASS/1SKIP를 불필요하게 다시 실행하지 않았고, private helper 실제 읽기·신규 준비/probe·모델·두 RO 감사를 실행한 범위로 구분한다. Commit/Push/Merge/배포 없음.
+
+최종독립실행감사는발견된추가필수수정없음이다. 검토자직접작은실행증거/SQLite읽기전용집계/PG감사요약/후속ROJUnit1PASS·financialC hash/보호baseline-final manifest·diff를대조했다. 25HEAD/root8내용/기존제품dirtySHA/원본trial4SHA동일·HEADd52/staged0을확인했다. 내용PASS PF1a와검토기한FAIL/나머지56NOT_RUN/전체PARTIAL을분리하는판정이타당하다고확인했다. 검토자실제모델/키/Docker실행이나대형state읽기는없다. 최종검토후실행코드변경은없고이결과기록만추가했다.
+
+## 한계·학습·면접
+
+나머지56요청/실제A2/C4/C답변/반복12/유료웹6은NOT_RUN,전체서비스PARTIAL이다. 모델답변의정확성,요청완료,운영자검토기한,예산의확정성,데이터불변성은서로다른조건이다. 새금융거래없이조회만하더라도최종불변성관측자체가실패할수있어UNKNOWN과변조를구분해야한다. 코드별정본은PostgreSQL금융/C체인/PG비용카운터/SQLite평가원장/의미검토decision으로분리돼있다. 기업운영이라면재개프로토콜·운영자인코딩·평가결정처리의liveness와중복과금방지가함께검증돼야한다. 질문:왜HTTP200/ANSWERED가전체인수PASS가아닌가? UTF-8처리결함이운영평가를어떻게중단시키는가? 왜관측된토큰보다더큰예약액을유지하나? 중단뒤정확히한번이어가기에는어떤identity와원장을검증해야하나? 왜후속읽기성공으로과거UNKNOWN을덮어쓰면안되나?
+
+### 2026-11-08 후속: 300초 검토 재현과 동일 누적 예산의 제한된 승계
+
+사용자는 원본 STOP/원장을 보존하고 첫 응답 재전송 없이 나머지56문항을 기존18달러/92LLM/70Embedding 누적으로 재개하도록 승인했다. UTF-8을 명시한 공유 `ai_pilot_review.ReviewGate`로 실제 PF1a 응답을 다시 검토했고, 동일 monotonic 300초 내 54,905ms에 완료했다. 공급자 호출0이며 기존363.55초 실패 기록은 보존했다. 기존 decision 선주입과 기한 뒤 decision도 거절한다.
+
+`ai_pilot_continuation`과 `ai_pilot_carry_launcher`는 정확한 INDEX_LEGACY+PF1a 완료 prefix, 동결 기대값, 9개 OBSERVED 예약, 동일 allocation/approval/PG authority 및 원본 SHA를 검증한다. STOP 삭제나 원장 초기화 대신 원본 readonly와 별도 파생 원장을 사용하고 모든 예약/활동/제출/단계 행을 승계한다. 단일 claim으로 형제 재개를 차단한다. 기존 원장을 수정하는 방법은 보존 조건 때문에 채택하지 않았다. PG 새 예산 초기화도 하지 않는다. 실제 소스가 바뀌므로 신규 소스와 승계 증거의 결박을 검증하며, 단순 ready 플래그로 재개하지 않는다.
+
+표적 시험55PASS/Windows pipe1SKIP이며 모의56요청에서 PF1a 미재전송, 같은 누적 한도, 6 DOM 어댑터 호출을 확인했다. 초기 Windows 시험의 SQLite 파일 lock은 context manager만으로 연결이 닫히지 않는 원인으로 확인해 명시 close했다. 이는 실제56개 모델 답변/Chrome 검증이 아니다. 독립 초기 검토자는41PASS/1SKIP를 직접 실행하고 필수 결함 없음을 보고했다.
+
+실제 CARRY_PREPARE_ADMISSION은 RAM1,134.11MiB로 차단됐고, 최종 재측정도1,482.55MiB로1,920기준보다437.45MiB 부족했다. 디스크는약34.23GiB였다. 따라서 이번 시도의 실제 PG 현재 예약 대조·PLAN/AUTH·원장 import·claim·키 접근·추가 유료 호출은 NOT_RUN/0이다. 실행 준비 완료나 실제 승계 성공으로 주장하지 않는다. 같은 조건의 무의미한 반복·앱 종료·Guard 완화는 하지 않았다.
+
+기존25 worktree HEAD, root8 미커밋 내용, AI HEAD d52b29f, staged0, 기존 제품 main 소스 dirty SHA가 대조 일치했다. 원본 pilot-v2.sqlite/STOP/session.json SHA도 그대로다. 누적 LLM2/Embedding7/예약$0.082547760과 잔여$17.917452240은 불변이다. 전체1/57, 나머지56 NOT_RUN/서비스PARTIAL이다. 근거: EVALUATION_REPORT 최상단, READINESS_PLAN, PAID_LAUNCHER_RUNBOOK, 신규 test_ai_pilot_continuation, private first-response-revalidation과 continuation-49a7a2ab3c5a9791, root private 보존 baseline/final. 면접 쟁점: 안전성 대 활성성, 영속 예약의 보수적 회계, 중단 후 정확한 prefix 승계, monotonic deadline, 검증된 코드와 미실행 인프라의 구분.
+
+최종독립재검토1회:새필수지적없음. 공개기록/보존manifest/작은receipt·proof의54,905ms·300초·provider0/실제RAM admission/원본3SHA불변을직접대조했다. 초기권한거절은읽기승인후해소됐다. 검토자출력에서불명확했던receipt SHA·claim/import미생성은직접검증범위에서제외했다. 구현자의확인과검토자의실제범위를구분하며추가실행코드변경은없다.
+
+### 2026-11-08 실제 carry 실행: 검토 절차 복구 확인 / C4 근거 검증에서 새 STOP
+
+목적은기존누적승인으로56잔여를실행하는것이었다. RAM3,565.625MiB로기준을충족해continuation-dcefa791d03e57e2에서실제PG9예약대조·network-none PLAN/AUTH·원장파생승계를통과했다. 같은allocation/approvalId/PGauthority를유지하고완료PF1a/Legacy색인을재전송하지않았다. 공식OpenAI Terra/Embedding문서의단가envelope와실제승인경로DNS/TLS·metadata권한을확인했다. 현재실행파일582개의SHA도일치했다.
+
+PF1b수수료포함/계산과실제체결구분,PA2a/PA2b실시간Tool의SIMULATED·합성거래량/미제공숫자범위가실제답변에서통과했다. 세검토는33.868/44.763/45.350초로300초를유지했고UTF-8오류는재발하지않았다. PC4a는필터WAITING_LONG/limit5/120초/첫페이지범위·ADMIN Tool·RAG는성공했지만생성후AgentEvidence.validate가INVALID_AGENT_EVIDENCE로거절했다. 약Tool92ms/Embedding1342ms/검색1389ms(Embedding포함)/LLM4824ms/Agent6408ms로제품Timeout은아니다. fallback이SYNTHESIS_UNAVAILABLE를포함해기존필수assertion에서실행중단됐다.
+
+확인된원인은생성근거검증단계까지이며특정잘못된pointer/인용/값은미확인이다. 검증전Generated원문은영속보존되지않아근거없이어느validator분기를바꾸지않았다. 기존실패HTTP응답을키없는network-none Java단독검사에서재사용해필터계약과동일assertion거절을재현했다. 이재현PASS는C4품질PASS가아니다. 기존1응답전용carry에새5응답prefix를밀어넣거나claim/STOP삭제·새예산으로재시도하는대안은안전승계조건위반이라채택하지않았다. 기존실패/판정기준은그대로다.
+
+전체실제5/57응답확보·내용4PASS/1FAIL·52NOT_RUN이다. 누적6LLM/11Embedding/17OBSERVED/UNKNOWN0·보수예약$0.343083460·잔여$17.656916540,관측토큰입력21927/출력2495/Emb24593이다. 사용량단가상한추정$0.085249360은invoice가아니다. 별도no-key RO감사에서실제JUnit1PASS/0SKIP·금융9테이블/C불변·PG17예약일치·부모/파생SQLite·STOP·session6SHA불변을확인했다. 감사보조스크립트의child에없는paid-config참조는기동전오류로확인해기존owner설정readonly복사로최소수정했고02감사에서통과했다. 최초실패폴더는보존했다. 기존원장초기화/환불/추가모델재전송은없다.
+
+소유실행자원모두정상정지,25HEAD/root8미커밋내용/rootHEAD/AI HEADd52/staged0보존이다. 이번실행중공개제품코드는변경하지않았고문서와private감사/재현도구만추가했다. Commit/Push/Merge/배포없음. 남은정확한Generated실패원인·새prefix안전승계·PC4b/동결30/C/반복/유료웹은미해결/NOT_RUN이며전체PARTIAL이다. 근거:EVAL최상단/READINESS/RUNBOOK,privatechild control/reviews/serverlog/session/audit-02/c4-offline-guard-check,root private보존manifest. 면접학습:정상전송과의미검증의차이,JSON pointer scalar 검증,관측계층누락의한계,제한된재개프로토콜의범위,비용예약과실사용량,실패정본과후속RO감사를분리하는이유.
+
+최종독립실행검토:새필수지적없음. 검토자가작은증거·readonlySQLite17OBSERVED집계·원본/파생6SHA·같은allocation/approval/PGauthority/fixture·STOP/claim·582 source SHA·후속RO금융C동일/JUnit1PASS/0SKIP·3검토기한·offline기대거절결과를직접대조했다. 실제provider/키/Docker실행이나대형state원문접근은없다. 실행직후paid-carry-final과문서추기후paid-carry-closeout을구분하며이결과기록은closeout이후다. 품질완화/우회증거없음·PARTIAL판정타당,Generated정확필드는여전히미확인이다.
+
+### 2026-11-08 5응답 승계·민감정보 없는 진단 보완 — 실제 잔여 평가 전
+
+사용자는C4실패를추측수정하지않고진단근거를보완해완료5문항/17OBSERVED/6LLM11Emb/예약$0.343083460을같은누적상한으로승계하고52잔여만수행하도록승인했다. 기존FAIL을PASS로바꾸지않고C4응답을71.375초/300초로재사용검토(accepted=false)했다. 새5prefix는동결본문/기준/검토receipt·두선조SHA/PG17예약·배분ID를검증하며SQLite행·호출활동을모두파생본에승계한다. 원본STOP/기존claim은그대로고새계보claim만추가한다. 기존완료문항재전송/새예산발행은없다.
+
+제품validator변경대신Test-classpath에서실제validator를호출해생성/입력SHA,인용존재,포인터형태및scalar일치여부를고정분류로저장했다. 원문·값·포인터·키를저장하는방법은불필요한비공개자료축적위험때문에채택하지않았다. 기존PC4a정확필드는여전히미확인이다. 비치명SYNTHESIS_UNAVAILABLE fallback은동결assertFAIL그대로보존하고별도300초accepted=false검토가끝난경우에만독립질문을계속하도록실행흐름과품질판정을분리했다. 금융·권한·비용·Tool오류/C표적은중단한다. 최초검토는D5의0모델/0검색보안assertion실패까지일반품질FAIL로포착할결함을발견했다. D1~D5전부제외하고실패D5지속불가회귀를추가했다.
+
+무과금검증:Pythonfive-prefix12(기존상속포함),adapter21/Windows파이프1SKIP,plan3,sender8,schedule6 PASS·독립직접50PASS/1SKIP. Linuxnetwork-none고정JDK의표적컴파일/Java5PASS0SKIP. PythonWindows기본cp949 JSONread문제를새회귀가드러내UTF-8명시후통과했다. 5d0e…후보는D5수정전소스로준비만돼활성화하지않고보존했다. 최종소스재검토후실제실행결과를별도누적한다. 현재추가유료전송/키접근0이며Git/원본금융/정답/제품정책변경없음. 학습:형태검증과의미검증·기록가능한FAIL과중단해야할보안실패·부작용전예약·정확한prefix·민감정보최소관측.
+
+### 2026-11-09 후속: 12응답 승계·검토 liveness 분리·Anvil 입력 복구
+
+5prefix실제재개로PC4b/A1~A5/B1의7응답을추가했다. PC4b기본대기시간설명의정밀도,A2정책사실누락,A5nextBefore누락은PARTIAL로남기며accepted검토ACK를전체품질PASS와동일시하지않았다. B1은내용은충족했지만의미검토기록이419.009초뒤도착해같은300초gate에서STOP했다. 이실패/결정은보존했다. 코드·문서조사와의미검토를분리하고사전준비별도검토자가같은실제응답을62.297초/300초로무과금검토했다. 기한자체나필수품질기준을늘리거나생략하지않았다. 36OBSERVED/18LLM18Emb/$0.844583340예약을12응답/두단계/세세대원장계보와함께승계하는V3를검증했다. 교차단계45Mock/원장행·기존FAIL/UNKNOWN거절등Python15PASS(상속포함),최종독립재검토2에서핵심1시험직접PASS/필수지적없음이었다.
+
+V3후보111a…는서버/공급자시작전Anvil의state.json EOF파싱오류로DATA_READY_DEADLINE에걸렸다. PG는정상준비됐다. 불완전dump의발생원인은확정못했지만nonempty파일을검증없이재입력으로선택하던경계를확인했다. 손상volume/파일/실패를덮어쓰지않고보존했다. 원본snapshot125,682,932bytes/SHA8288b6e…을스트리밍대조해새owned Anvil/volume에readonly입력으로사용하고새dump는별도출력으로분리했다. 원본체인이나계약/금융장부를변경하는방식은채택하지않았다. 같은genesis/계약상태의격리readonly복사본이며블록높이/현재시각과금융정본동일성은구분한다. 실제chain/RPC·Spring읽기proof JUnit1PASS/0SKIP·금융9테이블/C hash일치·AnvilExit0/OOMfalse·정지확인PASS다. 이proof의키/공급자요청은0이다.
+
+시간경과로만료된단기permit는원파일을보존하고같은allocation/approval/source/context/PGauthority/원장행/누적상한의새private복사본에서시간과permitHash만갱신했다. 새예산은없다. WindowsPath.resolve와Linuxcanonical경로차이가초기prepare를안전거절했으며엄격canonical경로의해시대조와실제Linuxfrom_session을함께확인했다. 독립검토는원본candidate RW마운트가능성과cleanup미확인성공반환을발견해새복사본만canonical RW매핑·정지미확인실패/최초오류보존으로수정했다. 종료순수2PASS/검토자직접3조건PASS,작은실제same-budget18/18/844583340·원본SQLite/meta/permit/baseline4SHA불변까지재검토1PASS했다. Windows슬래시manifest마감KeyError는기존proof와SHA재대조후기록만마감해서버중복시험을피했다. 최초실패폴더들은그대로다.
+
+그뒤recovery-e7a47fc5a1ab에서45잔여실제모델평가를시작했고첫B2의기한내의미검토가통과했다. 이후결과는최종실행기록에누적한다. 별도의미검토자는응답/Tool/출처/동결기준을대조하고private decision만작성하며키·공급자·원장·소스·Git·Docker작업을하지않는다. 현재Git/원본데이터/정답/제품금융·인증·Timeout정책변경없음. 근거:EVAL/RUNBOOK최상단,privateV3/revalidation/recoveryproof/환경스크립트·종료회귀. 학습쟁점:운영자liveness·단기허가의시간결박과누적비용분리·OS별경로정본·불완전checkpoint의입력/출력격리·결함관측과실제원인확정·cleanup최초오류보존.
+
+### 2026-11-09 실제 평가 마감: 전송 불확실성과 확인된 의미 결함의 분리
+
+**목적/기존 구조:** 이전 완료 응답을 재전송하지 않고 동일 누적18달러/92LLM/70Embedding으로57개 실제 평가를 마치는 작업이다. PG 영속 예약과 Python 단일 원장, 필수300초 의미 검토를 유지했다.
+
+**관측/원인:** B2 PASS/B3 PARTIAL/B4 PASS 뒤 B5의4개 Tool 성공 후 Embedding `connection.request()` 약118ms에서 연결 오류, HTTP/usage 없음으로 UNKNOWN이 됐다. 전체16 HTTP/15 의미검토(10PASS/4PARTIAL/1FAIL),41 NOT_RUN이다. 과거 C4a는 생성 뒤 근거 검증 실패 구간만 확인되고 정확한 필드는 원문 부재로 미확인이다. B5도 DNS/TLS/errno와 원격 수신 여부를 당시 기록으로 특정할 수 없다. 네트워크 가설을 확정 원인으로 쓰지 않았다.
+
+**대안/판단:** 전송 오류를 무수신으로 간주하고 환불·재시도하는 방법은 중복 과금 위험과 명시 승인 조건 때문에 채택하지 않았다. UNKNOWN$0.000029060을 전액 유지하고 모든 후속 유료 전송을 중단했다. 원시 예외/본문을 저장하는 대신 allowlist 예외 종류·정수 errno·UNKNOWN 분류만 추가했다. 이 진단은 과거 원인을 복원하지 않으며 비용 권한도 아니다.
+
+**실제 수정:** C4b의 REVIEW_REQUIRED는 SQL상 status만 조건인데 DTO waitingSeconds 기본값이 실제 cutoff로 오해될 수 있음을 코드/답변으로 확인했다. 필터 SQL·한도·권한·Timeout을 바꾸는 대신 `waitingSecondsApplied`를 추가하고 STATE 문장과 synthesis 지시문에서 미적용을 명시했다. 기존 필드 호환성 유지. 이는 PC4a의 INVALID_AGENT_EVIDENCE 추측 수정이 아니다. 새 생성 지시문 해시는56c73ca…로 고정하고 기존 후보2 suffix/동결 질문 SHA는 유지했다.
+
+**검증:** Python 전송진단10/broker15 PASS. network-none 고정 Linux JDK21 표적 컴파일/Java13 PASS·0SKIP. 처음의 시험 디렉터리/보조 클래스 누락/변경 지시문 해시 mismatch는 각각 원인을 확인해 수정하고 전부 재검증했다. 실제 모델은 수정 전 실행 소스ce3afd79…이며 후속 C4b/전송진단 소스의 실제 모델 재인수는 NOT_RUN이다. 기존 품질 FAIL/PARTIAL을 바꾸지 않았다.
+
+**비용/안전:** 누적24LLM/22Embedding,46예약 중45OBSERVED/1UNKNOWN,보수합계$1.072998300/잔여$16.927001700. 관측토큰 기준 상한추정$0.247159760은 청구 확정액이 아니다. 후속 실제PG read-only감사에서 SQLite와 전체예약/상태/금액 일치,원장·STOP SHA불변을 확인했다. 서버 lifecycle JUnit1PASS/0SKIP·금융9테이블/C fingerprint 불변·소유 PG/Anvil/relay정지와 평가 일정 FAIL을 구분한다. 원본손상volume/실패증거를 보존하고 삭제/Commit/Push/Merge/배포하지 않았다.
+
+**한계/근거/면접:** 전체 실제 인수 PARTIAL/HALTED_UNKNOWN_NOT_READY. C 표적/반복12/실모델Chrome6은 NOT_RUN. 근거는 EVALUATION_REPORT/READINESS_PLAN/RUNBOOK최상단,private recovery-e7a47fc5a1ab final-budget-audit/result·STOP·trace·reviews·fingerprint,final-meaning-tests-04이다. 기술원리: 로컬 예외와 원격 부작용의 비동일성, 예약 회계와 청구 회계, 검증 가능한 DTO 의미와 자연어 설명, 동결 기준과 제품 지시문 버전 분리. 예상질문: 왜 예산이 남아도 중단하는가? 적용되지 않은 기본값이 어떻게 근거 오염을 만드는가? 원문을 저장하지 않고 장애를 어디까지 진단할 수 있는가? UNKNOWN을 해제하려면 어떤 외부 증거/별도 승인과 원장 프로토콜이 필요한가? 실제로 하지 않은 모델 재검증을 성과에 포함하지 않는다.
+
+**독립 최종 검토/보존:** 별도검토자가최종C4b/전송진단코드·테스트·문서·작은실행증거/readonlySQLite46예약/STOP을직접대조해발견된필수수정없음이었다. Python25를독립실행했고Java13은구현자실행과작은PASS artifact확인범위를구분했다. 키/유료/Docker실행은검토자가하지않았다. 최종읽기전용대조는25HEAD/root8파일·HEAD/staged0·동결/정책SHA·보호snapshot/과거원장/STOP·실패후보4파일/최신원장STOP모두불변이다. private final-closeout-summary와paid-quality-final-source-20261109로보존했다. 검토후코드변경없이결과기록만추가했다.
+
+추가 최종 순수 회귀:five/twelve-prefix·HTTP plan·paid adapter/sender/schedule66실행=65PASS/Windows파이프1SKIP(상속기존회귀포함). Python전송25/Java표적13과구분한다. diff --check PASS·staged0·현재이번소유컨테이너실행0확인. 유료추가전송/코드추가변경없이결과기록만마감했다.
+
+### 2026-11-09 B5 UNKNOWN의 좁은 예외 승계 준비 — PAID 비활성
+
+**이후 실제 실행 승인/기동 전 이식성 오류:** 사용자가 B5 UNKNOWN29060nUSD 전액유지·완료/B5재전송금지·같은누적18달러/92/70·41잔여단일후속을명시승인했다. 실행전Windows5085.66MiB/디스크33.63GiB와실제PG46예약일치는통과했다. 하지만CONTINUATION_PLAN의실제Linux source hash가호스트값과달라유료/키/claim전에차단됐다. 단계별감사로같은533파일/바이트임을확인하고nativeLinux구성요소정렬로원Linux해시를재현했다. Windows Path의casefold/구성요소정렬을호스트가그대로사용한이식성결함이확인됐다. 단순POSIX전체문자열로계산한초기가설값이기존Linux해시와같지않았던사실도보존했다. 고정상대POSIX문자열정렬키를목록생성과hash두경로에통일하고대소문자/중첩디렉터리회귀와기존artifact동일성2시험을통과했다. 동결질문/금융/Timeout/예산검사는바꾸지않았다. 첫prepare후보/구승인/기존package를보존하고paid/session/claim이없음을확인한뒤새portable package를준비한다. 독립검토뒤같은사용자승인범위에서만실제단일paid후속을시작한다. 근거:실패candidate source-order/native-order-proof/Linuxhash목록,source_paths/관련시험. 실제모델인수결과로계산하지않는다.
+
+최종 독립 재검토1은 발견된 필수 수정 없음으로 마감했다. R1 수정 뒤 직접 표적2시험 PASS, 실제 최종 package2,136파일 SHA·host/runtime/stage identity 및 비활성 exception-context를 대조했다. 초기 직접36시험과 구현자 Linux147/Java7 실행을 구분한다. 검토자는 키·유료·PG·Docker 실행을 하지 않았다. 보존감사는25HEAD/root8내용·HEAD/staged0·동결/정책/보호snapshot/과거원장/STOP·실패후보와 최신원장STOP 불변, 실제 successor claim 없음·예외false·runtime source 일치를 확인했다. 기존FAIL/PARTIAL과41NOT_RUN은 그대로다. 관련 private final-preservation/source-proof/비활성package를 보존하고 검토후에는 이 결과만 추가했다.
+
+**목적과 구조:** 기존16HTTP/15검토·46예약을 보존하고 B5를 재전송하지 않은 단일41요청 후속 실행을 준비한다. 새 평가 체계/질문/정답/예산을 만들지 않고 기존 coordinator/sender/PG 예약·source/fixture identity를 재사용한다. 현재 사용량 불명 예외 승인은 받지 않았으므로 실제 키/공급자 접근과 예산 활성화는 하지 않는다.
+
+**관측/가설/원인:** B5 trace는 request() 시작 뒤118ms 연결 오류·HTTP/usage 없음,예외종류/errno 미기록이다. 당시 DNS/TLS/부분 전송 중 어느 원인인지 확정할 수 없다. 현재 Windows socketpair10014와 Linux unit bind I/O 지연은 이번 시험 환경의 별개 관측이며 과거 B5의 원인 증거가 아니다. UNKNOWN을 무수신·무과금으로 바꾸지 않았다.
+
+**실제 비교/선택:** 전액예약 환불·B5 재시도·원장초기화는 중복과금/기준변조 위험으로 제외했다. 기존모든UNKNOWN차단을 전역완화하지 않고 정확한 과거 한 행+전체proposal SHA+새source+동일allocation/authority+단일child에 결박된 별도 명시 승인 경로를 선택했다. 원래제출/예약/활동행을 보존하고 별도 terminal disposition으로 B5 기술실패만 일정을 제외한다. complete/worker_exited를1로 위조하는 방법은 사용하지 않는다. 정상 paid permit도 계속 필요하고 새UNKNOWN은 예외가 아니다.
+
+**구현:** `ai_pilot_held_resume.py`의 read-only inspect·exception binding·HeldCoordinator,기존 continuation/channel/sender/schedule/launcher 연결을 최소 추가했다. 기본 coordinator의UNKNOWN거절은 그대로다. 새 파생본의 phase 처리완료는 B5 품질성공을 뜻하지 않는다. 검토기한300초를 유지하고 비치명 품질거절은 명시 SAFE_QUALITY_FAIL만 FAIL로 기록해 계속하도록 구분했다. 필수Tool선택누락도 기존frozen검증을FAIL로 남긴 채 안전 분류가 가능한 경우만 검토한다. D보안/C조회/예산/금융 위반은 이 분류로 우회하지 않는다.
+
+**최소 관측:** 명시 connect/TLS 시작·완료와 request 시작을 분리하고 암묵 재접속을 끈다. 같은deadline/인증서검증/고정호스트/한시도를 유지한다. 예외 원문 대신 고정분류/errno만 기록한다. PC4a는 원래 정확필드를 알 수 없고 새test-classpath audit의 shape/citation/fact flags도 모든 자연어 의미 규칙을 완전히 진단하지는 않는다. PC4b의 waitingSecondsApplied 설명 수정과 기존 PARTIAL은 보존한다.
+
+**검증:** 실제 불변SQLite+앞선 실제PG 감사snapshot46건+16응답/기한내15검토/금융C불변·정지 증거의 read-only proposal 감사PASS. 예외요청은false/시간0이다. 현재freshPG는기동하지않고승인후import직전필수대조로남겼다. Windows표적54개중53PASS/파이프1SKIP,동일소스Linux순수147PASS/0SKIP이다. Linux에서모의41개/6DOM어댑터를검증했을뿐실제브라우저·모델인수성공이아니다. 시험초기공개lock/classpath누락과180초unit-supervisor실패는보존하고,공개소스를Linux임시FS로옮겨동일판정으로검증했다. 타임아웃후남은이번소유unit컨테이너만라벨대조후정지했다. 기존사용자프로그램/볼륨은건드리지않았다. 추가Java진단·최종독립검토결과는후속추기한다.
+
+**한계/기술원리/면접:** 사용량확정없이예외승인할수있는근거는환불이아니라전액예약유지·누적한도·B5중복방지다. 실제PGfresh연결/새소스실모델/잔여41품질은NOT_RUN이다. 왜 UNKNOWN과실패처리완료/품질완료를분리하는가? 왜부모원장수정대신파생본+exclusive claim인가? 어떤부분이exactly-once가아닌at-most-once인가? OS/테스트환경오류와과거원인을어떻게구분하는가? 왜일반SDK재시도권고보다도메인비용정책을우선하는가? 금융회사라면승인기록서명·원장감사보존·운영자권한분리·공급자청구대조를추가검토해야하지만이번에구현했다고표현하지않는다. 근거:EVAL/RUNBOOK최상단,held_resume/관련회귀,private held-unknown-proposal·held-resume-linux-unit03/04. 로컬회고와연계하며Git작업은없다.
+
+**이번 최종표적검증/독립R1:** LinuxPython147PASS0SKIP,Java7PASS0SKIP. Java실행뒤Windows bind의시간속성보존cp오류는내용복사만하도록고쳐출력바이트를갱신했고기존평가source사본은유지했다. 180초unit-supervisor실패의정확병목은미확정이며tmp복사후147회귀통과와구분한다. 독립초기검토는직접36PASS후host에는없는build-identity artifact가stage에는생겨승인source조건을동시충족못하는R1을찾았다. source검사를푸는대신hostSource와실제runtimeSource를구분하고현재class/JAR+고정image artifact로후자를선계산했다. artifact없음/있음동일성및class/image drift거절시험과41suffix를표적재실행2PASS했고최종package의실제전체stage SHA/runtime일치도확인했다. 초기package와새finalpackage는모두비활성/보존상태다. 기존검토는R1필수수정있음으로기록하고수정후재검토를요청한다. 이번신규학습쟁점:소스identity와실행artifactidentity의차이,OS가아닌산출물유무에서생긴identity불일치,동등성검사를약화하지않는정본분리,실행바이트를실제로고정한승인.
+
+### 2026-11-09 단일 PAID 후속 실제 실행 마감 — PARTIAL / 34 NOT_RUN
+
+**목적/승인:** 사용자가 B5 UNKNOWN29060nUSD 전액 유지, 기존16응답/B5 재전송 금지, 기존누적18달러/92LLM/70Embedding과 단일41잔여 실행을 명시 승인했다. 실제paid run은3e9742bfa5d17456 한 번이며 두번째paid run은 하지 않았다.
+
+**실제 결과:** C1/C2/D1 내용PASS, C3 FAIL, C4/C5/D2 내용PARTIAL의7개HTTP를 추가했다. C3는 actual Tool2개 성공 뒤 FUTURES_EVIDENCE_UNVERIFIED guard로 모델0회 일반 fallback을 반환했다. 조회된 현재사실/정책을 설명하지 못하는 경로 결함과 청산 완료 확정 금지를 구분해야 한다. C5도 승인된 STATE C조회/모델0회이며 과거동결legacy미지원 기대와 구현차이·legacy/C 관계 설명 누락을 그대로 기록했다. PC4b 같은 문항 재전송은 없고 새C4에서 waitingSeconds 미적용 설명의 정확성만 관측했다. PC4a의 정확원문필드는 여전히 미확인이다. PF1a/PF1b·PA2a/PA2b의 기존PASS와 동결문항F1 NOT_RUN/동결A2 PARTIAL을 구분한다.
+
+**실행 기한 실패:** D2 actual Agent6935ms/모델2회와 검토 지연은 별개다. 단조300초gate가 V2_SEMANTIC_REVIEW_REQUIRED로 종료됐고 D2 decision은 파일UTC차약314.052초에 생성돼 receipt가 없다. 파일시각은 저장된 단조elapsed가 아니며 성공6건의 UTC차/receipt에도약1.036~4.467초차가 있다. decision생성이 gate통과와같다는 판단을하지않는다. 검토전남은기한재확인누락은확인됐지만각도구nested wall 약2.77/3.18초외 승인·스케줄·판단대기는분해계측되지않아원인으로단정하지않는다. 해당지연을 공급자문제·사용자잘못으로돌리지않는다.
+
+**보존/결정:** 총23HTTP/34NOT_RUN,기한내검토21+늦은D2내용검토1+B5기술실패1이다. 내용등급13PASS/7PARTIAL/2FAIL에는늦은D2 PARTIAL이포함되며 전체인수PASS가아니다. 기존STOP·late decision·원JUnitFAIL/fingerprintUNKNOWN을그대로두고300초를늘리거나정상receipt로바꾸지않았다. 동일child의inner-start/claim을지워재실행하거나추가후속을임의로만들지않았다. 예산은남았지만기존승인된단일paid후속은종료됐다.
+
+**비용/후속감사:** 신규LLM7/Embedding6을포함한누적31/28회·59예약(58OBSERVED/과거UNKNOWN1),보수예약$1.418256940/잔여$16.581743060이다. 관측토큰85690/9544/26004로계산한보수사용량상한$0.329273080은청구확정액이아니다. UNKNOWN전액은유지했고새UNKNOWN0이다. 별도무과금RO감사로실제PG/SQLite59행state·금액일치·원UNKNOWN전체행불변·금융9테이블/선택C상태불변·JUnit1PASS0SKIP·3세대원장STOP9SHA불변·자원정지를확인했다. 이PASS가원실행FAIL을덮어쓰지않는다. raw provider input/pre-topK SQL권한필터를이번에직접감사했다는주장은하지않는다.
+
+**실제 수정/검증:** 기동전2bb후보는533파일/바이트가같지만native Path정렬이OS별로달라hash차이가났다. Linux구성요소정렬로원해시를재현해원인을확인한뒤상대POSIX문자열key를3곳에통일했다. 구현자2/독립2 표적PASS·새portable 실제LinuxPLAN/AUTH일치뒤에만paid를시작했다. 구후보/구승인/package와원본원장은보존했다. source2be8647f…/HEADd52b29f·미커밋상태이며금융/인증/Oracle/Timeout/비용/동결기준은바꾸지않았다. 대규모HTTP/C/Chrome회귀나유료재시도를반복하지않았다.
+
+**근거/학습/한계:** EVALUATION_REPORT와RUNBOOK최신절,실제child의paid-final-summary/review-timing-audit/STOP/reviews/post-stop-readonly-audit,2bb native-order-proof,portable package에근거를연결한다. 면접쟁점은출처검증과설명충분성,결정적경로의0모델의미,portable실행identity,단조deadline과파일UTC,의미판정ACK와품질PASS분리,원실패/후속감사분리,at-most-once와완료성의trade-off다. 앞으로검토절차의기한내기록과불완전설명경로를개선할필요가있으나이번에해결·재인수했다고표현하지않는다. 원격/Git커밋/배포/실제사용자거래는없다.
+
+**최종 독립 감사/보존:** 검토자가7개 실제 답변·동결 기대/Tool/출처·6개 receipt/D2 부재·누적 집계, SQLite RO와 실제PG snapshot59행·금액/상태·UNKNOWN 동일성·비용 산술을 독립 대조했다. 원장/STOP9파일 SHA를 직접 재계산하고 금융/C hash 및 별도JUnit1PASS 증거와 원실행FAIL을 구분했다. 최종 manifest의25worktree HEAD/root8파일 내용/HEADd52b29f/staged0 보존도 대조했다. 감사 범위에서 필수 수정 없음이며 전체 판정은 PARTIAL이다. 검토자는 실제Docker/PG실행·키·유료 호출을 하지 않았다. 최종 보존 전 체크true/소유 실행컨테이너0, 검토 뒤 실행소스 변경 없이 기록만 보완했다. 원시공급자입력/pre-topK 실환경 보안 및 잔여34개는 여전히 미검증이다.
+
+### 2026-11-09 의미 검토 전체 임계 경로 보완 / 23응답 보존·34승계 준비
+
+**최종 보존/감사 마감:** 독립증거감사는원D2보호6파일·원장STOP9파일SHA,25worktree/원본8파일/HEAD/staged0를직접대조해필수수정없음으로마감했다. 새PG가아닌보존PGsnapshot와현재ROSQLite59행의일치이며시험37/72는각실행주체와구분한다. 구현자최종manifest24개check모두true·평가하네스9/테스트3/공개문서4의16파일에만변경,기존다른변경/보호snapshot/원장·STOP·원실행source bytes/동결정책불변을확인했다. local회고/새무과금증거는ignored이고Commit/Push/Merge/새permit/새claim/추가API·키사용은없다. 현재는무과금절차·비활성34승계검증PASS/새명시승인대기이며모델전체인수PARTIAL이다. 이후기록만옮겼고실행코드는바꾸지않았다.
+
+**목적/기존구조:** PF1a/B1/D2의반복기한실패뒤사용자가300초와의미수준을유지하면서전담사전준비·필수판정/기록우선·상세분석후행을명시요청했다. 이번에는새PAID실행을승인하지않았다. 기존23HTTP/34NOT_RUN·31LLM28Embedding·$1.418256940/B5UNKNOWN29060nUSD와C3FAIL/C4·C5PARTIAL을보존했다.
+
+**문제/원인구분:** 기존ReviewGate는답변후에만자료를게시하고준비된검토자인지확인하지않았다. UTF-8수정이나전담역할배정만으로는자료탐색·실질판단·도구기록·상세회고가섞이는전체경로를바꾸지못했다. PF1aUTF-8/지연·B1약419초·D2gateFAIL은확인된사건이나D2의정확한승인/스케줄대기분해는미확정이다. 사용자대기나LLM/RAM탓으로돌리지않았다.
+
+**실제대안/선택:** 300초확대·자동승인/핵심의미검토생략은요구사항/안전성때문에기각했다. 모든row의frozen기준과필요계약을사전준비하고전송전row nonce/자료SHA에묶인ready를확인하는방식을채택했다. 준비없음은60초내claim/HTTP전에차단한다. 답변후에는실제본문·Tool·출처·동결핵심/금지주장을5차원으로대조하고compactassessment와판정을한번에기록한다. producer단조300초·receipt/completion/failure를확인한뒤에만상세분석/회고한다. 부분검토를완료로위장하지않고미완료/저장지연도실패로보존한다.
+
+**구현:** ai_pilot_review의ReviewDesk/brief/ready/submit/ReviewGate, PAID SpringAdapter와HTTP전준비hook을연결했다. 직접decision만쓰면새PAID경로는거절한다. ai_pilot_review_resume v5와carry launcher/continuation/channel은원23응답및원래D2gateFAIL·별도offline재검토를구분하고34개만같은예산에서승계한다. 기존59예약/UNKNOWN전체행/누적·단계한도/authority를보존하며새승인없이는import/run할수없다. 과거D2receipt를만들거나원STOP/원장을수정하지않았다.
+
+**검증:** 별도검토자가답변전정책/Tool·동결D2를사전준비한뒤보존응답으로새폴더에서실질5차원검토와판정기록을60,640ms/300,000ms에완료했다. PARTIAL유지,producer receipt/completion있음,failure없음,원6파일SHA불변,provider/key0이다. 이는사전준비의실제1회실측이며향후34개성공보증은아니다. 결정적시험은준비없음전송0,nonce/row변조거절,5차원/등급일치,PARTIAL/SAFEFAIL/안전실패분리,기한경계·늦은판정·저장지연실패,새승인없음import거절,59예약/23원응답유지·34만모의실행을포함한다. 초기테스트의부동소수밀리초절삭/새desk mock누락/가짜Clock인터페이스누락을고쳤고제품기준을완화하지않았다. 최종시험수와독립검토결과는마감에추기한다.
+
+**한계/학습근거:** root실제모델답변·C3guard/C4/C5설명결함은개선했다고주장하지않는다. 실제freshPG/서버/Chrome/유료34개는새명시승인후NOT_RUN이고이전통합시험을반복하지않았다. 예산잔여는새실행권한이아니다. 근거:EVAL/RUNBOOK최신절,review-procedure-replay/proof,비활성review-carry23-proposal,새두표적시험파일. 기술쟁점:critical-path에서선행가능작업분리,준비ACK/내용판정/완료receipt의책임분리,단조deadline과durable write,at-most-once와liveness,증거·비용·정답의서로다른versioning. 기업용이라면reviewer가용성/운영알림·교대/SLA·append-only감사·별도비용승인을더고려해야하지만이번에구현했다고표현하지않는다. 예상질문:왜시간상한을늘리지않고순서를바꿨는가? ready는품질검토와무엇이다른가? 늦게저장된receipt를어떻게실패로구분하는가? offline재검토는과거FAIL을왜바꾸지않는가?
+
+**후속 관측과 실제 수정:** 독립초기검토가R1(assessment안전중단과모순된SAFE메모로계속가능)·R2(파일출현/읽기후60초재확인누락)를합성입력으로재현했다. canonical decision전체동일성/assessment기반계속판단과ready읽기·저장뒤단조기한재검사로수정했고변조등급/marker·늦은ready·느린read회귀를추가했다. 이어cold brief→ready는파일UTC70.740초로준비60초에서거절됐다. 순차두도구총49.8초중실CLI약5.06초외승인/스케줄/전달세부는미확정이다. 이를의미검토실패나공급자오류로혼동하지않았고60초를늘리지않았다. 이미사전자료를읽은검토자가producer전실제watcher프로세스를기동하고templateSHA/nonce로ready·응답전달만하는방식을선택했다. 자동의미판정은없고watch최대600초도producer60/300을연장하지않는다.
+
+**최종 검증/검토:** hot최종코드재사용D2는ready156ms·의미검토/필수기록44,968ms,receipt/completion·failure없음·내용PARTIAL이다. 초기60,640ms와cold실패및원D2gateFAIL은그대로다. 응답을여러번읽은표적검증이므로신규문항성능/SLA개선률로해석하지않는다. 최종소스결합회귀73실행=72PASS/기존Windows파이프1SKIP(59.649초). 코드재검토1은R1/R2해결·watcher수동의미판정경계·v5승계/기한/권한검사를확인해필수수정없음/직접순수37PASS다. 별도실행감사자는hot三파일/proof현재코드SHA·44968/156·PARTIAL·원6SHA불변을직접대조했다. 새module이Linux stage복사목록에없던실제실패는CARRY_SOURCES공유로수정했고초기실패폴더/수정전r1을보존했다. 최종비활성r2의2,137raw파일SHA·23prefix/59PG예약·단일기존예산·승인false/시간0·permit/새claim없음도독립대조했다. freshPG/공급자/유료34개는새승인후NOT_RUN이다. 최종전체보존결과는기록전용으로마감한다.
+
+# AI v2: 승인된 잔여34 — 실제 단일 후속 마감 PARTIAL
+
+> 갱신: 2026-11-09. 전체 상세·문항표는 docs/ai/EVALUATION_REPORT.md 최신 별도 실행 이력이다.
+
+## 목적·실제 변경
+
+사용자가 기존23응답/B5 재전송 금지·기존18달러/92LLM/70Embedding 누적한도로 단일 후속을 승인했다. 첫 prepare가 실제PG59예약 일치 뒤 V2_CARRY_PARENT_SCOPE로 차단됐다. `ai_pilot_paid_launcher.py`의 명시 allowlist에 정확한 같은-owner 원23부모 경로 하나가 빠진 실행 연결 결함이었다. 넓은 패턴 허용 대신 정확한 한 경로만 추가하고 `test_ai_pilot_paid_adapter.py`에 다른owner/child/하위경로 거절을 추가했다. 직접1PASS·독립1PASS 후 r3-scope/source807cc162…의 단일실행을 진행했다. 초기실패 r2는 키/POST/session/claim0이며 보존했다. 제품 Java·금융·인증·Oracle·Timeout·호출/예산 정책은 수정하지 않았다.
+
+## 검증·실제 결과
+
+기존23개 재전송 없이 신규HTTP9개를 확보해 총32/57이다. 사전대기 watcher는 row/templateSHA/nonce 준비ACK와 전달만 수행하고 별도 검토자가 의미판정했다. 새8건의5차원 assessment·receipt·completion은 모두300초 이내(약110.4~220.5초), 4PASS/2PARTIAL/2FAIL이다. D3/E2의 품질FAIL도 그대로 기록하고 안전한 후속을 진행했다. 아홉째F1은 HTTP를 보존했지만 ReceiptTool ERROR/TOOL_UNAVAILABLE 및 SYNTHESIS_UNAVAILABLE로 서버검증에서 거절됐다. 원ReviewGate 미진입과 사후내용분석을 구분한다. 과거D2늦은gateFAIL·B5UNKNOWN·PC4aFAIL·C3FAIL·C4/C5PARTIAL은 바꾸지 않았다. 잔여Novel4/C3/latency12/web6=25는NOT_RUN이다.
+
+## 원인 분석·판단
+
+Docker OOMKilled=true/exit137, UTC시작12:31:52.563/종료12:41:53.808과 같은containerID의 kernel CONSTRAINT_MEMCG/task=anvil/UID1000을 대조해 시험 Anvil384MiB cgroup OOM을 확인했다. Windows초기 가용4,956.34MiB/디스크34.06GiB 및 재기동 Guard 통과와 다른 자원 경계다. 약601초 후 죽은 Anvil을 약12:53:28 F1에서 조회했고 ReceiptTool은38ms에 unavailable이었다. 과거3초ToolTimeout/Windows10014나OracleTTL 실패로 혼동하지 않는다. 지속채굴/이력보존이 증가에 기여할 가능성은 있으나 메모리 추세가 없어 직접 증가 원인은 미확정이다. 자원 한도를 추측으로 변경하거나 이력/snapshot 정책을 낮추지 않았다.
+
+별개로 F1 생성 응답의 구조/출처/13facts exact-value 진단은 통과했지만 서버의 의미검사에서 거절됐다. 독립소스검토로 남는 BuyFeeMeaning/금지실행주장 검사를 좁혔으나 원 interpretation이 없어 어느 검사/정당거절/오탐인지 미확정이다. 숫자·포인터 검증 성공이 자연어 의미 성공을 보장하지 않는 사례다. 수수료 오류 재발로 단정하거나 근거 없는 prompt/검증완화 수정을 하지 않았다. 향후 안전한 단계식별 진단과 장시간 Anvil 자원 계측이 필요한 상태다.
+
+## 비용·불변성·독립 검토
+
+최종PG/SQLite79예약 일치:45LLM/34Embedding·OBSERVED78+기존UNKNOWN1, 보수예약$1.911453860/18·B5$0.000029060 전액 유지다. 입력114405/출력12203/Embedding26492 관측토큰의 보수환산$0.432978340은 invoice가 아니며 UNKNOWN은 별도다. 새UNKNOWN·자동재시도·환불·예산초기화 없음. 종료원본 DB/C fingerprint UNKNOWN을 보존했다. 후속 별도 PG 전용 읽기 감사는9테이블과 시작hash 일치를 확인했고 C최종은OOM으로UNKNOWN이다. 감사 최초호스트JDK오류·Linux builder의날짜직렬화 차이결과도 보존했다. Spring Boot의WRITE_DATES_AS_TIMESTAMPS=false와동일화한 감사도구에서만 DB PASS를 얻었으며 기준hash/데이터/원결과를 바꾸지 않았다. 감사는API/키/Anvil/AI서버0,시험PG와컴파일/감사컨테이너만정상정지했다.
+
+별도검토자는 신규8개 동결질문/기대·요청SHA·5차원판정·300초 receipt/completion,79행/기존59행 전체승계/UNKNOWN 및 원장STOP9파일, OOM증거와 후속DBhash를 직접읽기대조했다. 이는 모델공급자 원본문/모든SQL전단의 재실행감사가 아니다. 의미검증 정확 원인은 미확정으로 유지한다. 검토자의 직접1PASS와 구현자1PASS를 합쳐2개의서로다른시험으로 과장하지 않는다. 최종source/25worktree·root8파일·동결SHA·원장STOP·cleanup 보존검사는 별도마감manifest에 연결한다.
+
+## 한계·회고·다음 조건
+
+전체 실모델 인수PARTIAL,남은25NOT_RUN이며 단일실행은종료했다. 비용잔여가 추가실행권한은 아니므로 STOP/claim을 지우지 않는다. 다음에는 무과금 장시간 Anvil memory/health를 측정하고 필요한 시험자원 설정과 완료32/B5 미재전송 승계를 검증한 뒤 별도명시승인 경계를 따른다. C3의 검증guard와시점설명을 함께 제공하는 대안, C4의 지원/적용/미지원 필터 구조화, C5의C/Legacy 정본 분리설명은 개선방향이지 이번에 구현·재인수한 성과가 아니다. 개인 회고는 ignored career-retrospective-index-local.md에만 추가한다. Commit/Push/Merge/배포·기존데이터삭제 없음.
+
+# 2026-11-09~10: Anvil OOM 대조·저장/복원 및 D3/E2 최소 보완
+
+## 목적·문제·관측과 가설
+
+32/57 실제 응답 뒤 중단된 시험 Anvil의 자원 안정성과 보존된 C 상태를 무과금으로 검증했다. 원본384MiB 노드는601초에 MEMCG OOM/137, 저장 after.json은0bytes였다. 원baseline은119.86MiB·675blocks/674historical states/43transactions다. 원노드는 재시작/복구/초기화하지 않고 새 소유 복제본만 사용했다. 원C 최종 UNKNOWN과 모든 실패/원장/STOP은 유지한다.
+
+실제 RSS/cgroup/메모리상한·덤프 시점을 분리했다. 1GiB/3GiB+1초 채굴, 2GiB+10초 채굴 및 allocator 설정 후보에서 OOM을 재현했다. 10초 대조는 블록2~3개 증가 사이60초마다 RSS 약842~844MiB 증가였다. 고정높이 대조에서는 반복 dump 뒤 RSS가 약272MiB로 안정됐다. 따라서 불필요한 새 빈 블록과 전체 이력 dump의 결합에 따른 증가가 확인됐으나 allocator 누수/덤프 중첩의 정확한 원인은 미확정이다. 최신 버전 추측 대신 고정 Foundry commit982849d의 dumper/history/loader 소스와 대조했다.
+
+## 실제 검토한 대안과 변경
+
+증설만 하기, 채굴 간격 늘리기, allocator 조정은 관측 효과가 없거나 부족해 기각했다. 이번 평가의 C 데이터는 이미 동결됐고 새 거래/Report 발행이 없으므로 새 평가 복제본만 no-mining+1GiB로 했다. 과거 state/주기dump와 제품 보안·금융·RPC·Oracle·호스트Guard는 그대로다. `ai_pilot_paid_launcher.py`는 새 profile 구성과 기동 전 profile 거절을 추가했다. 기존384MiB 노드/사용자 체인/수동 거래 런처를 바꾸지 않는다.
+
+D3는 Planning 뒤 UNSUPPORTED/Tool0/RAG0으로 타인 데이터 노출 없이 범위 안내를 못했다. `AgentService` 고정 안내와 `StateExplanation` 본인 모의장부 label을 보완하고 잘못된 STATE 계획에서도 principal/인자{}가 유지되는 회귀를 추가했다. E2는 Planning 뒤 CLARIFY/Tool0/RAG0으로 거짓 매칭 전제를 일반 정책으로 설명하지 못했다. `OpenAiAgentProvider` Planning에 일반 거래구조 정책과 특정 주문 실제상태의 target 필요성을 구분했다. 실제 모델 재평가가 아니므로 기존 FAIL은 그대로다.
+
+## 검증·한계
+
+새 복제본930.516초 관측(초기3GiB, 마지막1GiB 확인354.6초), peak531,947,520bytes·OOM0·정상 종료다. 덤프 중 readRPC358/Receipt72 실패0, canonical Receipt/본문hash 불변을 확인했다. 특정 이벤트 금액/서명 전수 의미감사나 Agent 재인수는 아니다. 실제 제품 C reader로 두 owner의 account/position·보존식·identity·고정header 및 baseline C hash 일치를 확인했다.
+
+첫 raw block 배열675→676 완전동일성 FAIL을 보존했다. accounts/tx/history와 모든 원block 객체가 같고 추가 하나는 loader 초기화용 비정본 빈 block0임을 확인했다. 별도1GiB 복원181.922초에서 원genesis/head 전체header·C hash·기존 Receipt가 일치하고 exit0/OOMfalse다. 두 번째 재저장 파일 전체 대조는 NOT_RUN이다. 복원 성공은 원OOM 최종C UNKNOWN을 해소하지 않는다.
+
+현재3제품Java/3테스트 Linux Java21 표적52PASS/0SKIP/0FAIL, launcher/adapter Linux Python26PASS/0SKIP/0FAIL이다. 초기 테스트 wire/컴파일과 임시 Linux 공개의존파일 누락은 실제 계약에 맞게 수정했고 실패증거를 보존했다. 전 모델/대규모 HTTP/Chrome 재시험은 하지 않았다. 원F1의 Receipt 가용성과 별도 의미검증 거절은 구분하며 의미거절의 정확 원문이 없어 무근거 수정하지 않았다.
+
+## 독립 검토·다음 조건·학습
+
+별도 코드 검토는 본인범위·정책분류·wire/principal 회귀를 읽고 필수 수정 없음, 최종52PASS 증거를 직접 대조했다(직접 재실행은 아님). 별도 인프라 증거 검토에서는 1GiB 관측 길이, 원UNKNOWN과 복원 구분, 첫 raw FAIL 보존 및 이벤트 검증 한계를 명시하도록 반영했다. 최종 보존/정지 감사24항목도PASS다. 25HEAD·원본8파일·기존원장/STOP·D2six·원source2137·frozenSHA·원baseline/OOM불변,추가claim없음,시험전부STOPPED를 별도검토자가 실제증거로 대조했고 필수결함은 발견하지 않았다. 기존미커밋 중 이번12파일 외hash도 유지됐다. private final-preservation-20261110.json에 기록했고 개인회고는ignored다. 검토자가 Docker/테스트/모델을 직접 재실행한 것은 아니다.
+
+누적45LLM/34Embedding·예약$1.911453860·B5 UNKNOWN을 유지했다. 새 호출0이며 잔여25 보수 타당성 계산만 수행했다(전체86/65/$9.562321060). 최신 실행source와 완료32/B5 미재전송·단일예산 승계 검증 및 새 명시승인 전에는 실행하지 않는다. 새예산/claim/세션 발행도 없다. 상세 증거 경로와 판단은 EVALUATION_REPORT 이번 절에 연결한다. 로컬 회고 인덱스에 cgroup/RSS와 호스트 RAM 차이, 대조 실험/반증, snapshot canonical성, 가용성/의미검증 분리, 원실패와 사후복원 책임의 면접 쟁점을 기록했다. Commit/Push/Merge/배포·원본삭제 없음.
+
+# 2026-11-10: 잔여25 승인 전 단일 승계·실행 소스 결박
+
+## 목적·변경·선택
+
+OOM 후 안정화된 읽기복제본을 사용하되 기존32응답/B5 UNKNOWN·79예약·45LLM34Embedding/$1.911453860을 재사용하고 남은25개만 같은18달러/92/70에서 실행할 수 있도록 준비했다. 기존23전용 v5를 숫자만 바꾸어 재사용하거나 STOP/원장을 초기화하는 대신 정확한32상태를 검증하는 좁은 v6를 기존coordinator/import/schedule/sender에 연결했다. 새 평가체계/질문/제품기능은 추가하지 않았다.
+
+원23계보와32문항의동결row,실HTTP9개·신규8의미검토300초receipt/completion,단일B5 UNKNOWN·F1서버검증FAIL을 각각 검사한다. 원C최종UNKNOWN을숨기지않고별도복원C기준증거를결박했다. 모의import는새temp원장만사용하며전행을승계하고25개만스케줄했다. 실제원장·claim은변경하지않았다. 실제후속prepare는새명시승인예외와freshPG79대조후에만가능하다.
+
+이전실행source807cc162… 대비runtime입력차이는지난3제품Java와이번6개Python이다. Java3개를Linux21/network-none에서컴파일해7class를고정하고2,138파일/class/JAR/image를host/runtime지문에결박했다. 최종비활성package-25fb16d7 source는0abf4706c576aee660517b79412ed93c49f8784e8a9b04bbf96f823399321627이다. 과거stage/퇴역후보도보존한다. 이번제품Java의새의미변경은없다.
+
+## 실패·검증·독립 검토
+
+합성HTTP200고정은권한거절row와불일치해실패했다. 동결값을바꾸지않고fixture를실제expectedHttp로수정했다. 합성평가차원과grade불일치,PG감사STOPPED문자열을bool로가정한문제,조회summary가전송을막는다고잘못시험한문제도실제계약/차단경계에맞췄다. Linux임시공개source의역사평가Java누락은의존파일만추가했다. 모두초기실패증거를유지했다.
+
+PAID supervisor는새1GiB frozen노드profile/running/OOM을시작전·루프·app종료직후확인하고메모리표본/최종exit을기록한다. OOM이면실행app을정지하지만이미전송중호출의무과금을보장하지않으며UNKNOWN은유지한다. 독립검토자는종료진단의Docker inspect가최초오류를덮는것을full-Mock으로재현했다. cleanup/resource/terminal수집을각각고정code로기록하고최초오류유지·최초오류없는종료검증실패차단으로수정했다. app stop증거쓰기실패도원오류를보존한다.
+
+Linux승계/이전23/Sender/adapter42PASS0SKIP,마지막종료경계Linux4PASS 및새app증거쓰기실패host1PASS다(실행간중복을합산하지않음). 최종source로실제network-none CONTINUATION_PLAN이통과했고비활성exception은실제CLI및직접호출에서PG/claim전에거절됐다. 추가Linux시험하나는PLAN병행중RAM Guard에서기동전차단되어기록했으며기준완화나사용자프로그램종료는없다. 과거큰HTTP/C/Chrome/실모델시험은반복하지않았다.
+
+독립검토최초HTTP지적은수정후직접4PASS/필수수정없음으로재확인됐다. 마지막재검토의종료원오류보존지적은수정·위표적PASS했지만재검토2회한도상마지막수정의독립재확인은미실시다. 이한계를PARTIAL로남기며독립최종통과라고기록하지않는다. 실제PG재대조·유료실행·실모델품질은NOT_RUN이다.
+
+## 남은 조건·회고
+
+32/57·D3/E2원FAIL·C3/C4C5/F1미해결·원CUNKNOWN은유지한다. 승인안은추가예산없이동일18달러/92/70에서완료32/B5제외25개만단일후속실행이다. 보수추가41LLM/31Embedding·전체86/65/$9.562321060범위이며사용목표나실청구액이아니다. 새UNKNOWN/정합성/금융보안위반시즉시추가전송중단·자동재시도금지다. 비용/키/승인활성화/실제PAID세션/claim/Commit/Push/Merge/배포는0이다. 소스·증거·원본보존감사는별도마감manifest로연결한다.
+
+면접학습은로컬인덱스에연결했다. 처리완료와품질성공의차이,불변원장복제·단일후속claim·누적예산,source와compiledruntime차이,finally의예외우선순위,제어평면실패와데이터평면UNKNOWN을구분한다. 미래개선안이나새기술을실제로실험한성과처럼기록하지않는다.
+
+최종마감manifest의전체검사true:25HEAD/root8/동결SHA/원장STOP/D2six/원2137source·baseline/OOM불변,이번11파일외기존내용hash동일,빈index·HEADd52b29f유지,최종후보2138stage/runtime일치·새claim/실제child/permit없음,시험전부STOPPED·개인회고ignored다. 근거는private resume25-preparation-20261110/final-preservation.json이며독립최종수정재확인미실시한계는그대로다.
+
+# 2026-11-10: 승인된 잔여25 실모델 평가 종료 — 전체품질 PARTIAL
+
+## 목적·실제 경로·승인
+
+사용자는 마지막 종료진단수정의 독립재확인미완료 한계를 확인/수용하고 동일누적18달러/92LLM/70Embedding에서32개/B5를제외한25개 단일후속 실행을 명시승인했다. source0abf4706…/child60c4912e2e9417d9에서 기존coordinator·PG/Python이중예약·실Spring/Tool/RAG/Chrome·실gpt-5.6-terra/text-embedding-3-small을사용했다. 새source/모델/질문/합격기준/제품정책을 실행중 바꾸지않았고 새예산도없다. 원parent의정확한단일claim만추가하고 원32/79예약/B5UNKNOWN/STOP은그대로승계했다.
+
+OpenAI Docs를직접열어현행Terra입력2달러/M·cachewrite1.25배·출력12/M·Embedding0.02/M과기존보수입력2.50/M을대조했다. 짧은context/default/nonregional조건을유지하고키는승인된lazy sender만읽었다. 첫POST전에실제DNS/TLS와두모델metadata접근이통과했다. 운영도구는기존승인된컨테이너의키mount reference만검증하고내용을읽거나출력하지않았다.
+
+## 실제 장애와 판단
+
+prepare입장은RAM2781.60MiB/디스크33.14GiB였지만실제run입장때1704.58MiB로낮아Guard에서인프라/inner-start/POST전에차단됐다. 사용자프로그램이나전역WSL설정을바꾸지않고소유자원정지를확인·대기했다. WMI재측정2797.37MiB,별도WinAPI재입장검사2790.48MiB,실제CARRY_RUN_ADMISSION2779.73MiB로각시점을구분한다. 원79예약/STOP없음/미시작상태와차단로그SHA를확인해새child내로그만보존archive로옮겼다. 원장/예산reset이나완료문항재전송/실제PAID중단후재시도가아니다. 이구분은prestart-admission-archive.json에기록했다.
+
+원OOM노드는재시작하지않고새1GiB/no-mining/전체history·dump노드를사용했다. 약38분30초가동/exit0/OOMfalse,224개Docker메모리표본최대593.6MiB·중간cgrouppeak726298624bytes/RSS409856KiB/oom0이다. 중간peak를전체최종peak로과장하지않는다. 신규금융서명/거래없음·최종금융DB/Cfingerprint둘다true다. 원OOM실행의C최종UNKNOWN을이번정상복제본으로덮지않았다.
+
+## 내용 검토·기능·지연 결과
+
+전담별도검토자는25개실제응답을5차원/동결핵심사실·금지주장으로검토했다. 준비warm watcher는nonce readiness만자동ACK하고품질자동판정은없다. 전25receipt57.584~110.742초/최종completion최대110.753초로300초미만,FAIL9의accepted=false를보존하고안전한설명실패만다음독립row로진행했다. 전체25는13PASS/3PARTIAL/9FAIL이며57HTTP누적은30PASS12PARTIAL13FAIL+B5내용NOT_RUN1/F1내용NOT_REVIEWED1이다. 과거D2기한FAIL과원D3/E2등은유지했다. source/corpus다른이력을최종57재인수로부르지않는다.
+
+PCa/PCb/PCc와웹두계정의C설명은PASS였다. ownC잔고/approve≠예치/과거담보≠현재잠금/시스템부채≠개인Claim·본인free한계를분리했다. A1반복6은KNOWLEDGE내용PASS,웹PA2a두계정도시장Tool/답변PASS다. Chrome156 Sandbox검증true/계정2/실제DOM요청6이지만내용은4PASS2FAIL이다. 실제사람만족도는미측정이며자동E2E로한정한다.
+
+핵심결손은PF1b반복6+웹2가전부SYNTHESIS_UNAVAILABLE/FAIL인점이다. Tool의75000입력/포함수수료75는정확하고반환오금액/타인노출/허위실행은관측되지않았지만설명이완료되지않았다. 생성이존재하고8개INVALID_AGENT_EVIDENCE 안전진단은facts/pointer/exact가모두맞았다. 5개policyCited=false는정책근거가있는생성단계의인용누락조건미충족이다. 단그전금액의미guard도있어유일/최초원인으로단정하지않는다. 정책인용있는나머지3개는금액의미/금지실행주장guard중정확원인미확정이고원문/runId직접결박부재로오탐·개별대응도확정못했다. RAG실행/Tool성공/생성/검증실패를분리했고 AnvilOOM/수수료계산결함과합치지않았다.
+
+F3는현재값및이전미확정을설명했지만계정/연결generation·옛데이터폐기/노출대응·인가범위안내누락으로FAIL이다. 실제데이터접근권한위반은관측없다. F2/F4/F5는핵심사실을맞추고유보했지만구체다음확인/미지원경계설명이부족해PARTIAL이다. 정답기준을완화하거나모두ANSWERED로올리지않았다.
+
+실제Agent지연n6:A1 p50/p95nearest=9847/13406ms,PF1b=7142/10661ms다. 후자는실패응답의속도이지정상답변성능성과가아니다. 순차소표본이며동시운영SLA가아니다. 캐시반복호출감소는관측했으나새ON/OFF비교를실행하지않았다.
+
+## 비용·보존·검토·남은 결정
+
+PG/SQLite131행일치/원79행·활동승계/B5UNKNOWN29060nUSD전액유지,누적77LLM54Embedding·보수예약3.653474240달러다. 새UNKNOWN0/자동재시도0/새예산0이다. 관측225442입력/24490출력/Embedding53336tokens의보수환산상한0.858551720달러는청구액이아니며UNKNOWN별도다. 남은예산/호출량은추가실험권한이아니다. 정상Spring실환경JUnit1PASS0SKIP0FAIL,전소유서버/Chrome/relay/PG/Anvil정지,25HEAD/root8/원source2137/frozenSHA/원장STOP/원UNKNOWN/단일claim보존감사PASS다. 실제실행증거별도검토결과는마감추기한다. 마지막코드독립재확인한계수용과실행증거감사는다르다.
+
+제품전체실사용준비는PARTIAL이다. 먼저민감정보없는요청correlation/semantic reason code·정책인용응답계약/결정적금액설명을비교할필요가있다. 금융계산/guard를완화하지않고무과금경계·부정문시험부터시작하는것이권장되지만이번에추가구현/재평가하지않았다. 이어F3및기존C3/C4C5/D3E2·다음확인설명과대표질문재인수를계획해야한다. 사람이직접쓰는파일럿/운영SLA/배포는NOT_RUN이다. GraphDB/추가금융기능을자동시작하지않으며Commit/Push/Merge/배포·기존자료삭제없다.
+
+최종별도실행증거감사:발견된필수수정없음. 새25원HTTP19/DOM6·동결/5차원/기한·131예약/원79행·B5UNKNOWN·양fingerprint·ChromeSandbox/실Agent6/DOM6·cleanup·단일claim/anchor/stage2138·25HEAD/root8·문서4변경을직접읽기대조했다. 측정RAM시점의작은수치구분을정정했고결론은동일하다. 감사자의실제PG/브라우저/모델재실행·생성원문복원·코드마지막수정재검토는없으며기존한계수용기록은유지한다. 근거는currentchild remaining25-final-summary.private.json/remaining25-preservation-docs-final.json과각원증거다. 검토기록만추가한마감이며새실행은없다.
+
+# AI 실제 실패 기반 제품 답변 보완 — 구현 / 무과금 검증
+
+> 작성: 2026-11-10. 사용자 승인 범위는 제품 품질 수정이며 새 유료 평가·Git 반영 승인이 아니다.
+
+## 구현과 확인된 원인
+
+PF1b8실패의 Tool 금융관계는 정상이나5개 정책인용누락이 확인됐다. 기존 생성 schema가 Tool-only 인용을 허용하고 서버는 정책을 필수로 검증하는 계약 불일치를 수정했다. OpenAiAgentProvider는 정책/Tool ID 각각의 enum 선택과 ANSWERED 필수 인용·INSUFFICIENT 빈 인용을 strict nested anyOf로 전달하고 선택된 ID만 기존 Generated/AgentResponse로 정규화한다. 서버 임의 인용 추가·자동 유료 재시도·금융 의미guard 완화는 하지 않았다. 나머지3개 원문/직접correlation 부재는 원인불명으로 유지한다. AgentFailure/AgentEvidence/AiObservability에는 민감값 없는 고정 reason enum과 기존 runId 관측을 추가했다. 외부 코드/정확 scalar/금액 의미/읽기 전용 검증은 유지한다.
+
+F3 원문은 MIXED/getPortfolio와 잔고 중심 검색으로 WS 계정세대 정책을 누락했다. AccountSwitchQuestion과 RequiredReadRoute는 명시target/Skill 없는 계정전환+이전알림 유형을 연결 정책 조회로 한정하고 검색어를 바로잡는다. Portfolio 본인범위를 익명 metadata로 전달하고 생성 지시에는 이전연결·데이터폐기/늦은REST·이벤트세대/본인조회/노출신고를 구분한다. 실제 검색 적중·자연어 충분성은 유료 재검증 전 미검증이다.
+
+C3는 INCONCLUSIVE에서 현재 확인한 값까지 버린 조기반환을 개선했다. StateExplanation은 현재 DB 상태/riskStatus/담보/실현손익/badDebt·제공된 현재equity/maintenance·pending유무와 선택 START_CALL/LIQUIDATE 범위를 설명한다. CLEAR_CALL 전체이력 또는 경고해제 확정은 제공하지 않고 PARTIAL과 모델합성차단을 유지한다. C5는 getPortfolio(DB)와 getCAccount(C체인)의 다른 정본을 명시한다. Receipt fallback도 실행/이벤트/확인수/DB 각 관측을 설명하지만 실패를 성공으로 승격하지 않는다. C4/PC4b의 기존 필터표시/미적용조건, D3/E2의 이전 안전수정은 유지했고 실제 모델 재인수 성과로 주장하지 않는다.
+
+## 대안과 기술 판단
+
+프롬프트 경고만 반복하거나 서버가 인용을 대리 생성하는 방법은 채택하지 않았다. 모델이 실제 제공 ID를 선택하게 하는 생성 계약과 기존 서버 검증의 이중 경계를 선택했다. 의미를 schema만으로 증명하지 않으므로 BuyFeeMeaning과 scalar/주장 guard는 그대로다. 검증원문 전체 보관 대신 reason enum/correlation을 택해 개인정보 최소화와 진단을 연결했다. F3는 더 많은 잔고 조회가 아니라 질문 범위/검색 문맥 문제, C3는 금융 계산 오류가 아니라 안전 fallback의 정보손실로 분류했다. 정책·코퍼스·동결질문·기준은 수정하지 않았다. 상세 학습·면접 쟁점은 EVALUATION_REPORT의 같은 날짜 제품 보완 절과 로컬 회고 후속 사건에 연결한다.
+
+## 검증과 한계
+
+새 network-none Java21/비root 컨테이너에서 변경 제품 소스·직접 관련 테스트 및 두 기존 통제어댑터를 컴파일했다. 첫93PASS/5FAIL은 새 prompt identity 미갱신1과 하네스작업경로4였고 assertion/동결데이터는 보존하면서 수정해98PASS를 확인했다. 후속 C3/C5·동결F3 테스트까지 포함한 최종 표적 회귀와 독립검토 결과는 마감추기에 기록한다. 전체57·실PG/Anvil/Spring/Chrome·유료 모델은 재실행하지 않는다. 현재 제품품질 인수는 PARTIAL이고 새 wire의 실제 공급자 수용/자연어 개선은 NOT_RUN이다.
+
+검토: 이번 제품 milestone의 별도 검토와 직접 실행한 시험을 구분한다. 기존 비용원장/STOP/B5UNKNOWN/실패증거, root미커밋8/25HEAD를 보존하고 commit/push/merge/main·배포·기존데이터 삭제는 금지 상태다. 다음 실제 재인수는 전체57 대신13요청/LLM14/Embedding11의 별도 미승인 제안이며, 기존 고정단가 보수예약 $1.416130560·상한$2 제안이다. 이전77/54와합산91/65로 원호출상한 이내이나 잔여량은 권한이 아니다. 새 승인/현행가격/색인재사용 검증 없이는 실행하지 않는다.
+
+최종 마감: 변경 소스 표적101PASS/0SKIP/0FAIL와 컴파일/diff-check PASS. 독립검토(/root/review_answer_quality_fixes)는 실제소스·새파일·주변계약·문서와101원로그/network-none/두소유컨테이너STOPPED를 읽기대조해 발견된필수수정없음이며 시험직접재실행은없다. 실제 새schema 공급자/의미검색/자연어 재인수는NOT_RUN이다. 기존PF1b실제PASS의정책+Tool인용과네Tool성공을후기실패와대조해단순금융계산/정책문서전무원인을배제했다. 원문없는3개는그대로불명이다. 보존감사는25HEAD/root8내용/현HEAD/stage/frozen/원paid및old32원장STOP/D2/oldsource2137/UNKNOWN/131예약을모두PASS로확인했다. Git-visible18파일(제품8/시험8/공개기록2)만변경,개인회고ignore/HEADd52b29f/미커밋유지다. 실행증거는product-quality-java-72a0e19427,product-quality-closeout-20261110.json,초기PASS대조private자료이며공개runtime원문은추가하지않았다.
+
+# AI Agent 개발 최종 마감 — 제품 경계 보완과 기록 정리
+
+> 작성: 2026-11-10. 종료 기준은 합리적 제품 보완·무과금 회귀·미해결 명시·기록 정리이며 추가 유료 평가 준비가 아니다.
+
+## 실제 제품 변경과 판단
+
+최근101PASS 수정본과 실제57응답을 다시 대조했다. 수수료는 DTO amountRelation과 금액/인용 검증 계약을 유지했고 원문 없는3개는 원인불명으로 남겼다. F3/C3/C5는 앞선 서버 Routing·검색 문맥·본인scope·결정적 fallback 변경을 유지했다. 추가 점검에서 D3/E2의 이전 프롬프트 보완만으로는 잘못된 Plan을 막지 못하며 C4의 미적용 설정값이 계속 모델 사실에 들어간다는 결손을 확인했다.
+
+변경 전 동결 D3에 STATE/PORTFOLIO Plan, 동결 E2에 CLARIFY Plan을 주입하고 C4의 applied=false projection을 확인하는 회귀를 먼저 작성했다. 총105시험 중102PASS/3FAIL로 각각 본인 조회 대체/정책 경로 실패/미적용 값 잔존을 재현했다. 실제 타인 정보 유출이나 수수료 계산 사고를 재현한 것은 아니다.
+
+- `RequiredReadRoute`: 명시 target/Skill/abnormal 없는 명확한 타인 포트폴리오 요청은 모델/Tool 전 UNSUPPORTED. 기존 본인범위 안내를 사용하고 다른 사용자 선택 기능이나 권한을 추가하지 않는다. E2의 상대주문/주문장 구조 질문은 KNOWLEDGE/NONE으로 분리하되 실제 체결 확인 질문과 명시 target은 제외한다. 제한된 문법이며 모든 자연어의 완전한 의미 분류는 아니다.
+- `AgentService.retrievalQuestion`: E2 원질문과 ExchangeVault/풀·발행·소각 검색 문맥을 결합하고 원질문 길이를700자로 제한해 기존 검색1000자 한도 안에 둔다. 새 검색/Tool 호출을 추가하지 않는다.
+- `AgentEvidence.modelInput`: listAbnormalOrders의 명시적 boolean waitingSecondsApplied=false인 복사본에서 waitingSeconds를 제외한다. 이는 미적용 설정을 현재 사실로 전달하지 않는 제품 projection이다. 원본 DTO와 공개 ToolEvidence·실제 filter/limit/scope/false flag는 보존하고, true 또는 미확인일 때 실제 자료를 임의 제거하지 않는다. 없는 pointer를 fact로 제시하면 기존 검증에서 계속 거부된다.
+
+Tool 금융 계산·인증/주체·SQL 권한/domain·C 고정블록·Oracle/RPC/Timeout/비용 정책은 변경하지 않았다. `AgentServiceTest`의 옛 D3 본인 조회 기대는 단순 삭제하지 않고 더 엄격한 UNSUPPORTED/모델0/Tool0/본인수치비노출로 교체했다. 고정 질문·기대결과·lock은 수정하지 않았다. D3/E2는 분류 모델 의존을 제거하는 코드 경계를, C4는 사실 전달 구조 변경을 선택했다. 프롬프트를 더 반복하거나 서버가 잘못된 결론을 성공으로 바꾸는 방안은 채택하지 않았다.
+
+## 검증
+
+수정 후105PASS, 경계조건/기존 C4 필터까지 최종 **115PASS/0SKIP/0FAIL**, 변경 Java 및 두 통제 HTTP 어댑터 컴파일/diff-check PASS. network-none/비root/메모리384MiB의 새 소유 Java21 컨테이너만 사용하고 기존 RAM1920MiB/디스크2GiB Guard를 유지했다. 실행 근거는 `product-quality-java-743fe36a9d`의3실패, `product-quality-java-59872f7760`의105PASS, `product-quality-java-285c599229`의115PASS와 각 cleanup이다. 기존 전체57·대규모 통합·기존 PG/Anvil/Chrome은 반복하지 않았다. 실제 공급자·키·예산 활성화0이다. 새 wire의 공급자 수용·실제 검색 적중·자연어 충분성은 미검증이다.
+
+## 누적 경험 기록 점검 — 제품/프롬프트/도구/인프라 구분
+
+| 사건과 실제 근거 | 실제 변경·판단 및 검증된 범위 | 남은 한계 |
+|---|---|---|
+| RAG 정확 식별자 / 기존 동일vector 비교 | `IdentifierQuery`/`PgKnowledgeStore`/`AuthorizedKnowledgeRetrieval`: 선택적 식별자 후보를 role/domain SQL 경계 안에서 결합. Golden12/12·MRR0.881944 유지 및 ID8/8, 전역Hybrid는MRR0.840278로 기각한 당시 측정 | 고정 소표본·당시 corpus이며 최종57의 모든 답변 충분성 성과가 아님 |
+| STATE 호출 구조와 벡터 캐시 | `DeterministicStateRoute`는 좁은 본인조회 문법에서 Planning/Synthesis0, `QueryVectorCache`는model/corpus/question+TTL/LRU·복사본. 승인/index/권한·최신 Tool 조회는 매번 유지 | 캐시는 답변/잔고 캐시가 아니며 공급자 장기 SLA나 모든 표현의0호출 보장이 아님 |
+| Deadline와 worker 수명 | `CallDeadline`과 요청별 남은 예산, `AgentService`의 제한 worker/대기큐0 및 비협조 호출의 실제 종료까지 점유를 유지. 단계 budget과 전체 deadline을 구분하고 무제한 대기/재시도 대신 실패 경계를 둠 | 503 보호가 충분한 사용자 수용률을 의미하지 않음. 실제 동시운영/장기 SLA 미입증 |
+| 영속 비용 예약과 UNKNOWN | `PgProviderBudget`의 DB 비관적 예약과 별도 평가원장 대조, 재시작/계정/corpus 간 동일 누계 및 전송 전 차단. 누락 usage를0정산하지 않고 UNKNOWN 보유 | 예약액은 청구액이 아니며 B5 공급자 수신/과금 불명은 해결되지 않음 |
+| Receipt 혼합부하 timeout | `ReadOnlyReceiptClient`·시험 DB/DTO/worker Trace로 관측구간 분리, 후속51HTTP/반복12 연결과 금융fingerprint 확인 | 과거3020/3022ms는 미재현/원인 미확정. 정상 후속을 누수/네트워크 원인 해결로 기록하지 않음 |
+| Windows 중계/Anvil OOM | Linux 내부주소로 환경경계를 분리. 실제384MiB OOM 후 증설/덤프 대조, 읽기복제본1GiB/no-mining+history/snapshot 보존으로 제한된 읽기 평가 안정화 | allocator 누수의 정확 원인·원OOM 최종C UNKNOWN은 남음. 실시간 거래노드에 no-mining을 적용한 것이 아님 |
+| Chrome Sandbox/DOM 준비 | Sandbox해제 대신 nonroot/userns/seccomp와 실제renderer 상태 대조, HTML존재와handler-ready 분리 후 실제로그인/DOM6 연결 | 무과금 통제공급자 성공과 실제 모델 품질/사람 만족도는 다른 결과 |
+| 검토 절차300초와 원장 승계 | UTF-8·사전근거 준비·필수판정/기록 우선, 늦은 원D2는보존. 완료응답/UNKNOWN을 재전송하지 않고 배타claim/동일누계 승계 | 운영자 검토 liveness는 모델 기능 개선과 구분. 과거 늦은 검토를PASS로 바꾸지 않음 |
+| 이번 답변 계약·Routing·fallback | 인용 schema와 기존 의미guard, 익명 본인scope, F3 검색 문맥, D3/E2 결정적 경계, C4 미적용 설정 projection, C3/C5·Receipt의 확인된 사실 보존 | schema는 자연어 진실성 증명이 아님. 실제 모델 재인수 없이 과거FAIL을 해결성과로 소급하지 않음 |
+
+각 사건의 상세 관측·초기 가설·실제 검토한 대안은 기존 날짜별 구현/EVALUATION 이력과 로컬 회고에 이미 있으며 이번에는 연결과 분류를 보완했다. 지금 떠올린 기업용 추가 과제(보존기간/분산감사/장기부하 등)는 미실행 제안으로만 기록하고 당시 선택 동기로 만들지 않는다.
+
+## 검토·보존·종료
+
+이번 마감 변경/문서의 독립 검토를 수행하고 결과는 마감추기에 기록한다. 기존 비용 원장/STOP/B5UNKNOWN/모든 실패/동결 자료와25worktree/root8파일을 보존한다. HEADd52b29f와 기존 미커밋은 유지하며 stage/commit/push/merge/main변경/배포/삭제는 하지 않는다. 최종보고는 EVALUATION_REPORT 최상단에 하나로 요약한다. 품질은 여전히PARTIAL, 새 실모델 재인수·사람효용·운영SLA는NOT_RUN이다. 사용자 요청이 없는 새 실험·유료평가·GraphDB·기능 확장은 시작하지 않고 이번 AI 개발을 마감한다.
+
+최초독립검토는RequiredReadRoute의구어체경계1개를필수지적했다. `내 매수 주문이 반대주문과 매칭됐어?`에서실제확인제외false/정책조건true를직접확인했다. 원래115시험을통과했다는이유로기각하지않고, 정책후보의일반'매칭'조건을제거해설명의도가있는범위로좁히고과거형확인·정책과실제확인의혼합문장을회귀에넣었다. 동결평가/인가/금융검증기준변경은없다. 제한문법밖/모호한표현의일반화는여전히미입증이다. 수정후시험과재검토는최종마감추기에기록한다.
+
+마감:지적수정후 `product-quality-java-0ac073250b`의컴파일·115PASS/0SKIP/0FAIL·diff-check PASS, 별도재검토1(/root/review_ai_development_closeout)은발견된필수수정없음이다. 검토자는원로그/network-none/두소유컨테이너STOPPED·수정소스/문서를직접읽었으며시험직접재실행은없다. 이번10Git-visible파일(제품3/시험3/공개문서4)과ignored회고만마감변경이고앞선누적미커밋은보존한다. 실제57원결과·미확정원인·새실모델NOT_RUN/품질PARTIAL은그대로다. HEADd52b29f/브랜치/stage0을유지하고유료/키/예산활성화/commit/push/merge/main변경/배포/원자료삭제0으로개발을종료한다. 최종보존검사는product-quality-closeout-20261110-development-reviewed-final.json으로연결한다.
+
+최종보존검사결과모두true:25HEAD/root8내용/현재HEAD·stage/10파일범위/frozen/원paid·old32원장STOP/D2/원·최신source/최근25capture/B5UNKNOWN/77LLM54Embedding·131예약·보수예약3.653474240/새승계없음/회고ignore/network-none·소유시험정지. 원자료수정없이감사결과만추기하고종료한다.
+
+# AI 개발 마감 로컬 Git 보존
+
+> 작성: 2026-11-10. 이번 승인은 코드 보존용 로컬 Commit이며 새 개발/평가/Push 승인이 아니다.
+
+## 선정과 검증
+
+현재AI worktree/ci브랜치의누적공개후보152파일(제품11/시험70/실행기63/문서7/속성1)을검토했다. private runtime·원장STOP·실제응답·사용자data·지갑·개인회고는Git대상에서제외했다. 실제145source index와명시선정목록·정규화본문·frozen원문/lock 및LF가일치하고삭제/rename/typechange가없음을확인했다. 독립검토는전체파일의bytes/해시/패턴·의존성과실제index를확인해필수수정없음이다. 탐지3항목은기존거부canary/변수연결password설정/금융fingerprint였으며고확도키·JWT리터럴미탐지다. 전용secret scanner미사용과탐지한계를명시하며무유출보증으로표현하지않는다.
+
+최종115PASS이후제품소스변경은없다. 전체시험대신Java68소스컴파일/134class,그중원115회귀28class의바이트동일성을확인했다. 첫컴파일의기존CI helper 누락5심볼은제품결함이아니라임시javac입력문제였다. product-read-ci.gradle의ciHelpers source set을그대로반영해성공했고제품/테스트를고치지않았다. Python71AST/JSON/Node14구문·diff-check PASS다. 새network-none컴파일컨테이너만기존RAM/디스크Guard뒤사용했고서버/PG/Anvil/실제모델·Embedding/키사용0이다. 검토자는컴파일증거ACL때문에그원파일을직접확인하지못해이부분은구현자결과로구분했다.
+
+## 로컬 커밋과 남은 상태
+
+제품·시험·재현실행기145파일은 `8519c52170e9447f4e8f36bbd0cf965e99b56c7a` (`feat(ai): finalize grounded agent and preserve acceptance tooling`)로로컬커밋했다. 부모는d52b29fe57de338074bfd0c87bd4175a20bf5cee이며현재ci/ai-unpaid-readiness-20261031만진행시켰다. 공개문서7파일은이기록과함께별도문서커밋으로보존하며최종ID는git log/마감보고를따른다. 기존source/평가기록/질문을사후갱신하지않았다.
+
+서비스품질PARTIAL·수정후실모델NOT_RUN·원57결과·수수료원문불명3·B5UNKNOWN·원Receipt지연원인미확정·사람효용/장기SLA/C전체진단한계는그대로다. 이번작업은승인된코드를Git에보존하는절차이며새기능이나평가시스템을추가하지않았다. 다른24worktree HEAD·root원본8내용·main/원격refs·원장/STOP/실패증거를보존한다. Push/병합/배포/원자료삭제없음으로마감한다.

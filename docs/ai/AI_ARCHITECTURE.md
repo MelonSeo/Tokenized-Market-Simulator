@@ -2,6 +2,8 @@
 
 > AI Phase 8 기준. 검증/완료 상태는 [평가 보고서](EVALUATION_REPORT.md)를 따른다.
 
+2026-11-10 개발 마감: 현재 등록은 기본8+legacy 선물2+C 읽기2의12 Tool과4 Skill이다. 기존9문서/88Chunk 및 C포함10문서/93Chunk의 실행 조건을 구분한다. 최종 품질은PARTIAL이며 새 생성 계약/최근 Routing 보완 후 실제 모델 재인수는NOT_RUN이다. 제품 변경과 평가/인프라 변경, 미해결 사항은 [최종 마감 보고](EVALUATION_REPORT.md#2026-11-10-ai-agent-개발-최종-마감-보고)에 정리했다. 아래 날짜별 기능 기록은 각 당시 범위다.
+
 2026-10-30 Agent 조회는 query embedding만 model+corpus+question 키/TTL5분/LRU64로 캐시한다(실측 후 기본ON, `app.ai.query-vector-cache=false` 가능). 권한/domain/활성 index/승인 검증과 최신 Tool 조회는 매 요청 유지하며 답변·거래 상태·검색 결과는 캐시하지 않는다. Basic RAG/ingest 경로는 그대로다. 모델이 근거 부족을 선택해도 성공 Tool 사실이 있으면 검증된 scalar만 PARTIAL로 보존하고, 미검증 모델 초안은 노출하지 않는다. 실제 부분 인수와 소표본/cold/warm 한계는 최신 평가 절에서 구분한다.
 
 2026-10-19 Futures 확장: 기존 구조와 권한/예산을 재사용해 선물 Tool2개·Skill1개·positionId target 및 기존9문서의 선물 정산 정책을 연결했다. 거래 Worker/원장/계약을 호출·변경하는 Agent는 아니다. [후속 구현·실행별 증거](../../claude-docs/futures-ai-integration.md)의 실제 DB/Anvil과 Mock 모델을 구분한다. 실제 LLM 및 새 corpus의 유료 embedding/index 평가는 별도 승인 전 미실행이다.
@@ -23,9 +25,9 @@ JWT principal ── RAG ADMIN API ── 승인 corpus/manifest ── AI pgvec
 
 - `ai/RagService`, `retrieval/AuthorizedKnowledgeRetrieval`: 지식 설명. 현재 잔고·가격·주문은 지식으로 추측하지 않는다.
 - `ai/provider/OpenAiProvider`, `agent/OpenAiAgentProvider`: 기존 gpt-5.6-terra / text-embedding-3-small1536 연결, timeout/응답 크기/구조화 출력. Tool 실행 권한을 provider에 등록하지 않는다.
-- `ai/tool`: 정해진8개 조회와 권한/연결/안전 DTO. [보안 모델](TOOL_SECURITY_MODEL.md).
+- `ai/tool`: 등록12개 읽기 전용 조회와 권한/연결/안전 DTO. 기본8/선물2/C2의 자산 모델과 인가 범위는 별도다. [보안 모델](TOOL_SECURITY_MODEL.md).
 - `ai/agent`: KNOWLEDGE/STATE/MIXED/CLARIFY/UNSUPPORTED, 서버 주체·대상·예산·출처/사실 검증. USER 요청의 userId/role을 모델이 만들지 않는다.
-- `ai/skill`: 버전/hash registry3개와 고정 절차. [Skill 안내](SKILL_GUIDE.md).
+- `ai/skill`: 버전/hash registry4개와 고정 절차. [Skill 안내](SKILL_GUIDE.md).
 - `ai/diagnosis`: 별도 scheduler/private pool과 durable marker/안전한 이력. 자동 거래·재전송·잠금 해제는 없다.
 - `ai/observability`: 고정 label count/sum/max와 ADMIN 조회. 영속 로그 저장소나 거래 DB 쓰기는 없다.
 
