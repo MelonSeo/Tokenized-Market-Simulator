@@ -17,4 +17,12 @@ class BuyFeeMeaningTest {
         for(String good:new String[]{"수수료는 입력 금액에 포함됩니다. 추가 차감하지 않습니다.","75075가 아니라 입력 총액 75000만 차감됩니다."})assertThat(BuyFeeMeaning.contradiction(good,input)).isFalse();
     }
     @Test void invalidQuotedFeeCannotBecomeVerifiedRelation(){var q=ToolFixtures.quote(1,2);q.setFee(q.getInputAmount().add(java.math.BigInteger.ONE));assertThat(BuyAmountRelation.quoted(json,q).path("inputIncludesFee").asBoolean()).isFalse();}
+    @Test void scopedFormalNegationDoesNotHideAnotherPositiveDebitClaim(){
+        var input=json.createObjectNode();input.putArray("tools").addObject().putObject("data").set("amountRelation",BuyAmountRelation.quoted(json,ToolFixtures.quote(1,2)));
+        for(String good:new String[]{"수수료는 별도로 차감되는 것이 아닙니다.","수수료는 추가로 차감되는 것은 아닙니다."})
+            assertThat(BuyFeeMeaning.contradiction(good,input)).as(good).isFalse();
+        for(String wrong:new String[]{"수수료는 별도로 차감되는 것이 아닙니다만 수수료 75는 추가 차감합니다.",
+                "수수료 75는 별도로 더해져 총 75075가 차감됩니다. 할인은 아닙니다."})
+            assertThat(BuyFeeMeaning.contradiction(wrong,input)).as(wrong).isTrue();
+    }
 }

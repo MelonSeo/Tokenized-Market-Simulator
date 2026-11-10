@@ -57,4 +57,22 @@ class AgentEvidenceReasonTest {
         data.remove("waitingSecondsApplied");
         assertThat(AgentEvidence.modelInput(json,List.of(),List.of(tool)).at("/tools/0/data/waitingSeconds").asInt()).isEqualTo(120);
     }
+    @Test void paginationIdentifiersStayPrivateButPageFactsAndOriginalDtoRemainIntact(){
+        for(String kind:List.of("ABSENT","NULL","PRESENT")){
+            var data=json.createObjectNode().put("hasMore",kind.equals("PRESENT")).put("scope","FIRST_PAGE_NOT_FULL_HISTORY");
+            if(kind.equals("NULL"))data.putNull("nextCursor");
+            if(kind.equals("PRESENT"))data.put("nextCursor","private-cursor-marker");
+            data.putObject("nested").put("cursor","private-cursor-marker");
+            var original=data.deepCopy();
+            var tool=AgentResponse.ToolEvidence.from("tool",com.pricetrack.exchange.ai.tool.ToolResult.success("listAbnormalOrders","TRADING_DB",data));
+            var n=AgentEvidence.modelInput(json,List.of(),List.of(tool));
+            assertThat(n.at("/tools/0/data/nextCursor").isMissingNode()).isTrue();
+            assertThat(n.toString()).doesNotContain("private-cursor-marker");
+            assertThat(n.at("/tools/0/data/hasMore").booleanValue()).isEqualTo(kind.equals("PRESENT"));
+            assertThat(n.at("/tools/0/data/scope").asText()).isEqualTo("FIRST_PAGE_NOT_FULL_HISTORY");
+            assertThat(data).isEqualTo(original);
+            var g=new Generated("ANSWERED","페이지 조회",List.of("tool"),List.of(new FactReference("tool","/nextCursor","null")),List.of(),List.of(),Usage.none());
+            assertThatThrownBy(()->AgentEvidence.validate(g,Route.MIXED,n)).isInstanceOfSatisfying(AgentFailure.class,e->assertThat(e.evidenceReason()).isEqualTo(FACT_VALUE));
+        }
+    }
 }

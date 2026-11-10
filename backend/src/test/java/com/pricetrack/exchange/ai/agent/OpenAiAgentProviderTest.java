@@ -123,10 +123,11 @@ class OpenAiAgentProviderTest {
         assertThat(base).doesNotContain("과거 원인·실시간 공급자 상태는 uncertainties에 남긴다", "실제 숫자는 facts를 가리킨다");
         assertThat(base).contains("정책으로 설명할 수 있는 부분", "서버가 PARTIAL로 표시", "핵심에 답할 근거가 전혀 없을 때만");
         assertThat(HexFormat.of().formatHex(digest.digest(base.getBytes(StandardCharsets.UTF_8))))
-            .isEqualTo("50c724eb1320e5b77b1c75d752ab6f073e400a2f32c8af7a7960005175f5be04");
+            .isEqualTo("7e2357b55c10447a130ae037ad5a57950fd075c8f5da9ea669c21d5f2d4bb873");
         assertThat(base).contains("amountRelation.inputIncludesFee=true","quotedTotalDebit","includedFee","hasMore/scope");
         assertThat(base).contains("waitingSecondsApplied=true", "false이면 반환된 기본값을 적용된 조회 조건으로 설명하지 않는다");
         assertThat(base).contains("현재 로그인 계정 확인", "이전 연결과 데이터 폐기", "generation", "본인 REST 재조회", "노출 시각·화면 경로", "타 계정에 로그인하거나");
+        assertThat(base).contains("과거 자산 이전의 발생·부재를 증명하지 않는다", "비공개 식별자로 모델에 전달되지 않는다", "제공된 hasMore/scope", "지원된 WAITING_LONG 별도 조회", "발행/소각 설명도 본문에 포함");
         assertThat(payload.path("max_output_tokens").asInt()).isEqualTo(1600);
         assertThat(payload.at("/text/format/schema/properties/facts/maxItems").asInt()).isEqualTo(20);
         assertThat(payload.path("text").path("format").path("strict").asBoolean()).isTrue();

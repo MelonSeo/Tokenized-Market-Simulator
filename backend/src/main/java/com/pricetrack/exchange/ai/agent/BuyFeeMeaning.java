@@ -10,6 +10,9 @@ final class BuyFeeMeaning {
             var r=t.path("data").path("amountRelation");if(!r.path("inputIncludesFee").asBoolean())continue;
             for(String sentence:prose.split("(?<=[!?。！？\\n])|(?<=다\\.)")){
                 String s=sentence.replaceAll("\\s+","").replace(",","");
+                // Only this explicit negative debit clause is normalized. Do not treat an
+                // unrelated "아닙니다" as negation of every financial claim in the sentence.
+                s=s.replaceAll("(?:추가|별도)(?:로)?차감되는(?:것이|것은|게|건)?아닙니다", "차감하지않습니다");
                 if(s.matches(".*수수료.{0,35}(추가|별도|다시)(로)?차감(됩|합|하겠).*"))return true;
                 boolean negative=s.matches(".*(추가차감하지않|별도차감하지않|더하지않|더해지지않|합산하지않|아니|포함|추가비용없).*" );
                 if(!negative&&s.matches(".*(수수료.{0,35}(추가|별도|더해|합산)|(입력|원금).{0,20}수수료.{0,20}(더해|더하|합산)).*"))return true;

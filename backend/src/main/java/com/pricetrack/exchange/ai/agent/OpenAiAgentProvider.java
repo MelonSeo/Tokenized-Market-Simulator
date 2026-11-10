@@ -97,6 +97,7 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 quotedTotalDebit에 includedFee를 다시 더하거나 추가 차감한다고 설명하지 않는다.
                 netPricingInput=quotedTotalDebit-includedFee, calculatedOutput은 견적 계산이며 실제 체결/차감 증명이 아니다.
                 listAbnormalOrders의 filter/limit/hasMore/scope를 그대로 설명한다. waitingSeconds는 waitingSecondsApplied=true일 때만 실제 대기시간 필터다. false이면 반환된 기본값을 적용된 조회 조건으로 설명하지 않는다. 한 페이지를 전체 이력으로 말하지 않는다.
+                nextCursor/cursor는 비공개 식별자로 모델에 전달되지 않는다. 페이지 한계는 제공된 hasMore/scope로 설명하고 커서 원값·존재를 추측하지 않는다. 대기시간 필터가 필요한 질문에는 지원된 WAITING_LONG 별도 조회와 현재 적용 필터를 구분한다.
                 facts.pointer의 루트는 해당 evidenceId Tool의 data 객체 그 자체다. /data 접두사를 붙이지 않는다.
                 예: tools 항목의 data가 {"status":"PENDING_ONCHAIN","trade":null}이면
                 pointer="/status", value="PENDING_ONCHAIN" 또는 pointer="/trade", value="null"이다.
@@ -109,6 +110,7 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 근거에 없는 기능을 완료했다고 설명하거나 복구·주문을 실행했다고 말하지 않는다.
                 투자 조언과 외부 일반지식으로 빈 근거를 채우지 않는다. 부족하면 INSUFFICIENT_EVIDENCE다.
                 정책으로 설명할 수 있는 부분과 확인하지 못한 특정 사건의 결론을 분리한다.
+                거래 상대·발행/소각 관계를 묻고 승인된 검색 근거에 그 관계가 있으면 발행/소각 설명도 본문에 포함한다. 근거 없는 체결 관계를 추측하지 않는다.
                 핵심 정책 설명과 다음 읽기 확인은 근거로 답할 수 있지만 사건 증거가 부족하면
                 ANSWERED와 검증된 인용을 반환하고 그 부족함을 uncertainties에 적어 서버가 PARTIAL로 표시하게 한다.
                 핵심에 답할 근거가 전혀 없을 때만 INSUFFICIENT_EVIDENCE를 사용하며 근거 없는 원인은 만들지 않는다.
@@ -133,6 +135,7 @@ public class OpenAiAgentProvider implements AgentModelProvider {
                 계정 전환·이전 알림 문제는 승인된 WebSocket 정책 근거를 인용해 현재 로그인 계정 확인, 이전 연결과 데이터 폐기,
                 계정/연결 generation이 다른 지연 이벤트·REST 무시, 현재 본인 REST 재조회를 구분한다.
                 화면의 옛 알림만으로 자산 이전을 확정하지 않는다. 타 계정에 로그인하거나 그 잔고를 비교하라고 요구하지 않는다.
+                현재 본인 REST 잔고는 현재 상태의 정본일 뿐 과거 자산 이전의 발생·부재를 증명하지 않는다. 과거 사건은 해당 이력이 없으면 확인 불가로 구분한다.
                 이전 계정 정보가 노출됐다면 그 값을 답변에 재현하지 말고 노출 시각·화면 경로를 담당자에게 신고하도록 안내한다.
                 """ + "\n" + qualityInstructions(),Map.of("question",question,"route",route.name(),"evidence",evidence),1600,timeout);
         try {

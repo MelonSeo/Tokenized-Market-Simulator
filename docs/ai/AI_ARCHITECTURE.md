@@ -2,6 +2,8 @@
 
 > AI Phase 8 기준. 검증/완료 상태는 [평가 보고서](EVALUATION_REPORT.md)를 따른다.
 
+2026-11-10 후속 표적13은 실제 공급자·PG·JWT·웹을 연결해5PASS/4PARTIAL/4FAIL이었다. 정책/Tool 분리 인용 schema는 실제 공급자가 수용했지만 수수료 설명4개는 의미guard에 차단돼 안전한PARTIAL fallback을 반환했다. 이후 명시적 부정 차감절 오탐을 국소 정규화하고, 현재 REST와 과거 사건·실제필터/페이지한계·발행/소각 설명 지시를 보완했다. cursor 원값은 모델 비공개를 유지하며 제공되지 않은 존재/원값을 추측하지 않는다. 이 후속 소스의 표적 무과금 회귀와 실제 모델 재인수는 구분하며 실제 모델 재인수는NOT_RUN이다. 기존57결과·UNKNOWN·금융 정본과 서비스PARTIAL은 유지한다. 아래 마감/미실행 표기는 각 당시 이력이다.
+
 2026-11-10 개발 마감: 현재 등록은 기본8+legacy 선물2+C 읽기2의12 Tool과4 Skill이다. 기존9문서/88Chunk 및 C포함10문서/93Chunk의 실행 조건을 구분한다. 최종 품질은PARTIAL이며 새 생성 계약/최근 Routing 보완 후 실제 모델 재인수는NOT_RUN이다. 제품 변경과 평가/인프라 변경, 미해결 사항은 [최종 마감 보고](EVALUATION_REPORT.md#2026-11-10-ai-agent-개발-최종-마감-보고)에 정리했다. 아래 날짜별 기능 기록은 각 당시 범위다.
 
 2026-10-30 Agent 조회는 query embedding만 model+corpus+question 키/TTL5분/LRU64로 캐시한다(실측 후 기본ON, `app.ai.query-vector-cache=false` 가능). 권한/domain/활성 index/승인 검증과 최신 Tool 조회는 매 요청 유지하며 답변·거래 상태·검색 결과는 캐시하지 않는다. Basic RAG/ingest 경로는 그대로다. 모델이 근거 부족을 선택해도 성공 Tool 사실이 있으면 검증된 scalar만 PARTIAL로 보존하고, 미검증 모델 초안은 노출하지 않는다. 실제 부분 인수와 소표본/cold/warm 한계는 최신 평가 절에서 구분한다.

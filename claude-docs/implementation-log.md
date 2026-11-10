@@ -4061,4 +4061,22 @@ Tool 금융 계산·인증/주체·SQL 권한/domain·C 고정블록·Oracle/RPC
 
 표적13 실행연결은 기존57원문/기준을 유지하고 승인된같은원장77LLM/54Embedding/$3.653474240와B5UNKNOWN을 승계한다. 추가USD2/14/11/보수토큰상한은 기존USD18/92/70과 함께 atomic예약 내부에서 강제한다. 초기검토의 단일자식 claim 결박 지적을 받아 부모exclusive claim과childId/source/descriptor/session경로hash를 추가했다. 새PG복제본에는 기존소유stopped volume만RO로복제하고 새로운1GiB/no-mining Anvil을사용한다. 실제색인의재사용은별도실환경확인 대상이며 재색인비용을숨겨넣지않는다. 공급자키는기존lazy sender에서두예약후만읽고새UNKNOWN은중단한다.
 
-회귀: 추가상한/승계/UNKNOWN/중복claim5PASS, broker16PASS, 관련coordinator/sender/HTTP31PASS, adapter/environment/broker67실행중66PASS/Windows익명pipe1SKIP, 브라우저flow4PASS. 원115제품소스는바꾸지않았다. Node/무과금 Mock은 실제모델/브라우저품질PASS가 아니다. 기존frozen감사PASS. 실제launcher/13품질/필수CI/PR/main 결과는후속추기로분리한다. 운영배포는하지않는다.
+회귀: 추가상한/승계/UNKNOWN/중복claim5PASS, broker16PASS, 관련coordinator/sender/HTTP31PASS, adapter/environment/broker67개중66PASS/Windows익명pipe1SKIP, 브라우저flow4PASS. 원115제품소스는바꾸지않았다. Node/무과금 Mock은 실제모델/브라우저품질PASS가 아니다. 기존frozen감사PASS. 실제launcher/13품질/필수CI/PR/main 결과는후속추기로분리한다. 운영배포는하지않는다.
+
+## 표적13 실제 실행과 후속 제품 보완
+
+검증feature dd4cbe7/runtime05a48dfa에서13개실제HTTP를완료했다. 품질5PASS/4PARTIAL/4FAIL이며원57결과와합치거나재채점하지않았다. 실제Chrome156두계정2DOM/Sandbox/로그아웃/답변근거DOM과PG·JWT·Tool·실Embedding·기존10문서색인경로를확인했다. C3/C5/D3는모델0결정적현재사실·거절경로PASS, F3두표현/C4/E2는설명부족PARTIAL, PF1bHTTP1PASS3FAIL·웹1PASS1FAIL이다. 모든실패는FEE_MEANING거절이며실제반환fallback의금액/Receipt/본인범위는정확하다. 생성원문미보존으로4실패문장정확원인은확정못한다. 과거정책인용누락이이번실패원인이라고반복하지않는다.
+
+재검토중별도무과금재현으로 `수수료는 별도로 차감되는 것이 아닙니다.`가오탐임을확인했다(15PASS1FAIL). 문장전체아닙니다를포괄허용하는방법은다른긍정금융주장을가리므로기각했다. 명시부정차감절만국소정규화하고동일문장긍정추가차감·75075·무관한부정을계속거절해16PASS/0SKIP/0FAIL을확인했다. 이는수학/인가/원장/정확값/정책인용완화가아니고, 원4실패가이부정문때문이었다고증명한것도아니다. F3/E2는실제분류/Tool/RAG가정상이고설명계약에누락이있어현재REST≠과거사건증명·검색에있는발행소각설명지시를보완했다. 이프롬프트수정과서버오탐수정은구분하며수정후실제모델NOT_RUN이다.
+
+독립검토필수지적C4: nextCursor가실제원DTO에는있지만AgentEvidence에서비공개식별자로제거됨을확인했다. 생성문제만으로분류하고제공cursor설명을요구한초기진단은잘못이었다. 원cursor를노출하거나마감중새메타데이터를추가하지않고기존redaction을유지했다. prompt는제공된hasMore/scope/실제filter·지원WAITING_LONG으로한계를설명하며없는cursor원값/존재를추측하지않도록수정했다. 모델비공개cursor의없음/null/존재·중첩비노출/원DTO와페이지사실보존/해당pointer거절회귀를추가하고동결C4의기대미충족은미해결로남긴다. 설명부족과의도적보안제한을분리한후속판단이다.
+
+지적반영최종소스는새network-none Java21 표적17PASS/0SKIP/0FAIL·컴파일/diff-check PASS다. 원실패red15P1F·중간16P·최종17P의증거를별개로보존하며제품소스identity와시험산출물을결박했다. 이표적회귀는실제공급자재인수를대체하지않는다.
+
+별도제품검토최초1회는C4원인분류의필수지적1건을찾았고지적반영재검토1은발견된필수수정없음이다. 검토자는최종diff/5시험소스SHA·17PASS원로그/소유컨테이너정지·예산/품질요약을직접읽었고시험/실제모델을재실행하지않았다. 새검증후소스의필수CI를통과한경우에만개인main에통합하며운영배포는하지않는다. 실제통합commit·merge시각·CI정본은[개인PR1](https://github.com/MelonSeo/Tokenized-Market-Simulator/pull/1)과원격main에서확인한다. 기능브랜치·비공개평가증거·로컬회고는보존한다.
+
+첫준비의Docker엔진미기동과기동직후RAM Guard차단은키/예약/자원준비전이었다. 정상기동과자연RAM회복후같은1920MiB기준으로진행했다. 첫실행은검토watcher의사전문서읽기/숫자slot순서문제로60초readiness를넘겨전송0/새예약0에서중단됐다. 무전송과행동일성을검증하고실패폴더전체/STOP/SQLite를새형제archive로보존한파생세션만허용했다. watch를먼저hot기동하고본평가의13실질판정·기록은43.6~66.1초로300초이내완료했다. 대기기한·판정·예산을느슨하게하지않고절차를수정한사례다.
+
+추가10LLM/6Embedding·예약0.710095380달러,누적87/60·예약4.363569620달러로두금액/횟수/토큰상한을모두유지했다. B5UNKNOWN29060nUSD원형/새UNKNOWN0·PG/SQLite147예약일치·원131원장/frozenSHA/root8내용/다른24HEAD/금융DB와Cfingerprint불변을확인했다. 관측토큰의보수환산추가0.178735780달러/누적1.037287500달러는청구서가아니다. 읽기Anvil1GiB81표본166.4~475.4MiB·exit0/OOM없음·새소유자원정상종료를검증했고과거OOM실행최종C UNKNOWN은소급해결하지않았다.
+
+개인PR1에기존필수금융/read/direct·AI/auth/웹CI를연결했다. dd4cbe7의4workflow모두PASS, AI Java408PASS45SKIP/Python471실행/실제PG·HTTP통제공급자·브라우저게이트PASS다. 처음구형트리거문자열test실패는새승인PR조건을정확검사하도록맞춰순수83PASS였다. 검토자는13개실제답변을독립판독·기한내기록했고금융/권한반환위반은찾지못했다. 새제품보완의별도검토·최종CI/main통합은후속추기로기록한다. 사람사용성/운영SLA/전체C진단·배포는NOT_RUN이며코드통합과구분한다.
